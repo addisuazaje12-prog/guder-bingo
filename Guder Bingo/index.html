@@ -6,82 +6,98 @@
     <title>Guder Bingo</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --bg-color: var(--tg-theme-bg-color, #121212);
-            --text-color: var(--tg-theme-text-color, #ffffff);
-            --button-color: var(--tg-theme-button-color, #0088cc);
-            --button-text-color: var(--tg-theme-button-text-color, #ffffff);
-            --card-bg: #1e1e1e;
-            --marked-color: #2ec4b6;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
             padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
         }
-        h2 { margin-bottom: 10px; }
+        h2 {
+            margin-bottom: 15px;
+            color: #ffffff;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
         .grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 8px;
             max-width: 350px;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         .cell {
             aspect-ratio: 1;
-            background-color: var(--card-bg);
-            border-radius: 8px;
+            background-color: #2c2c2c;
+            color: #ffffff !important;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             cursor: pointer;
             user-select: none;
+            border: 1px solid #3a3a3a;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .cell.marked {
-            background-color: var(--marked-color);
-            color: #000;
+            background-color: #2ec4b6 !important;
+            color: #000000 !important;
         }
         .cell.free {
-            background-color: #ff2a4b;
-            color: #fff;
+            background-color: #ff2a4b !important;
+            color: #ffffff !important;
+            font-size: 0.9rem;
         }
         .bingo-btn {
             width: 100%;
             max-width: 350px;
-            padding: 12px;
-            font-size: 1.1rem;
+            padding: 14px;
+            font-size: 1.2rem;
             font-weight: bold;
-            background-color: var(--button-color);
-            color: var(--button-text-color);
+            background-color: #0088cc;
+            color: #ffffff;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .bingo-btn:active {
+            transform: scale(0.98);
         }
         .menu-bar {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
             max-width: 350px;
             width: 100%;
         }
         .menu-bar button {
-            padding: 8px 12px;
-            background: #2a2a2a;
-            color: #fff;
-            border: 1px solid #444;
-            border-radius: 6px;
+            padding: 10px 14px;
+            background: #2c2c2c;
+            color: #ffffff !important;
+            border: 1px solid #444444;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .menu-bar button:active {
+            background: #444444;
         }
     </style>
 </head>
@@ -102,12 +118,19 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+
+        function initApp() {
+            if (tg) {
+                tg.ready();
+                tg.expand();
+            }
+            generateBoard();
+        }
 
         function generateBoard() {
             const board = document.getElementById("bingoBoard");
+            if (!board) return;
             board.innerHTML = "";
             let numbers = [];
             while(numbers.length < 24) {
@@ -124,8 +147,8 @@
                     cell.classList.add("free", "marked");
                 } else {
                     cell.innerText = numbers[count++];
-                    cell.addEventListener("click", () => {
-                        cell.classList.toggle("marked");
+                    cell.addEventListener("click", function() {
+                        this.classList.toggle("marked");
                     });
                 }
                 board.appendChild(cell);
@@ -133,7 +156,7 @@
         }
 
         function claimBingo() {
-            if(tg.showAlert) {
+            if (tg && tg.showAlert) {
                 tg.showAlert("🎉 Congratulations! You declared Bingo!");
             } else {
                 alert("🎉 Congratulations! You declared Bingo!");
@@ -141,34 +164,49 @@
         }
 
         function openDeposit() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData("DEPOSIT");
+            if (tg && tg.showAlert) {
+                tg.showAlert("Deposit: Send /deposit directly in the bot chat to add funds.");
             } else {
-                alert("Use /deposit in the Telegram bot chat to add funds.");
+                alert("Deposit: Send /deposit directly in the bot chat to add funds.");
             }
         }
 
         function openWithdraw() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData("WITHDRAW");
+            if (tg && tg.showAlert) {
+                tg.showAlert("Withdraw: Send /withdraw directly in the bot chat to request cash out.");
             } else {
-                alert("Use /withdraw in the Telegram bot chat to withdraw funds.");
+                alert("Withdraw: Send /withdraw directly in the bot chat to request cash out.");
             }
         }
 
         function openSupport() {
-            window.Telegram.WebApp.openTelegramLink("https://t.me/Guderbingosupport");
+            const supportUrl = "https://t.me/Guderbingosupport";
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(supportUrl);
+            } else {
+                window.location.href = supportUrl;
+            }
         }
 
         function openInstructions() {
-            alert("Game Instructions:\nTap numbers to mark your cartela, get a line, and click BINGO!");
+            const msg = "🎮 Game Instructions:\n\n1. Tap numbers to mark your cartela.\n2. Form a complete horizontal, vertical, or diagonal line.\n3. Tap BINGO! to declare your win.";
+            if (tg && tg.showAlert) {
+                tg.showAlert(msg);
+            } else {
+                alert(msg);
+            }
         }
 
         function openInvite() {
-            window.Telegram.WebApp.openTelegramLink("https://t.me/share/url?url=https://t.me/guderbingo_bot&text=Play%20Guder%20Bingo%20now!");
+            const inviteUrl = "https://t.me/share/url?url=https://t.me/guderbingo_bot&text=Play%20Guder%20Bingo%20now!";
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(inviteUrl);
+            } else {
+                window.location.href = inviteUrl;
+            }
         }
 
-        generateBoard();
+        document.addEventListener("DOMContentLoaded", initApp);
     </script>
 </body>
 </html>
