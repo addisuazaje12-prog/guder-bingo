@@ -11,13 +11,13 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #121212;
             color: #ffffff;
-            padding: 15px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
         }
-        .header { text-align: center; margin-bottom: 10px; }
+        .header { text-align: center; margin-bottom: 8px; }
         .status-box {
             background-color: #1e1e1e;
             border: 1px solid #333;
@@ -26,88 +26,84 @@
             font-size: 1rem;
             font-weight: bold;
             color: #ffcc00;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-align: center;
             width: 100%;
-            max-width: 350px;
+            max-width: 360px;
         }
         .audio-banner {
-            background-color: #d32f2f;
-            color: #fff;
+            background-color: #ff9800;
+            color: #000;
             padding: 10px;
             border-radius: 8px;
             text-align: center;
             font-weight: bold;
             margin-bottom: 10px;
             width: 100%;
-            max-width: 350px;
+            max-width: 360px;
             cursor: pointer;
+            box-shadow: 0 0 10px rgba(255,152,0,0.5);
         }
         .called-number-box {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: bold;
             color: #00e676;
             background: #222;
             width: 100%;
-            max-width: 350px;
+            max-width: 360px;
             text-align: center;
             padding: 8px;
             border-radius: 8px;
             border: 2px solid #00e676;
             margin-bottom: 10px;
         }
-        .registration-panel {
-            background: #1e1e1e;
-            padding: 15px;
+        
+        /* 800 CARTELA GRID STYLING */
+        .cartela-selection-board {
+            background: #1a1a1a;
+            border: 1px solid #333;
             border-radius: 8px;
-            width: 100%;
-            max-width: 350px;
-            text-align: center;
-            margin-bottom: 15px;
-            border: 1px solid #444;
-        }
-        .registration-panel input {
             padding: 10px;
-            font-size: 1.2rem;
-            width: 80px;
-            text-align: center;
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 12px;
+        }
+        .cartela-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 5px;
+            background: #000;
             border-radius: 6px;
-            border: 1px solid #666;
+        }
+        .cartela-btn {
             background: #2a2a2a;
             color: #fff;
-            margin-bottom: 10px;
-        }
-        .cartela-grid-picker {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-            max-height: 120px;
-            overflow-y: auto;
-            margin-top: 10px;
-            background: #111;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .picker-btn {
-            background: #333;
-            color: #fff;
-            border: none;
-            padding: 6px;
-            font-size: 0.8rem;
+            border: 1px solid #444;
+            padding: 8px 2px;
+            font-size: 0.75rem;
+            font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
+            text-align: center;
         }
-        .picker-btn.selected {
+        .cartela-btn.selected {
             background-color: #2e7d32 !important;
-            border: 1px solid #4caf50;
+            border-color: #4caf50 !important;
+            color: #fff !important;
+            transform: scale(1.05);
         }
+
+        /* 5x5 GAME BOARD */
         .grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 6px;
-            max-width: 350px;
+            max-width: 360px;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         .cell {
             aspect-ratio: 1;
@@ -124,6 +120,7 @@
         }
         .cell.marked { background-color: #0288d1; border-color: #03a9f4; transform: scale(0.95); }
         .cell.free { background-color: #ff8f00; color: #000; }
+        
         .action-btn {
             background-color: #2e7d32;
             color: #fff;
@@ -134,7 +131,7 @@
             border-radius: 8px;
             cursor: pointer;
             width: 100%;
-            max-width: 350px;
+            max-width: 360px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .action-btn:disabled { background-color: #555; cursor: not-allowed; }
@@ -146,23 +143,24 @@
         <h2>🌊 ጉደር ቢንጎ (Guder Bingo) 🌊</h2>
     </div>
 
-    <!-- Audio Unlock Banner for Mobile Browsers -->
+    <!-- AUDIO UNLOCK BANNER -->
     <div class="audio-banner" id="audioBanner" onclick="unlockAudio()">
-        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (Tap to Enable Voice)
+        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (Tap First to Enable Voice)
     </div>
 
-    <div class="status-box" id="gameStatus">ምዝገባ በመካሄድ ላይ... (30 ሰከንድ)</div>
+    <div class="status-box" id="gameStatus">ደረጃ 1፡ ምዝገባ (30 ሰከንድ)</div>
 
-    <!-- Cartela Selector (1 to 800) -->
-    <div class="registration-panel" id="regPanel">
-        <p style="margin-bottom:8px; font-size:0.9rem;">ካርቴላ ቁጥር ይምረጡ (ከ 1 እስከ 800):</p>
-        <input type="number" id="cartelaInput" min="1" max="800" value="1">
-        <br>
-        <button class="action-btn" style="padding:8px 16px; font-size:1rem;" onclick="confirmCartelaSelection()">ካርቴላ ምረጥ (Lock Cartela)</button>
+    <!-- 800 CARTELA SELECTOR BOARD -->
+    <div class="cartela-selection-board" id="cartelaBoard">
+        <p style="text-align:center; margin-bottom:8px; font-size:0.9rem; color:#aaa;">
+            ካርቴላዎን በፍጥነት ይምረጡ (ከ 1 እስከ 800):
+        </p>
+        <div class="cartela-grid" id="cartelaGrid"></div>
     </div>
 
     <div class="called-number-box" id="calledDisplay">የተጠራ ቁጥር: --</div>
 
+    <!-- 5x5 BINGO PLAYING BOARD -->
     <div class="grid" id="bingoBoard" style="display:none;"></div>
 
     <button class="action-btn" id="bingoBtn" onclick="claimBingo()" disabled>🎉 ቢንጎ! (BINGO)</button>
@@ -171,73 +169,109 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let gameState = "REGISTRATION"; 
-        let selectedCartelaNo = 1;
-        let audioUnlocked = false;
+        let gameState = "REGISTRATION";
+        let selectedCartelaNo = null;
         let callInterval = null;
 
         const statusBox = document.getElementById('gameStatus');
         const calledDisplay = document.getElementById('calledDisplay');
         const bingoBtn = document.getElementById('bingoBtn');
-        const board = document.getElementById('bingoBoard');
-        const regPanel = document.getElementById('regPanel');
+        const bingoBoard = document.getElementById('bingoBoard');
+        const cartelaBoard = document.getElementById('cartelaBoard');
+        const cartelaGrid = document.getElementById('cartelaGrid');
         const audioBanner = document.getElementById('audioBanner');
 
-        // --- AUDIO UNLOCK FUNCTION (Fixes Mobile Voice Silence) ---
+        // --- ENHANCED VOICE ENGINE WITH UNLOCK & SPEECH SYNTH ---
         function unlockAudio() {
             if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance("ድምጽ ተከፍቷል");
-                utterance.volume = 1.0;
-                window.speechSynthesis.speak(utterance);
-                audioUnlocked = true;
-                audioBanner.style.display = "none";
+                window.speechSynthesis.cancel();
+                const testUtterance = new SpeechSynthesisUtterance("ድምጽ ተከፍቷል");
+                testUtterance.lang = 'am-ET';
+                testUtterance.volume = 1.0;
+                window.speechSynthesis.speak(testUtterance);
+
+                audioBanner.style.backgroundColor = "#2e7d32";
+                audioBanner.style.color = "#fff";
+                audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Voice Enabled)";
+                setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
             }
         }
 
-        // --- VOICE ANNOUNCEMENT SYSTEM ---
         function speakVoice(text) {
-            if ('speechSynthesisIn' in window || 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Clears queue to guarantee immediate speech
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 0.9;
+                
+                // Try Amharic voice if available, fallback to default speech synthesis
+                utterance.lang = 'am-ET';
+                utterance.rate = 0.85;
                 utterance.pitch = 1.0;
                 utterance.volume = 1.0;
+
                 window.speechSynthesis.speak(utterance);
             }
         }
 
         function callNumberVoice(num) {
-            let letter = num <= 15 ? 'B' : num <= 30 ? 'I' : num <= 45 ? 'N' : num <= 60 ? 'G' : 'O';
             let amharicLetter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
-            
             calledDisplay.textContent = `የተጠራ ቁጥር: ${amharicLetter}-${num}`;
-            speakVoice(`${letter} ${num}`);
+            
+            // Speaks formatted callout aloud
+            speakVoice(`${amharicLetter} ${num}`);
         }
 
-        // --- CONFIRM CARTELA & HIGHLIGHT GREEN ---
-        function confirmCartelaSelection() {
-            const inputVal = parseInt(document.getElementById('cartelaInput').value);
-            if (isNaN(inputVal) || inputVal < 1 || inputVal > 800) {
-                alert("እባክዎ ከ 1 እስከ 800 መካከል ትክክለኛ ቁጥር ያስገቡ።");
-                return;
-            }
-            selectedCartelaNo = inputVal;
+        // --- POPULATE 800 CARTELA SELECTOR GRID ---
+        for (let i = 1; i <= 800; i++) {
+            const btn = document.createElement('button');
+            btn.classList.add('cartela-btn');
+            btn.textContent = i;
+            btn.onclick = () => selectCartela(i, btn);
+            cartelaGrid.appendChild(btn);
+        }
 
-            // Hide registration panel, show game board
-            regPanel.style.display = "none";
-            board.style.display = "grid";
-            statusBox.style.backgroundColor = "#2e7d32"; // Highlights green on selection
-            statusBox.textContent = `ካርቴላ #${selectedCartelaNo} ተመርጧል (ተቆልፏል)!`;
+        function selectCartela(cartelaNum, btnElement) {
+            if (gameState !== "REGISTRATION") return;
 
-            generateBoardNumbers();
+            // Remove highlight from previously selected card
+            document.querySelectorAll('.cartela-btn.selected').forEach(el => el.classList.remove('selected'));
+            
+            // Highlight chosen cartela in green
+            btnElement.classList.add('selected');
+            selectedCartelaNo = cartelaNum;
+
+            statusBox.style.backgroundColor = "#2e7d32";
+            statusBox.textContent = `ካርቴላ #${selectedCartelaNo} ተመርጧል!`;
 
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: selectedCartelaNo }));
             }
         }
 
+        // --- 30-SECOND REGISTRATION COUNTDOWN ---
+        let regTimer = 30;
+        const regInterval = setInterval(() => {
+            regTimer--;
+            if (gameState === "REGISTRATION") {
+                statusBox.textContent = `ምዝገባ: ${regTimer} ሰከንድ ቀርቷል ${selectedCartelaNo ? '(ካርቴላ #' + selectedCartelaNo + ')' : ''}`;
+            }
+
+            if (regTimer <= 0) {
+                clearInterval(regInterval);
+                
+                // If user didn't tap a card, assign a random one automatically
+                if (!selectedCartelaNo) {
+                    selectedCartelaNo = Math.floor(Math.random() * 800) + 1;
+                }
+
+                cartelaBoard.style.display = "none";
+                bingoBoard.style.display = "grid";
+                generateBoardNumbers();
+                startPreparationStage();
+            }
+        }, 1000);
+
         function generateBoardNumbers() {
-            board.innerHTML = '';
+            bingoBoard.innerHTML = '';
             const numbers = Array.from({length: 75}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 24);
             let cellIdx = 0;
 
@@ -253,30 +287,14 @@
                         if (gameState === "CALLING") cell.classList.toggle('marked');
                     });
                 }
-                board.appendChild(cell);
+                bingoBoard.appendChild(cell);
             }
         }
-
-        // --- 30-SECOND REGISTRATION TIMER ---
-        let regTimer = 30;
-        const regInterval = setInterval(() => {
-            regTimer--;
-            if (regPanel.style.display !== "none") {
-                statusBox.textContent = `ምዝገባ: ${regTimer} ሰከንድ ቀርቷል`;
-            }
-            if (regTimer <= 0) {
-                clearInterval(regInterval);
-                if (regPanel.style.display !== "none") {
-                    confirmCartelaSelection(); // Auto-lock default if time runs out
-                }
-                startPreparationStage();
-            }
-        }, 1000);
 
         function startPreparationStage() {
             gameState = "PREPARING";
             statusBox.style.backgroundColor = "#1e1e1e";
-            statusBox.textContent = "ዝግጅት ላይ ነው... (Preparing...)";
+            statusBox.textContent = "ዝግጅት ላይ ነው... (5 ሰከንድ)";
             let prepTimer = 5;
 
             const prepInterval = setInterval(() => {
@@ -309,16 +327,16 @@
         function claimBingo() {
             if (gameState !== "CALLING") return;
 
-            speakVoice("Bingo! Winner!");
+            speakVoice("ቢንጎ! እንኳን ደስ አለዎት! አሸናፊ ሆነዋል!");
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
-            
+
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
 
             clearInterval(callInterval);
             gameState = "DISPLAY";
-            
+
             setTimeout(() => {
                 statusBox.textContent = `🏆 አሸናፊ ካርቴላ #${selectedCartelaNo}!`;
                 setTimeout(() => {
