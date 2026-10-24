@@ -149,9 +149,9 @@
         <h2>🌊 ጉደር ቢንጎ (Guder Bingo) 🌊</h2>
     </div>
 
-    <!-- AUDIO UNLOCK BANNER (CRITICAL FOR MOBILE WEBVIEW) -->
+    <!-- AUDIO UNLOCK BANNER -->
     <div class="audio-banner" id="audioBanner" onclick="unlockAudio()">
-        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP HERE FIRST FOR SOUND)
+        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP TO UNLOCK VOICE)
     </div>
 
     <div class="status-box" id="gameStatus">ደረጃ 1፡ ምዝገባ (30 ሰከንድ)</div>
@@ -188,9 +188,22 @@
         const cartelaGrid = document.getElementById('cartelaGrid');
         const audioBanner = document.getElementById('audioBanner');
 
-        // --- HARDWARE AUDIO UNLOCK & DUAL-ENGINE SPEECH ---
+        // --- AMHARIC NUMBER CONVERTER (1 to 75) ---
+        function getAmharicNumberWords(num) {
+            const units = ["", "አንድ", "ሁለት", "ሶስት", "አራት", "አምስት", "ስድስት", "ሰባት", "ስምንት", "ዘጠኝ"];
+            const tens = ["", "አስር", "ሀያ", "ሰላሳ", "አርባ", "ሀምሳ", "ስልሳ", "ሰባ", "ሰማንያ", "ዘጠና"];
+
+            if (num <= 9) return units[num];
+            if (num === 10) return "አስር";
+            if (num > 10 && num < 20) return "አስራ " + units[num % 10];
+            
+            let tenPart = Math.floor(num / 10);
+            let unitPart = num % 10;
+            return unitPart === 0 ? tens[tenPart] : tens[tenPart] + " " + units[unitPart];
+        }
+
+        // --- HARDWARE AUDIO UNLOCK ---
         function unlockAudio() {
-            // 1. Initialize Web Audio Context
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (AudioContext) {
                 audioCtx = new AudioContext();
@@ -199,13 +212,12 @@
                 }
             }
 
-            // 2. Play audible confirmation tone
             playBeep(600, 0.2);
 
-            // 3. Fallback Speech Synth Call
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const testUtterance = new SpeechSynthesisUtterance("ድምጽ ተከፍቷል");
+                testUtterance.lang = 'am-ET';
                 testUtterance.volume = 1.0;
                 window.speechSynthesis.speak(testUtterance);
             }
@@ -217,7 +229,6 @@
             setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
         }
 
-        // Web Audio Synthesizer Beep (Works on ALL phones without requiring speech engines)
         function playBeep(freq = 440, type = 0.1) {
             try {
                 if (!audioCtx) {
@@ -236,21 +247,25 @@
             } catch(e) { console.log(e); }
         }
 
-        // Speech Callout System
+        // --- AMHARIC VOICE CALLOUT SYSTEM ---
         function callNumberVoice(num) {
-            let amharicLetter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
-            let englishLetter = num <= 15 ? 'B' : num <= 30 ? 'I' : num <= 45 ? 'N' : num <= 60 ? 'G' : 'O';
+            let letter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
+            let numberInAmharic = getAmharicNumberWords(num);
             
-            calledDisplay.textContent = `የተጠራ ቁጥር: ${amharicLetter}-${num}`;
+            // Format Visual: e.g. "ኦ-73" or "ቢ-10"
+            calledDisplay.textContent = `የተጠራ ቁጥር: ${letter}-${num}`;
             
-            // Audio Cue Beep
-            playBeep(880, 0.15);
+            // Beep tone cue
+            playBeep(880, 0.12);
 
-            // Speech Synthesis
+            // Speech Synthesis in Amharic Phrase (e.g., "ኦ ሰባ ሶስት")
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(`${englishLetter} ${num}`);
+                const phrase = `${letter} ${numberInAmharic}`;
+                const utterance = new SpeechSynthesisUtterance(phrase);
+                utterance.lang = 'am-ET';
                 utterance.rate = 0.85;
+                utterance.pitch = 1.0;
                 utterance.volume = 1.0;
                 window.speechSynthesis.speak(utterance);
             }
@@ -357,17 +372,21 @@
             }, 4000);
         }
 
+        // --- LOUD BINGO WINNER ANNOUNCEMENT ---
         function claimBingo() {
             if (gameState !== "CALLING") return;
 
-            playBeep(1000, 0.5);
+            playBeep(1200, 0.6);
 
+            // Loud Amharic Bingo Announcement
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance("Bingo! Winner!");
-                utterance.rate = 0.9;
-                utterance.volume = 1.0;
-                window.speechSynthesis.speak(utterance);
+                const loudAnnouncement = new SpeechSynthesisUtterance("ቢንጎ! ቢንጎ! እንኳን ደስ አለዎት አሸናፊ ሆነዋል!");
+                loudAnnouncement.lang = 'am-ET';
+                loudAnnouncement.rate = 0.9;
+                loudAnnouncement.pitch = 1.1; // Higher pitch for excitement
+                loudAnnouncement.volume = 1.0; // Max volume
+                window.speechSynthesis.speak(loudAnnouncement);
             }
 
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
