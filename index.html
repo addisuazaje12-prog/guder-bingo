@@ -102,7 +102,7 @@
             transform: scale(1.05);
         }
 
-        /* BINGO BOARD CONTAINER & HEADERS */
+        /* BINGO BOARD CONTAINER & B-I-N-G-O HEADERS */
         .board-container {
             width: 100%;
             max-width: 360px;
@@ -278,14 +278,16 @@
             } catch(e) { console.log(e); }
         }
 
-        // --- AMHARIC VOICE CALLOUT SYSTEM ---
+        // --- AMHARIC VOICE CALLOUT ENGINE ---
         function callNumberVoice(num) {
             let letter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
             let numberInAmharic = getAmharicNumberWords(num);
             
+            // Format Display (e.g., "ቢ-10", "ኦ-73")
             calledDisplay.textContent = `የተጠራ ቁጥር: ${letter}-${num}`;
             playBeep(880, 0.12);
 
+            // Speech Synthesis (e.g., "ቢ አስር", "ኦ ሰባ ሶስት")
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const phrase = `${letter} ${numberInAmharic}`;
@@ -348,19 +350,15 @@
         function generateBoardNumbers() {
             bingoBoard.innerHTML = '';
             
-            // Standard Bingo range distribution for B-I-N-G-O columns
             const bCol = Array.from({length: 15}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 5);
             const iCol = Array.from({length: 15}, (_, i) => i + 16).sort(() => Math.random() - 0.5).slice(0, 5);
-            const nCol = Array.from({length: 15}, (_, i) => i + 31).sort(() => Math.random() - 0.5).slice(0, 4); // 4 numbers + FREE
+            const nCol = Array.from({length: 15}, (_, i) => i + 31).sort(() => Math.random() - 0.5).slice(0, 4);
             const gCol = Array.from({length: 15}, (_, i) => i + 46).sort(() => Math.random() - 0.5).slice(0, 5);
             const oCol = Array.from({length: 15}, (_, i) => i + 61).sort(() => Math.random() - 0.5).slice(0, 5);
 
             for (let row = 0; row < 5; row++) {
-                // Column B
                 createCell(bCol[row]);
-                // Column I
                 createCell(iCol[row]);
-                // Column N
                 if (row === 2) {
                     const freeCell = document.createElement('div');
                     freeCell.classList.add('cell', 'free', 'marked');
@@ -370,9 +368,7 @@
                     const nIdx = row > 2 ? row - 1 : row;
                     createCell(nCol[nIdx]);
                 }
-                // Column G
                 createCell(gCol[row]);
-                // Column O
                 createCell(oCol[row]);
             }
         }
@@ -420,7 +416,7 @@
             }, 4000);
         }
 
-        // --- LOUD BINGO WINNER ANNOUNCEMENT ---
+        // --- LOUD WINNER ANNOUNCEMENT ---
         function claimBingo() {
             if (gameState !== "CALLING") return;
 
