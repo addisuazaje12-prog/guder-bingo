@@ -63,8 +63,6 @@
             border: 2px solid #00e676;
             margin-bottom: 10px;
         }
-        
-        /* 800 CARTELA GRID STYLING */
         .cartela-selection-board {
             background: #1a1a1a;
             border: 1px solid #333;
@@ -101,8 +99,6 @@
             color: #fff !important;
             transform: scale(1.05);
         }
-
-        /* BINGO BOARD CONTAINER & HEADERS */
         .board-container {
             width: 100%;
             max-width: 360px;
@@ -124,8 +120,6 @@
             border-radius: 6px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
-
-        /* 5x5 GAME BOARD */
         .grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -170,14 +164,12 @@
         <h2>🌊 ጉደር ቢንጎ (Guder Bingo) 🌊</h2>
     </div>
 
-    <!-- AUDIO UNLOCK BANNER -->
     <div class="audio-banner" id="audioBanner" onclick="unlockAudio()">
         🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP TO UNLOCK AUDIO)
     </div>
 
     <div class="status-box" id="gameStatus">ደረጃ 1፡ ምዝገባ (30 ሰከንድ)</div>
 
-    <!-- 800 CARTELA SELECTOR BOARD -->
     <div class="cartela-selection-board" id="cartelaBoard">
         <p style="text-align:center; margin-bottom:8px; font-size:0.9rem; color:#aaa;">
             ካርቴላዎን በፍጥነት ይምረጡ (ከ 1 እስከ 800):
@@ -187,7 +179,6 @@
 
     <div class="called-number-box" id="calledDisplay">የተጠራ ቁጥር: --</div>
 
-    <!-- 5x5 BINGO PLAYING BOARD -->
     <div class="board-container" id="boardContainer" style="display:none;">
         <div class="bingo-header-row">
             <div class="bingo-header-cell">B</div>
@@ -208,7 +199,7 @@
         let gameState = "REGISTRATION";
         let selectedCartelaNo = null;
         let callInterval = null;
-        let activeAudio = new Audio();
+        let audioCtx = null;
 
         const statusBox = document.getElementById('gameStatus');
         const calledDisplay = document.getElementById('calledDisplay');
@@ -219,40 +210,42 @@
         const cartelaGrid = document.getElementById('cartelaGrid');
         const audioBanner = document.getElementById('audioBanner');
 
-        // --- PLAY AUDIO FILE FROM GITHUB REPOSITORY ---
-        function playRepoAudio(filename) {
+        function playTone(freq, duration, type="sine") {
             try {
-                activeAudio.pause();
-                activeAudio.currentTime = 0;
-                // Points directly to your GitHub Pages or raw file URL structure
-                activeAudio.src = `https://addisuazaje12-prog.github.io/guder-bingo/${filename}`;
-                activeAudio.play().catch(e => console.log("Audio play prevented:", e));
-            } catch(e) {
-                console.log("Audio error:", e);
-            }
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.log(e); }
         }
 
         function unlockAudio() {
-            playRepoAudio('unlock.mp3');
+            playTone(880, 0.3);
             audioBanner.style.backgroundColor = "#2e7d32";
             audioBanner.style.color = "#fff";
             audioBanner.style.animation = "none";
-            audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Audio Unlocked!)";
+            audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Sound Active!)";
             setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
         }
 
-        // --- NUMBER CALLOUT (e.g. b10.mp3, o73.mp3) ---
         function callNumberVoice(num) {
-            let letter = num <= 15 ? 'b' : num <= 30 ? 'i' : num <= 45 ? 'n' : num <= 60 ? 'g' : 'o';
             let displayLetter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
-            
             calledDisplay.textContent = `የተጠራ ቁጥር: ${displayLetter}-${num}`;
-            
-            // Plays your custom mp3 recording from GitHub repo (e.g., b10.mp3)
-            playRepoAudio(`${letter}${num}.mp3`);
+            playTone(600, 0.15, "triangle");
+            setTimeout(() => playTone(900, 0.25, "sine"), 150);
         }
 
-        // --- POPULATE 800 CARTELA SELECTOR GRID ---
         for (let i = 1; i <= 800; i++) {
             const btn = document.createElement('button');
             btn.classList.add('cartela-btn');
@@ -263,35 +256,26 @@
 
         function selectCartela(cartelaNum, btnElement) {
             if (gameState !== "REGISTRATION") return;
-
             document.querySelectorAll('.cartela-btn.selected').forEach(el => el.classList.remove('selected'));
             btnElement.classList.add('selected');
             selectedCartelaNo = cartelaNum;
-
-            playRepoAudio('select.mp3');
-
+            playTone(520, 0.1);
             statusBox.style.backgroundColor = "#2e7d32";
             statusBox.textContent = `ካርቴላ #${selectedCartelaNo} ተመርጧል!`;
-
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: selectedCartelaNo }));
             }
         }
 
-        // --- 30-SECOND REGISTRATION COUNTDOWN ---
         let regTimer = 30;
         const regInterval = setInterval(() => {
             regTimer--;
             if (gameState === "REGISTRATION") {
                 statusBox.textContent = `ምዝገባ: ${regTimer} ሰከንድ ቀርቷል ${selectedCartelaNo ? '(ካርቴላ #' + selectedCartelaNo + ')' : ''}`;
             }
-
             if (regTimer <= 0) {
                 clearInterval(regInterval);
-                if (!selectedCartelaNo) {
-                    selectedCartelaNo = Math.floor(Math.random() * 800) + 1;
-                }
-
+                if (!selectedCartelaNo) selectedCartelaNo = Math.floor(Math.random() * 800) + 1;
                 cartelaBoard.style.display = "none";
                 boardContainer.style.display = "block";
                 generateBoardNumbers();
@@ -301,7 +285,6 @@
 
         function generateBoardNumbers() {
             bingoBoard.innerHTML = '';
-            
             const bCol = Array.from({length: 15}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 5);
             const iCol = Array.from({length: 15}, (_, i) => i + 16).sort(() => Math.random() - 0.5).slice(0, 5);
             const nCol = Array.from({length: 15}, (_, i) => i + 31).sort(() => Math.random() - 0.5).slice(0, 4);
@@ -340,7 +323,6 @@
             statusBox.style.backgroundColor = "#1e1e1e";
             statusBox.textContent = "ዝግጅት ላይ ነው... (5 ሰከንድ)";
             let prepTimer = 5;
-
             const prepInterval = setInterval(() => {
                 prepTimer--;
                 if (prepTimer <= 0) {
@@ -354,7 +336,6 @@
             gameState = "CALLING";
             bingoBtn.disabled = false;
             statusBox.textContent = `ጨዋታ ተጀምሯል! ካርቴላ #${selectedCartelaNo}`;
-
             const pool = Array.from({length: 75}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
             let drawIdx = 0;
 
@@ -368,27 +349,19 @@
             }, 4000);
         }
 
-        // --- LOUD WINNER ANNOUNCEMENT (bingo.mp3) ---
         function claimBingo() {
             if (gameState !== "CALLING") return;
-
-            // Plays bingo.mp3 from your GitHub repository
-            playRepoAudio('bingo.mp3');
+            playTone(523, 0.2, "square");
+            setTimeout(() => playTone(659, 0.2, "square"), 200);
+            setTimeout(() => playTone(783, 0.5, "square"), 400);
 
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
-
-            if (tg.sendData) {
-                tg.sendData(JSON.stringify({ action: "claim_bingo" }));
-            }
-
+            if (tg.sendData) tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             clearInterval(callInterval);
             gameState = "DISPLAY";
-
             setTimeout(() => {
                 statusBox.textContent = `🏆 አሸናፊ ካርቴላ #${selectedCartelaNo}!`;
-                setTimeout(() => {
-                    location.reload();
-                }, 5000);
+                setTimeout(() => { location.reload(); }, 5000);
             }, 1000);
         }
     </script>
