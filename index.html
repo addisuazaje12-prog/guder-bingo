@@ -164,8 +164,9 @@
         <h2>🌊 ጉደር ቢንጎ (Guder Bingo) 🌊</h2>
     </div>
 
+    <!-- AUDIO UNLOCK BANNER -->
     <div class="audio-banner" id="audioBanner" onclick="unlockAudio()">
-        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP TO UNLOCK AUDIO)
+        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP TO UNLOCK AMHARIC VOICE)
     </div>
 
     <div class="status-box" id="gameStatus">ደረጃ 1፡ ምዝገባ (30 ሰከንድ)</div>
@@ -199,7 +200,10 @@
         let gameState = "REGISTRATION";
         let selectedCartelaNo = null;
         let callInterval = null;
-        let audioCtx = null;
+        
+        // Single persistent Audio Element for WebView compatibility
+        const voiceAudio = new Audio();
+        let audioUnlocked = false;
 
         const statusBox = document.getElementById('gameStatus');
         const calledDisplay = document.getElementById('calledDisplay');
@@ -210,42 +214,59 @@
         const cartelaGrid = document.getElementById('cartelaGrid');
         const audioBanner = document.getElementById('audioBanner');
 
-        function playTone(freq, duration, type="sine") {
+        // AMHARIC NUMBER MAPPING FOR DISPLAY
+        function getAmharicLetter(num) {
+            return num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
+        }
+
+        function getFilePrefix(num) {
+            return num <= 15 ? 'b' : num <= 30 ? 'i' : num <= 45 ? 'n' : num <= 60 ? 'g' : 'o';
+        }
+
+        // PLAY MP3 FROM GITHUB REPOSITORY
+        function playAmharicMP3(filename) {
             try {
-                if (!audioCtx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioCtx = new AudioContext();
+                voiceAudio.pause();
+                voiceAudio.currentTime = 0;
+                voiceAudio.src = `./${filename}`;
+                
+                const playPromise = voiceAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Audio playback blocked by Telegram WebView:", error);
+                    });
                 }
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch(e) { console.log(e); }
+            } catch (e) {
+                console.log("Audio error:", e);
+            }
         }
 
         function unlockAudio() {
-            playTone(880, 0.3);
-            audioBanner.style.backgroundColor = "#2e7d32";
-            audioBanner.style.color = "#fff";
-            audioBanner.style.animation = "none";
-            audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Sound Active!)";
-            setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
+            audioUnlocked = true;
+            // Unlocks audio context on mobile iOS/Android Telegram WebViews
+            voiceAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+            voiceAudio.play().then(() => {
+                audioBanner.style.backgroundColor = "#2e7d32";
+                audioBanner.style.color = "#fff";
+                audioBanner.style.animation = "none";
+                audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Amharic Voice Active!)";
+                setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
+            }).catch(() => {
+                audioBanner.textContent = "⚠️ ድጋሚ ይጫኑ (TAP AGAIN TO UNLOCK)";
+            });
         }
 
         function callNumberVoice(num) {
-            let displayLetter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
-            calledDisplay.textContent = `የተጠራ ቁጥር: ${displayLetter}-${num}`;
-            playTone(600, 0.15, "triangle");
-            setTimeout(() => playTone(900, 0.25, "sine"), 150);
+            let letter = getAmharicLetter(num);
+            let prefix = getFilePrefix(num);
+            
+            calledDisplay.textContent = `የተጠራ ቁጥር: ${letter}-${num}`;
+            
+            // Plays b10.mp3, o73.mp3, etc. from root directory
+            playAmharicMP3(`${prefix}${num}.mp3`);
         }
 
+        // POPULATE 800 CARTELA GRID
         for (let i = 1; i <= 800; i++) {
             const btn = document.createElement('button');
             btn.classList.add('cartela-btn');
@@ -256,26 +277,33 @@
 
         function selectCartela(cartelaNum, btnElement) {
             if (gameState !== "REGISTRATION") return;
+
             document.querySelectorAll('.cartela-btn.selected').forEach(el => el.classList.remove('selected'));
             btnElement.classList.add('selected');
             selectedCartelaNo = cartelaNum;
-            playTone(520, 0.1);
+
             statusBox.style.backgroundColor = "#2e7d32";
             statusBox.textContent = `ካርቴላ #${selectedCartelaNo} ተመርጧል!`;
+
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: selectedCartelaNo }));
             }
         }
 
+        // 30-SECOND COUNTDOWN
         let regTimer = 30;
         const regInterval = setInterval(() => {
             regTimer--;
             if (gameState === "REGISTRATION") {
                 statusBox.textContent = `ምዝገባ: ${regTimer} ሰከንድ ቀርቷል ${selectedCartelaNo ? '(ካርቴላ #' + selectedCartelaNo + ')' : ''}`;
             }
+
             if (regTimer <= 0) {
                 clearInterval(regInterval);
-                if (!selectedCartelaNo) selectedCartelaNo = Math.floor(Math.random() * 800) + 1;
+                if (!selectedCartelaNo) {
+                    selectedCartelaNo = Math.floor(Math.random() * 800) + 1;
+                }
+
                 cartelaBoard.style.display = "none";
                 boardContainer.style.display = "block";
                 generateBoardNumbers();
@@ -285,6 +313,7 @@
 
         function generateBoardNumbers() {
             bingoBoard.innerHTML = '';
+            
             const bCol = Array.from({length: 15}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 5);
             const iCol = Array.from({length: 15}, (_, i) => i + 16).sort(() => Math.random() - 0.5).slice(0, 5);
             const nCol = Array.from({length: 15}, (_, i) => i + 31).sort(() => Math.random() - 0.5).slice(0, 4);
@@ -323,6 +352,7 @@
             statusBox.style.backgroundColor = "#1e1e1e";
             statusBox.textContent = "ዝግጅት ላይ ነው... (5 ሰከንድ)";
             let prepTimer = 5;
+
             const prepInterval = setInterval(() => {
                 prepTimer--;
                 if (prepTimer <= 0) {
@@ -336,6 +366,7 @@
             gameState = "CALLING";
             bingoBtn.disabled = false;
             statusBox.textContent = `ጨዋታ ተጀምሯል! ካርቴላ #${selectedCartelaNo}`;
+
             const pool = Array.from({length: 75}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
             let drawIdx = 0;
 
@@ -349,19 +380,27 @@
             }, 4000);
         }
 
+        // LOUD WINNER ANNOUNCEMENT
         function claimBingo() {
             if (gameState !== "CALLING") return;
-            playTone(523, 0.2, "square");
-            setTimeout(() => playTone(659, 0.2, "square"), 200);
-            setTimeout(() => playTone(783, 0.5, "square"), 400);
+
+            // Plays bingo.mp3 from repository
+            playAmharicMP3('bingo.mp3');
 
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
-            if (tg.sendData) tg.sendData(JSON.stringify({ action: "claim_bingo" }));
+
+            if (tg.sendData) {
+                tg.sendData(JSON.stringify({ action: "claim_bingo" }));
+            }
+
             clearInterval(callInterval);
             gameState = "DISPLAY";
+
             setTimeout(() => {
                 statusBox.textContent = `🏆 አሸናፊ ካርቴላ #${selectedCartelaNo}!`;
-                setTimeout(() => { location.reload(); }, 5000);
+                setTimeout(() => {
+                    location.reload();
+                }, 5000);
             }, 1000);
         }
     </script>
