@@ -166,7 +166,7 @@
 
     <!-- AUDIO UNLOCK BANNER -->
     <div class="audio-banner" id="audioBanner" onclick="unlockAudio()">
-        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP TO UNLOCK AMHARIC VOICE)
+        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP TO UNLOCK AUDIO)
     </div>
 
     <div class="status-box" id="gameStatus">ደረጃ 1፡ ምዝገባ (30 ሰከንድ)</div>
@@ -200,10 +200,7 @@
         let gameState = "REGISTRATION";
         let selectedCartelaNo = null;
         let callInterval = null;
-        
-        // Single persistent Audio Element for WebView compatibility
-        const voiceAudio = new Audio();
-        let audioUnlocked = false;
+        let audioCtx = null;
 
         const statusBox = document.getElementById('gameStatus');
         const calledDisplay = document.getElementById('calledDisplay');
@@ -214,56 +211,84 @@
         const cartelaGrid = document.getElementById('cartelaGrid');
         const audioBanner = document.getElementById('audioBanner');
 
-        // AMHARIC NUMBER MAPPING FOR DISPLAY
-        function getAmharicLetter(num) {
-            return num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
-        }
-
-        function getFilePrefix(num) {
-            return num <= 15 ? 'b' : num <= 30 ? 'i' : num <= 45 ? 'n' : num <= 60 ? 'g' : 'o';
-        }
-
-        // PLAY MP3 FROM GITHUB REPOSITORY
-        function playAmharicMP3(filename) {
-            try {
-                voiceAudio.pause();
-                voiceAudio.currentTime = 0;
-                voiceAudio.src = `./${filename}`;
-                
-                const playPromise = voiceAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log("Audio playback blocked by Telegram WebView:", error);
-                    });
-                }
-            } catch (e) {
-                console.log("Audio error:", e);
+        // HARDWARE AUDIO ENGINE
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
             }
         }
 
+        function playHardwareTone(freq, duration, type="sine") {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.log(e); }
+        }
+
         function unlockAudio() {
-            audioUnlocked = true;
-            // Unlocks audio context on mobile iOS/Android Telegram WebViews
-            voiceAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-            voiceAudio.play().then(() => {
-                audioBanner.style.backgroundColor = "#2e7d32";
-                audioBanner.style.color = "#fff";
-                audioBanner.style.animation = "none";
-                audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Amharic Voice Active!)";
-                setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
-            }).catch(() => {
-                audioBanner.textContent = "⚠️ ድጋሚ ይጫኑ (TAP AGAIN TO UNLOCK)";
-            });
+            initAudio();
+            playHardwareTone(880, 0.3);
+            
+            // Native speech fallback
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance("ድምጽ ተከፍቷል");
+                u.lang = 'am-ET';
+                u.volume = 1.0;
+                window.speechSynthesis.speak(u);
+            }
+
+            audioBanner.style.backgroundColor = "#2e7d32";
+            audioBanner.style.color = "#fff";
+            audioBanner.style.animation = "none";
+            audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Audio Activated!)";
+            setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
+        }
+
+        function getAmharicNumberWords(num) {
+            const units = ["", "አንድ", "ሁለት", "ሶስት", "አራት", "አምስት", "ስድስት", "ሰባት", "ስምንት", "ዘጠኝ"];
+            const tens = ["", "አስር", "ሀያ", "ሰላሳ", "አርባ", "ሀምሳ", "ስልሳ", "ሰባ", "ሰማንያ", "ዘጠና"];
+            if (num <= 9) return units[num];
+            if (num === 10) return "አስር";
+            if (num > 10 && num < 20) return "አስራ " + units[num % 10];
+            let tenPart = Math.floor(num / 10);
+            let unitPart = num % 10;
+            return unitPart === 0 ? tens[tenPart] : tens[tenPart] + " " + units[unitPart];
         }
 
         function callNumberVoice(num) {
-            let letter = getAmharicLetter(num);
-            let prefix = getFilePrefix(num);
+            let letter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
+            let numberInAmharic = getAmharicNumberWords(num);
             
             calledDisplay.textContent = `የተጠራ ቁጥር: ${letter}-${num}`;
             
-            // Plays b10.mp3, o73.mp3, etc. from root directory
-            playAmharicMP3(`${prefix}${num}.mp3`);
+            // Play audio chime
+            playHardwareTone(650, 0.2, "triangle");
+            setTimeout(() => playHardwareTone(950, 0.3, "sine"), 180);
+
+            // Speech Callout
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const phrase = `${letter} ${numberInAmharic}`;
+                const utterance = new SpeechSynthesisUtterance(phrase);
+                utterance.lang = 'am-ET';
+                utterance.rate = 0.85;
+                utterance.volume = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
         }
 
         // POPULATE 800 CARTELA GRID
@@ -277,11 +302,11 @@
 
         function selectCartela(cartelaNum, btnElement) {
             if (gameState !== "REGISTRATION") return;
-
             document.querySelectorAll('.cartela-btn.selected').forEach(el => el.classList.remove('selected'));
             btnElement.classList.add('selected');
             selectedCartelaNo = cartelaNum;
-
+            
+            playHardwareTone(520, 0.12);
             statusBox.style.backgroundColor = "#2e7d32";
             statusBox.textContent = `ካርቴላ #${selectedCartelaNo} ተመርጧል!`;
 
@@ -300,10 +325,7 @@
 
             if (regTimer <= 0) {
                 clearInterval(regInterval);
-                if (!selectedCartelaNo) {
-                    selectedCartelaNo = Math.floor(Math.random() * 800) + 1;
-                }
-
+                if (!selectedCartelaNo) selectedCartelaNo = Math.floor(Math.random() * 800) + 1;
                 cartelaBoard.style.display = "none";
                 boardContainer.style.display = "block";
                 generateBoardNumbers();
@@ -313,7 +335,6 @@
 
         function generateBoardNumbers() {
             bingoBoard.innerHTML = '';
-            
             const bCol = Array.from({length: 15}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 5);
             const iCol = Array.from({length: 15}, (_, i) => i + 16).sort(() => Math.random() - 0.5).slice(0, 5);
             const nCol = Array.from({length: 15}, (_, i) => i + 31).sort(() => Math.random() - 0.5).slice(0, 4);
@@ -380,12 +401,23 @@
             }, 4000);
         }
 
-        // LOUD WINNER ANNOUNCEMENT
+        // LOUD WINNER CELEBRATION
         function claimBingo() {
             if (gameState !== "CALLING") return;
 
-            // Plays bingo.mp3 from repository
-            playAmharicMP3('bingo.mp3');
+            // Victory Tones
+            playHardwareTone(523, 0.2, "square");
+            setTimeout(() => playHardwareTone(659, 0.2, "square"), 200);
+            setTimeout(() => playHardwareTone(783, 0.5, "square"), 400);
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const loudAnnouncement = new SpeechSynthesisUtterance("ቢንጎ! ቢንጎ! እንኳን ደስ አለዎት አሸናፊ ሆነዋል!");
+                loudAnnouncement.lang = 'am-ET';
+                loudAnnouncement.rate = 0.9;
+                loudAnnouncement.volume = 1.0;
+                window.speechSynthesis.speak(loudAnnouncement);
+            }
 
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
 
