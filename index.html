@@ -102,14 +102,35 @@
             transform: scale(1.05);
         }
 
+        /* BINGO BOARD CONTAINER & HEADERS */
+        .board-container {
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 12px;
+        }
+        .bingo-header-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .bingo-header-cell {
+            background-color: #d32f2f;
+            color: #ffffff;
+            font-size: 1.4rem;
+            font-weight: 900;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 6px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
         /* 5x5 GAME BOARD */
         .grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 6px;
-            max-width: 360px;
             width: 100%;
-            margin-bottom: 12px;
         }
         .cell {
             aspect-ratio: 1;
@@ -166,8 +187,17 @@
 
     <div class="called-number-box" id="calledDisplay">የተጠራ ቁጥር: --</div>
 
-    <!-- 5x5 BINGO PLAYING BOARD -->
-    <div class="grid" id="bingoBoard" style="display:none;"></div>
+    <!-- 5x5 BINGO PLAYING BOARD WITH B-I-N-G-O HEADERS -->
+    <div class="board-container" id="boardContainer" style="display:none;">
+        <div class="bingo-header-row">
+            <div class="bingo-header-cell">B</div>
+            <div class="bingo-header-cell">I</div>
+            <div class="bingo-header-cell">N</div>
+            <div class="bingo-header-cell">G</div>
+            <div class="bingo-header-cell">O</div>
+        </div>
+        <div class="grid" id="bingoBoard"></div>
+    </div>
 
     <button class="action-btn" id="bingoBtn" onclick="claimBingo()" disabled>🎉 ቢንጎ! (BINGO)</button>
 
@@ -183,6 +213,7 @@
         const statusBox = document.getElementById('gameStatus');
         const calledDisplay = document.getElementById('calledDisplay');
         const bingoBtn = document.getElementById('bingoBtn');
+        const boardContainer = document.getElementById('boardContainer');
         const bingoBoard = document.getElementById('bingoBoard');
         const cartelaBoard = document.getElementById('cartelaBoard');
         const cartelaGrid = document.getElementById('cartelaGrid');
@@ -252,13 +283,9 @@
             let letter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
             let numberInAmharic = getAmharicNumberWords(num);
             
-            // Format Visual: e.g. "ኦ-73" or "ቢ-10"
             calledDisplay.textContent = `የተጠራ ቁጥር: ${letter}-${num}`;
-            
-            // Beep tone cue
             playBeep(880, 0.12);
 
-            // Speech Synthesis in Amharic Phrase (e.g., "ኦ ሰባ ሶስት")
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const phrase = `${letter} ${numberInAmharic}`;
@@ -312,7 +339,7 @@
                 }
 
                 cartelaBoard.style.display = "none";
-                bingoBoard.style.display = "grid";
+                boardContainer.style.display = "block";
                 generateBoardNumbers();
                 startPreparationStage();
             }
@@ -320,23 +347,44 @@
 
         function generateBoardNumbers() {
             bingoBoard.innerHTML = '';
-            const numbers = Array.from({length: 75}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 24);
-            let cellIdx = 0;
+            
+            // Standard Bingo range distribution for B-I-N-G-O columns
+            const bCol = Array.from({length: 15}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 5);
+            const iCol = Array.from({length: 15}, (_, i) => i + 16).sort(() => Math.random() - 0.5).slice(0, 5);
+            const nCol = Array.from({length: 15}, (_, i) => i + 31).sort(() => Math.random() - 0.5).slice(0, 4); // 4 numbers + FREE
+            const gCol = Array.from({length: 15}, (_, i) => i + 46).sort(() => Math.random() - 0.5).slice(0, 5);
+            const oCol = Array.from({length: 15}, (_, i) => i + 61).sort(() => Math.random() - 0.5).slice(0, 5);
 
-            for (let i = 0; i < 25; i++) {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                if (i === 12) {
-                    cell.textContent = "ነጻ";
-                    cell.classList.add('free', 'marked');
+            for (let row = 0; row < 5; row++) {
+                // Column B
+                createCell(bCol[row]);
+                // Column I
+                createCell(iCol[row]);
+                // Column N
+                if (row === 2) {
+                    const freeCell = document.createElement('div');
+                    freeCell.classList.add('cell', 'free', 'marked');
+                    freeCell.textContent = "ነጻ";
+                    bingoBoard.appendChild(freeCell);
                 } else {
-                    cell.textContent = numbers[cellIdx++];
-                    cell.addEventListener('click', () => {
-                        if (gameState === "CALLING") cell.classList.toggle('marked');
-                    });
+                    const nIdx = row > 2 ? row - 1 : row;
+                    createCell(nCol[nIdx]);
                 }
-                bingoBoard.appendChild(cell);
+                // Column G
+                createCell(gCol[row]);
+                // Column O
+                createCell(oCol[row]);
             }
+        }
+
+        function createCell(numVal) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.textContent = numVal;
+            cell.addEventListener('click', () => {
+                if (gameState === "CALLING") cell.classList.toggle('marked');
+            });
+            bingoBoard.appendChild(cell);
         }
 
         function startPreparationStage() {
@@ -378,14 +426,13 @@
 
             playBeep(1200, 0.6);
 
-            // Loud Amharic Bingo Announcement
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const loudAnnouncement = new SpeechSynthesisUtterance("ቢንጎ! ቢንጎ! እንኳን ደስ አለዎት አሸናፊ ሆነዋል!");
                 loudAnnouncement.lang = 'am-ET';
                 loudAnnouncement.rate = 0.9;
-                loudAnnouncement.pitch = 1.1; // Higher pitch for excitement
-                loudAnnouncement.volume = 1.0; // Max volume
+                loudAnnouncement.pitch = 1.1;
+                loudAnnouncement.volume = 1.0;
                 window.speechSynthesis.speak(loudAnnouncement);
             }
 
