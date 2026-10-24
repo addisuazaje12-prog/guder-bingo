@@ -102,7 +102,7 @@
             transform: scale(1.05);
         }
 
-        /* BINGO BOARD CONTAINER & B-I-N-G-O HEADERS */
+        /* BINGO BOARD CONTAINER & HEADERS */
         .board-container {
             width: 100%;
             max-width: 360px;
@@ -172,7 +172,7 @@
 
     <!-- AUDIO UNLOCK BANNER -->
     <div class="audio-banner" id="audioBanner" onclick="unlockAudio()">
-        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP TO UNLOCK VOICE)
+        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP TO UNLOCK AMHARIC AUDIO)
     </div>
 
     <div class="status-box" id="gameStatus">ደረጃ 1፡ ምዝገባ (30 ሰከንድ)</div>
@@ -187,7 +187,7 @@
 
     <div class="called-number-box" id="calledDisplay">የተጠራ ቁጥር: --</div>
 
-    <!-- 5x5 BINGO PLAYING BOARD WITH B-I-N-G-O HEADERS -->
+    <!-- 5x5 BINGO PLAYING BOARD -->
     <div class="board-container" id="boardContainer" style="display:none;">
         <div class="bingo-header-row">
             <div class="bingo-header-cell">B</div>
@@ -208,7 +208,7 @@
         let gameState = "REGISTRATION";
         let selectedCartelaNo = null;
         let callInterval = null;
-        let audioCtx = null;
+        let activeAudio = new Audio();
 
         const statusBox = document.getElementById('gameStatus');
         const calledDisplay = document.getElementById('calledDisplay');
@@ -219,7 +219,7 @@
         const cartelaGrid = document.getElementById('cartelaGrid');
         const audioBanner = document.getElementById('audioBanner');
 
-        // --- AMHARIC NUMBER CONVERTER (1 to 75) ---
+        // --- AMHARIC NUMBER WORDS CONVERTER ---
         function getAmharicNumberWords(num) {
             const units = ["", "አንድ", "ሁለት", "ሶስት", "አራት", "አምስት", "ስድስት", "ሰባት", "ስምንት", "ዘጠኝ"];
             const tens = ["", "አስር", "ሀያ", "ሰላሳ", "አርባ", "ሀምሳ", "ስልሳ", "ሰባ", "ሰማንያ", "ዘጠና"];
@@ -233,71 +233,40 @@
             return unitPart === 0 ? tens[tenPart] : tens[tenPart] + " " + units[unitPart];
         }
 
-        // --- HARDWARE AUDIO UNLOCK ---
+        // --- DIRECT ONLINE AUDIO PLAYER (AUDIO STREAMING ENGINE) ---
+        function playAmharicSpeech(text) {
+            try {
+                activeAudio.pause();
+                activeAudio.currentTime = 0;
+                
+                // Uses Google TTS Amharic stream link directly
+                const encodedText = encodeURIComponent(text);
+                const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=am&client=tw-ob`;
+                
+                activeAudio.src = audioUrl;
+                activeAudio.play().catch(e => console.log("Audio playback blocked:", e));
+            } catch(e) {
+                console.log("Audio error:", e);
+            }
+        }
+
         function unlockAudio() {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (AudioContext) {
-                audioCtx = new AudioContext();
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-            }
-
-            playBeep(600, 0.2);
-
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const testUtterance = new SpeechSynthesisUtterance("ድምጽ ተከፍቷል");
-                testUtterance.lang = 'am-ET';
-                testUtterance.volume = 1.0;
-                window.speechSynthesis.speak(testUtterance);
-            }
-
+            playAmharicSpeech("ድምጽ ተከፍቷል");
             audioBanner.style.backgroundColor = "#2e7d32";
             audioBanner.style.color = "#fff";
             audioBanner.style.animation = "none";
-            audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Voice Unlocked!)";
+            audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Amharic Audio Unlocked!)";
             setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
         }
 
-        function playBeep(freq = 440, type = 0.1) {
-            try {
-                if (!audioCtx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioCtx = new AudioContext();
-                }
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = "sine";
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + type);
-            } catch(e) { console.log(e); }
-        }
-
-        // --- AMHARIC VOICE CALLOUT ENGINE ---
         function callNumberVoice(num) {
             let letter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
             let numberInAmharic = getAmharicNumberWords(num);
             
-            // Format Display (e.g., "ቢ-10", "ኦ-73")
             calledDisplay.textContent = `የተጠራ ቁጥር: ${letter}-${num}`;
-            playBeep(880, 0.12);
-
-            // Speech Synthesis (e.g., "ቢ አስር", "ኦ ሰባ ሶስት")
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const phrase = `${letter} ${numberInAmharic}`;
-                const utterance = new SpeechSynthesisUtterance(phrase);
-                utterance.lang = 'am-ET';
-                utterance.rate = 0.85;
-                utterance.pitch = 1.0;
-                utterance.volume = 1.0;
-                window.speechSynthesis.speak(utterance);
-            }
+            
+            // Speaks formatted text online: e.g. "ቢ አስር", "ኦ ሰባ ሶስት"
+            playAmharicSpeech(`${letter} ${numberInAmharic}`);
         }
 
         // --- POPULATE 800 CARTELA SELECTOR GRID ---
@@ -315,8 +284,6 @@
             document.querySelectorAll('.cartela-btn.selected').forEach(el => el.classList.remove('selected'));
             btnElement.classList.add('selected');
             selectedCartelaNo = cartelaNum;
-
-            playBeep(520, 0.1);
 
             statusBox.style.backgroundColor = "#2e7d32";
             statusBox.textContent = `ካርቴላ #${selectedCartelaNo} ተመርጧል!`;
@@ -416,21 +383,11 @@
             }, 4000);
         }
 
-        // --- LOUD WINNER ANNOUNCEMENT ---
+        // --- LOUD AMHARIC BINGO WINNER ANNOUNCEMENT ---
         function claimBingo() {
             if (gameState !== "CALLING") return;
 
-            playBeep(1200, 0.6);
-
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const loudAnnouncement = new SpeechSynthesisUtterance("ቢንጎ! ቢንጎ! እንኳን ደስ አለዎት አሸናፊ ሆነዋል!");
-                loudAnnouncement.lang = 'am-ET';
-                loudAnnouncement.rate = 0.9;
-                loudAnnouncement.pitch = 1.1;
-                loudAnnouncement.volume = 1.0;
-                window.speechSynthesis.speak(loudAnnouncement);
-            }
+            playAmharicSpeech("ቢንጎ! ቢንጎ! እንኳን ደስ አለዎት አሸናፊ ሆነዋል!");
 
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
 
