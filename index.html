@@ -32,9 +32,9 @@
             max-width: 360px;
         }
         .audio-banner {
-            background-color: #ff9800;
-            color: #000;
-            padding: 10px;
+            background-color: #d32f2f;
+            color: #fff;
+            padding: 12px;
             border-radius: 8px;
             text-align: center;
             font-weight: bold;
@@ -42,7 +42,13 @@
             width: 100%;
             max-width: 360px;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(255,152,0,0.5);
+            box-shadow: 0 0 10px rgba(211,47,47,0.6);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
         }
         .called-number-box {
             font-size: 2.2rem;
@@ -143,9 +149,9 @@
         <h2>🌊 ጉደር ቢንጎ (Guder Bingo) 🌊</h2>
     </div>
 
-    <!-- AUDIO UNLOCK BANNER -->
+    <!-- AUDIO UNLOCK BANNER (CRITICAL FOR MOBILE WEBVIEW) -->
     <div class="audio-banner" id="audioBanner" onclick="unlockAudio()">
-        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (Tap First to Enable Voice)
+        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (TAP HERE FIRST FOR SOUND)
     </div>
 
     <div class="status-box" id="gameStatus">ደረጃ 1፡ ምዝገባ (30 ሰከንድ)</div>
@@ -172,6 +178,7 @@
         let gameState = "REGISTRATION";
         let selectedCartelaNo = null;
         let callInterval = null;
+        let audioCtx = null;
 
         const statusBox = document.getElementById('gameStatus');
         const calledDisplay = document.getElementById('calledDisplay');
@@ -181,43 +188,72 @@
         const cartelaGrid = document.getElementById('cartelaGrid');
         const audioBanner = document.getElementById('audioBanner');
 
-        // --- ENHANCED VOICE ENGINE WITH UNLOCK & SPEECH SYNTH ---
+        // --- HARDWARE AUDIO UNLOCK & DUAL-ENGINE SPEECH ---
         function unlockAudio() {
+            // 1. Initialize Web Audio Context
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+
+            // 2. Play audible confirmation tone
+            playBeep(600, 0.2);
+
+            // 3. Fallback Speech Synth Call
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const testUtterance = new SpeechSynthesisUtterance("ድምጽ ተከፍቷል");
-                testUtterance.lang = 'am-ET';
                 testUtterance.volume = 1.0;
                 window.speechSynthesis.speak(testUtterance);
-
-                audioBanner.style.backgroundColor = "#2e7d32";
-                audioBanner.style.color = "#fff";
-                audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Voice Enabled)";
-                setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
             }
+
+            audioBanner.style.backgroundColor = "#2e7d32";
+            audioBanner.style.color = "#fff";
+            audioBanner.style.animation = "none";
+            audioBanner.textContent = "🔊 ድምጽ ተከፍቷል (Voice Unlocked!)";
+            setTimeout(() => { audioBanner.style.display = "none"; }, 1500);
         }
 
-        function speakVoice(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Clears queue to guarantee immediate speech
-                const utterance = new SpeechSynthesisUtterance(text);
-                
-                // Try Amharic voice if available, fallback to default speech synthesis
-                utterance.lang = 'am-ET';
-                utterance.rate = 0.85;
-                utterance.pitch = 1.0;
-                utterance.volume = 1.0;
-
-                window.speechSynthesis.speak(utterance);
-            }
+        // Web Audio Synthesizer Beep (Works on ALL phones without requiring speech engines)
+        function playBeep(freq = 440, type = 0.1) {
+            try {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "sine";
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + type);
+            } catch(e) { console.log(e); }
         }
 
+        // Speech Callout System
         function callNumberVoice(num) {
             let amharicLetter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
+            let englishLetter = num <= 15 ? 'B' : num <= 30 ? 'I' : num <= 45 ? 'N' : num <= 60 ? 'G' : 'O';
+            
             calledDisplay.textContent = `የተጠራ ቁጥር: ${amharicLetter}-${num}`;
             
-            // Speaks formatted callout aloud
-            speakVoice(`${amharicLetter} ${num}`);
+            // Audio Cue Beep
+            playBeep(880, 0.15);
+
+            // Speech Synthesis
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(`${englishLetter} ${num}`);
+                utterance.rate = 0.85;
+                utterance.volume = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
         }
 
         // --- POPULATE 800 CARTELA SELECTOR GRID ---
@@ -232,12 +268,11 @@
         function selectCartela(cartelaNum, btnElement) {
             if (gameState !== "REGISTRATION") return;
 
-            // Remove highlight from previously selected card
             document.querySelectorAll('.cartela-btn.selected').forEach(el => el.classList.remove('selected'));
-            
-            // Highlight chosen cartela in green
             btnElement.classList.add('selected');
             selectedCartelaNo = cartelaNum;
+
+            playBeep(520, 0.1);
 
             statusBox.style.backgroundColor = "#2e7d32";
             statusBox.textContent = `ካርቴላ #${selectedCartelaNo} ተመርጧል!`;
@@ -257,8 +292,6 @@
 
             if (regTimer <= 0) {
                 clearInterval(regInterval);
-                
-                // If user didn't tap a card, assign a random one automatically
                 if (!selectedCartelaNo) {
                     selectedCartelaNo = Math.floor(Math.random() * 800) + 1;
                 }
@@ -327,7 +360,16 @@
         function claimBingo() {
             if (gameState !== "CALLING") return;
 
-            speakVoice("ቢንጎ! እንኳን ደስ አለዎት! አሸናፊ ሆነዋል!");
+            playBeep(1000, 0.5);
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance("Bingo! Winner!");
+                utterance.rate = 0.9;
+                utterance.volume = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
 
             if (tg.sendData) {
