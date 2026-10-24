@@ -21,28 +21,85 @@
         .status-box {
             background-color: #1e1e1e;
             border: 1px solid #333;
-            padding: 10px 20px;
+            padding: 10px;
             border-radius: 8px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             color: #ffcc00;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-align: center;
             width: 100%;
             max-width: 350px;
         }
+        .audio-banner {
+            background-color: #d32f2f;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 350px;
+            cursor: pointer;
+        }
         .called-number-box {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: bold;
             color: #00e676;
             background: #222;
             width: 100%;
             max-width: 350px;
             text-align: center;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             border: 2px solid #00e676;
+            margin-bottom: 10px;
+        }
+        .registration-panel {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
             margin-bottom: 15px;
+            border: 1px solid #444;
+        }
+        .registration-panel input {
+            padding: 10px;
+            font-size: 1.2rem;
+            width: 80px;
+            text-align: center;
+            border-radius: 6px;
+            border: 1px solid #666;
+            background: #2a2a2a;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .cartela-grid-picker {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            max-height: 120px;
+            overflow-y: auto;
+            margin-top: 10px;
+            background: #111;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .picker-btn {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 6px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .picker-btn.selected {
+            background-color: #2e7d32 !important;
+            border: 1px solid #4caf50;
         }
         .grid {
             display: grid;
@@ -65,7 +122,6 @@
             cursor: pointer;
             user-select: none;
         }
-        .cell.selected-cartela { background-color: #2e7d32; border-color: #4caf50; }
         .cell.marked { background-color: #0288d1; border-color: #03a9f4; transform: scale(0.95); }
         .cell.free { background-color: #ff8f00; color: #000; }
         .action-btn {
@@ -90,11 +146,24 @@
         <h2>🌊 ጉደር ቢንጎ (Guder Bingo) 🌊</h2>
     </div>
 
-    <div class="status-box" id="gameStatus">ደረጃ 1፡ ምዝገባ (30 ሰከንድ)</div>
+    <!-- Audio Unlock Banner for Mobile Browsers -->
+    <div class="audio-banner" id="audioBanner" onclick="unlockAudio()">
+        🔊 ድምጽ ለማብራት እዚህ ይጫኑ (Tap to Enable Voice)
+    </div>
+
+    <div class="status-box" id="gameStatus">ምዝገባ በመካሄድ ላይ... (30 ሰከንድ)</div>
+
+    <!-- Cartela Selector (1 to 800) -->
+    <div class="registration-panel" id="regPanel">
+        <p style="margin-bottom:8px; font-size:0.9rem;">ካርቴላ ቁጥር ይምረጡ (ከ 1 እስከ 800):</p>
+        <input type="number" id="cartelaInput" min="1" max="800" value="1">
+        <br>
+        <button class="action-btn" style="padding:8px 16px; font-size:1rem;" onclick="confirmCartelaSelection()">ካርቴላ ምረጥ (Lock Cartela)</button>
+    </div>
 
     <div class="called-number-box" id="calledDisplay">የተጠራ ቁጥር: --</div>
 
-    <div class="grid" id="bingoBoard"></div>
+    <div class="grid" id="bingoBoard" style="display:none;"></div>
 
     <button class="action-btn" id="bingoBtn" onclick="claimBingo()" disabled>🎉 ቢንጎ! (BINGO)</button>
 
@@ -102,79 +171,112 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let gameState = "REGISTRATION"; // REGISTRATION, PREPARING, CALLING, DISPLAY
-        let assignedCartelaNo = Math.floor(Math.random() * 800) + 1;
-        let drawnNumbers = [];
+        let gameState = "REGISTRATION"; 
+        let selectedCartelaNo = 1;
+        let audioUnlocked = false;
         let callInterval = null;
 
         const statusBox = document.getElementById('gameStatus');
         const calledDisplay = document.getElementById('calledDisplay');
         const bingoBtn = document.getElementById('bingoBtn');
         const board = document.getElementById('bingoBoard');
+        const regPanel = document.getElementById('regPanel');
+        const audioBanner = document.getElementById('audioBanner');
 
-        // --- AMHARIC VOICE CALLOUT SYSTEM ---
-        function speakAmharic(text) {
+        // --- AUDIO UNLOCK FUNCTION (Fixes Mobile Voice Silence) ---
+        function unlockAudio() {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Prevent overlap
+                const utterance = new SpeechSynthesisUtterance("ድምጽ ተከፍቷል");
+                utterance.volume = 1.0;
+                window.speechSynthesis.speak(utterance);
+                audioUnlocked = true;
+                audioBanner.style.display = "none";
+            }
+        }
+
+        // --- VOICE ANNOUNCEMENT SYSTEM ---
+        function speakVoice(text) {
+            if ('speechSynthesisIn' in window || 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'am-ET';
-                utterance.rate = 0.85;
+                utterance.rate = 0.9;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
                 window.speechSynthesis.speak(utterance);
             }
         }
 
-        function callNumberAmharic(num) {
-            let letter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
-            calledDisplay.textContent = `የተጠራ ቁጥር: ${letter}-${num}`;
-            speakAmharic(`${letter} ${num}`);
+        function callNumberVoice(num) {
+            let letter = num <= 15 ? 'B' : num <= 30 ? 'I' : num <= 45 ? 'N' : num <= 60 ? 'G' : 'O';
+            let amharicLetter = num <= 15 ? 'ቢ' : num <= 30 ? 'አይ' : num <= 45 ? 'ኤን' : num <= 60 ? 'ጂ' : 'ኦ';
+            
+            calledDisplay.textContent = `የተጠራ ቁጥር: ${amharicLetter}-${num}`;
+            speakVoice(`${letter} ${num}`);
         }
 
-        // --- BOARD SETUP ---
-        const numbers = Array.from({length: 75}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 24);
-        let cellIdx = 0;
-
-        for (let i = 0; i < 25; i++) {
-            const cell = document.createElement('div');
-            cell.classList.add('cell');
-            if (i === 12) {
-                cell.textContent = "ነጻ";
-                cell.classList.add('free', 'marked');
-            } else {
-                cell.textContent = numbers[cellIdx++];
-                cell.addEventListener('click', () => {
-                    if (gameState === "CALLING") cell.classList.toggle('marked');
-                });
+        // --- CONFIRM CARTELA & HIGHLIGHT GREEN ---
+        function confirmCartelaSelection() {
+            const inputVal = parseInt(document.getElementById('cartelaInput').value);
+            if (isNaN(inputVal) || inputVal < 1 || inputVal > 800) {
+                alert("እባክዎ ከ 1 እስከ 800 መካከል ትክክለኛ ቁጥር ያስገቡ።");
+                return;
             }
-            board.appendChild(cell);
-        }
+            selectedCartelaNo = inputVal;
 
-        // --- AUTOMATIC GAME CYCLE (STAGES 1-6) ---
-        let registrationTimer = 30;
+            // Hide registration panel, show game board
+            regPanel.style.display = "none";
+            board.style.display = "grid";
+            statusBox.style.backgroundColor = "#2e7d32"; // Highlights green on selection
+            statusBox.textContent = `ካርቴላ #${selectedCartelaNo} ተመርጧል (ተቆልፏል)!`;
 
-        function startRegistrationCountdown() {
-            gameState = "REGISTRATION";
-            bingoBtn.disabled = true;
-            statusBox.textContent = `ምዝገባ: ${registrationTimer} ሰከንድ (ካርቴላ #${assignedCartelaNo})`;
+            generateBoardNumbers();
 
-            // Register card with backend
             if (tg.sendData) {
-                tg.sendData(JSON.stringify({ action: "join_round", cartela_no: assignedCartelaNo }));
+                tg.sendData(JSON.stringify({ action: "join_round", cartela_no: selectedCartelaNo }));
             }
-
-            const regInterval = setInterval(() => {
-                registrationTimer--;
-                statusBox.textContent = `ምዝገባ: ${registrationTimer} ሰከንድ (ካርቴላ #${assignedCartelaNo})`;
-                
-                if (registrationTimer <= 0) {
-                    clearInterval(regInterval);
-                    startPreparationStage();
-                }
-            }, 1000);
         }
+
+        function generateBoardNumbers() {
+            board.innerHTML = '';
+            const numbers = Array.from({length: 75}, (_, i) => i + 1).sort(() => Math.random() - 0.5).slice(0, 24);
+            let cellIdx = 0;
+
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                if (i === 12) {
+                    cell.textContent = "ነጻ";
+                    cell.classList.add('free', 'marked');
+                } else {
+                    cell.textContent = numbers[cellIdx++];
+                    cell.addEventListener('click', () => {
+                        if (gameState === "CALLING") cell.classList.toggle('marked');
+                    });
+                }
+                board.appendChild(cell);
+            }
+        }
+
+        // --- 30-SECOND REGISTRATION TIMER ---
+        let regTimer = 30;
+        const regInterval = setInterval(() => {
+            regTimer--;
+            if (regPanel.style.display !== "none") {
+                statusBox.textContent = `ምዝገባ: ${regTimer} ሰከንድ ቀርቷል`;
+            }
+            if (regTimer <= 0) {
+                clearInterval(regInterval);
+                if (regPanel.style.display !== "none") {
+                    confirmCartelaSelection(); // Auto-lock default if time runs out
+                }
+                startPreparationStage();
+            }
+        }, 1000);
 
         function startPreparationStage() {
             gameState = "PREPARING";
-            statusBox.textContent = "ዝግጅት ላይ ነው... (5 ሰከንድ)";
+            statusBox.style.backgroundColor = "#1e1e1e";
+            statusBox.textContent = "ዝግጅት ላይ ነው... (Preparing...)";
             let prepTimer = 5;
 
             const prepInterval = setInterval(() => {
@@ -189,7 +291,7 @@
         function startNumberCalling() {
             gameState = "CALLING";
             bingoBtn.disabled = false;
-            statusBox.textContent = "ጨዋታው ተጀምሯል! ቁጥሮችን ይመልከቱ";
+            statusBox.textContent = `ጨዋታ ተጀምሯል! ካርቴላ #${selectedCartelaNo}`;
 
             const pool = Array.from({length: 75}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
             let drawIdx = 0;
@@ -197,8 +299,7 @@
             callInterval = setInterval(() => {
                 if (drawIdx < pool.length && gameState === "CALLING") {
                     const num = pool[drawIdx++];
-                    drawnNumbers.push(num);
-                    callNumberAmharic(num);
+                    callNumberVoice(num);
                 } else {
                     clearInterval(callInterval);
                 }
@@ -208,29 +309,23 @@
         function claimBingo() {
             if (gameState !== "CALLING") return;
 
-            // Announce Winner in Voice
-            speakAmharic("ቢንጎ! እንኳን ደስ አለዎት! አሸናፊ ሆነዋል!");
-            
+            speakVoice("Bingo! Winner!");
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
+            
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
 
-            // Display Winner for 5 seconds (Stage 5)
             clearInterval(callInterval);
             gameState = "DISPLAY";
             
             setTimeout(() => {
-                statusBox.textContent = `🏆 አሸናፊ 카ርቴላ #${assignedCartelaNo}!`;
+                statusBox.textContent = `🏆 አሸናፊ ካርቴላ #${selectedCartelaNo}!`;
                 setTimeout(() => {
-                    // Stage 6: Reset for next round
                     location.reload();
                 }, 5000);
             }, 1000);
         }
-
-        // Initialize Registration Stage on Load
-        startRegistrationCountdown();
     </script>
 </body>
 </html>
