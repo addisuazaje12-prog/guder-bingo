@@ -280,16 +280,9 @@
             setTimeout(() => playHardwareTone(950, 0.3, "sine"), 180);
 
             // Speech Callout
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const phrase = `${letter} ${numberInAmharic}`;
-                const utterance = new SpeechSynthesisUtterance(phrase);
-                utterance.lang = 'am-ET';
-                utterance.rate = 0.85;
-                utterance.volume = 1.0;
-                window.speechSynthesis.speak(utterance);
-            }
-        }
+            let prefix = num <= 15 ? 'b' : num <= 30 ? 'i' : num <= 45 ? 'n' : num <= 60 ? 'g' : 'o';
+let calloutAudio = new Audio(`bingo_amharic_audio/${prefix}${num}.mp3`);
+calloutAudio.play().catch(e => console.log("Audio play blocked:", e));
 
         // POPULATE 800 CARTELA GRID
         for (let i = 1; i <= 800; i++) {
@@ -410,14 +403,8 @@
             setTimeout(() => playHardwareTone(659, 0.2, "square"), 200);
             setTimeout(() => playHardwareTone(783, 0.5, "square"), 400);
 
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const loudAnnouncement = new SpeechSynthesisUtterance("ቢንጎ! ቢንጎ! እንኳን ደስ አለዎት አሸናፊ ሆነዋል!");
-                loudAnnouncement.lang = 'am-ET';
-                loudAnnouncement.rate = 0.9;
-                loudAnnouncement.volume = 1.0;
-                window.speechSynthesis.speak(loudAnnouncement);
-            }
+            const winAudio = new Audio('bingo_amharic_audio/bingo.mp3');
+winAudio.play().catch(e => console.log("Audio play blocked:", e));
 
             statusBox.textContent = "ቢንጎ አሸናፊነት በመረጋገጥ ላይ...";
 
