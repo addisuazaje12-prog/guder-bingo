@@ -224,5 +224,21 @@ document.getElementById('buy-cartela-btn').addEventListener('click', function() 
 
 }); 
     </script>
-</body>
+<div class="calling-board-container">
+    <h2>Guder Bingo Calling Board</h2>
+    
+    <!-- Insufficient Amount Warning Stamp (Controlled by your JS) -->
+    <div id="insufficient-stamp" class="warning-stamp" style="display: none;">
+        INSUFFICIENT AMOUNT
+    </div>
+
+    <!-- Grid to display called numbers -->
+    <div id="number-board" class="number-grid">
+        <!-- Numbers 1 to 75 (or 90) can be generated via JS or listed here -->
+    </div>
+
+    <!-- Action / Purchase Button -->
+    <button id="buy-cartela-btn" class="btn-primary">Buy Cartela & Play</button>
+</div>
+   </body> 
 </html>
