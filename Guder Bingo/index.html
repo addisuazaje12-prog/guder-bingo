@@ -207,6 +207,21 @@
         }
 
         document.addEventListener("DOMContentLoaded", initApp);
-    </script>
+    <// Example of where it goes inside your button click function
+document.getElementById('buy-cartela-btn').addEventListener('click', function() {
+    
+    // Paste it right here before processing the purchase:
+    if (userBalance < cartelaTotalCost) {
+        // Show the insufficient amount stamp overlay
+        document.getElementById('insufficient-stamp').style.display = 'block';
+        return; // Stop the purchase flow
+    } else {
+        // Hide stamp and proceed with deposit/purchase
+        document.getElementById('insufficient-stamp').style.display = 'none';
+        
+        // Your existing purchase logic continues here...
+    }
+
+});>
 </body>
 </html>
