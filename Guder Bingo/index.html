@@ -120,7 +120,39 @@
         .menu-bar button:active {
             background: #444444;
         }
-    </style>
+    <//* Bottom Navigation Bar Styling */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #1a1a1a;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid #333;
+    z-index: 1000;
+}
+
+.nav-item {
+    background: none;
+    border: none;
+    color: #888;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.nav-item.active, .nav-item:hover {
+    color: #0088cc; /* Telegram blue or your app accent color */
+}
+
+.nav-item i {
+    font-size: 20px;
+    margin-bottom: 4px;
+}>
 </head>
 <body>
 
