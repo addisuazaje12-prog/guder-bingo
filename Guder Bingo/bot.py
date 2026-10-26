@@ -158,8 +158,7 @@ async def post_init(application):
 # ==========================================
 if __name__ == '__main__':
     # Insert your actual BotFather token string here
-    BOT_TOKEN = "8813599415:AAGgwpsZzL4iaG0Sq-YqFlQ9rliwTzxAsPA"
-    
+    BOT_TOKEN = "8813599415:AAGPW5RMyMS3aF_Nmpgv4VShWHt1wPJnNPk"
     app = ApplicationBuilder().token(BOT_TOKEN).post_init(post_init).build()
     
     # Register command handlers
