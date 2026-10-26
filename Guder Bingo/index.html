@@ -5,7 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Guder Bingo</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
+    </* Warning Stamp Styling */
+.warning-stamp {
+    position: absolute;
+    color: red;
+    border: 3px solid red;
+    padding: 10px 20px;
+    font-size: 24px;
+    font-weight: bold;
+    transform: rotate(-15deg);
+    text-transform: uppercase;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 100;
+    display: none;
+}
+
+/* Calling Board Grid Styling */
+.number-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 5px;
+    margin: 20px 0;
+}>
         * {
             box-sizing: border-box;
             margin: 0;
