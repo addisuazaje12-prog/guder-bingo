@@ -5,28 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Guder Bingo</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    </* Warning Stamp Styling */
-.warning-stamp {
-    position: absolute;
-    color: red;
-    border: 3px solid red;
-    padding: 10px 20px;
-    font-size: 24px;
-    font-weight: bold;
-    transform: rotate(-15deg);
-    text-transform: uppercase;
-    background-color: rgba(255, 255, 255, 0.8);
-    z-index: 100;
-    display: none;
-}
-
-/* Calling Board Grid Styling */
-.number-grid {
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    gap: 5px;
-    margin: 20px 0;
-}>
+    <style>
+        /* Global Styles */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -41,6 +21,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            padding-bottom: 80px; /* Space for bottom nav */
         }
         h2 {
             margin-bottom: 15px;
@@ -82,7 +63,7 @@
             color: #ffffff !important;
             font-size: 0.9rem;
         }
-        .bingo-btn {
+        .bingo-btn, .btn-primary {
             width: 100%;
             max-width: 350px;
             padding: 14px;
@@ -96,7 +77,7 @@
             margin-bottom: 20px;
             box-shadow: 0 3px 6px rgba(0,0,0,0.3);
         }
-        .bingo-btn:active {
+        .bingo-btn:active, .btn-primary:active {
             transform: scale(0.98);
         }
         .menu-bar {
@@ -106,6 +87,7 @@
             justify-content: center;
             max-width: 350px;
             width: 100%;
+            margin-bottom: 20px;
         }
         .menu-bar button {
             padding: 10px 14px;
@@ -120,48 +102,68 @@
         .menu-bar button:active {
             background: #444444;
         }
-    <//* Bottom Navigation Bar Styling */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: #1a1a1a;
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    border-top: 1px solid #333;
-    z-index: 1000;
-}
-
-.nav-item {
-    background: none;
-    border: none;
-    color: #888;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.nav-item.active, .nav-item:hover {
-    color: #0088cc; /* Telegram blue or your app accent color */
-}
-
-.nav-item i {
-    font-size: 20px;
-    margin-bottom: 4px;
-}>
+        /* Warning Stamp Styling */
+        .warning-stamp {
+            position: absolute;
+            color: red;
+            border: 3px solid red;
+            padding: 10px 20px;
+            font-size: 24px;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            text-transform: uppercase;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 100;
+            display: none;
+        }
+        /* Calling Board Grid Styling */
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            margin: 20px 0;
+        }
+        /* Bottom Navigation Bar Styling */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid #333;
+            z-index: 1000;
+        }
+        .nav-item {
+            background: none;
+            border: none;
+            color: #888;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .nav-item.active, .nav-item:hover {
+            color: #0088cc;
+        }
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+    </style>
 </head>
 <body>
 
     <h2>🌊 Guder Bingo</h2>
 
+    <!-- Main Bingo Card View -->
     <div class="grid" id="bingoBoard"></div>
-
     <button class="bingo-btn" onclick="claimBingo()">BINGO!</button>
 
+    <!-- Menu Bar -->
     <div class="menu-bar">
         <button onclick="openDeposit()">Deposit</button>
         <button onclick="openWithdraw()">Withdraw</button>
@@ -170,8 +172,53 @@
         <button onclick="openInvite()">Invite</button>
     </div>
 
+    <!-- Calling Board Container with Balance Gate & Warning Stamp -->
+    <div class="calling-board-container" style="position: relative; margin-top: 20px; width: 100%; max-width: 350px;">
+        <h2>Guder Bingo Calling Board</h2>
+        
+        <!-- Insufficient Amount Warning Stamp -->
+        <div id="insufficient-stamp" class="warning-stamp" style="display: none;">
+            INSUFFICIENT AMOUNT
+        </div>
+
+        <div id="number-board" class="number-grid"></div>
+
+        <button id="buy-cartela-btn" class="btn-primary">Buy Cartela & Play</button>
+    </div>
+
+    <!-- Manager Regulation Dashboard -->
+    <div id="managerPanel" class="manager-panel" style="display:none; margin-top: 20px; background: #2c2c2c; padding: 15px; border-radius: 10px; width: 100%; max-width: 350px;">
+        <h3>Manager Regulation Dashboard</h3>
+        <div id="sessionDetails">
+            <p><strong>Playing Session:</strong> <span id="mgrSession">Active</span></p>
+            <p><strong>Winner:</strong> <span id="mgrWinner">-</span></p>
+            <p><strong>Phone Number:</strong> <span id="mgrPhone">-</span></p>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+        <button class="nav-item active" data-tab="game">
+            <span>🎮 Game</span>
+        </button>
+        <button class="nav-item" data-tab="history">
+            <span>📜 History</span>
+        </button>
+        <button class="nav-item" data-tab="wallet">
+            <span>👛 Wallet</span>
+        </button>
+        <button class="nav-item" data-tab="profile">
+            <span>👤 Profile</span>
+        </button>
+    </div>
+
+    <!-- JavaScript Logic -->
     <script>
         const tg = window.Telegram ? window.Telegram.WebApp : null;
+
+        // Sample balance variables to prevent errors
+        let userBalance = 50; 
+        let cartelaTotalCost = 100;
 
         function initApp() {
             if (tg) {
@@ -207,6 +254,16 @@
                 board.appendChild(cell);
             }
         }
+
+        // Balance Gate Event Listener
+        document.getElementById('buy-cartela-btn').addEventListener('click', function() {
+            if (userBalance < cartelaTotalCost) {
+                document.getElementById('insufficient-stamp').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('insufficient-stamp').style.display = 'none';
+            }
+        });
 
         function claimBingo() {
             if (tg && tg.showAlert) {
@@ -260,53 +317,6 @@
         }
 
         document.addEventListener("DOMContentLoaded", initApp);
-   <script>// Example of where it goes inside your button click function
-document.getElementById('buy-cartela-btn').addEventListener('click', function() {
-    
-    // Paste it right here before processing the purchase:
-    if (userBalance < cartelaTotalCost) {
-        // Show the insufficient amount stamp overlay
-        document.getElementById('insufficient-stamp').style.display = 'block';
-        return; // Stop the purchase flow
-    } else {
-        // Hide stamp and proceed with deposit/purchase
-        document.getElementById('insufficient-stamp').style.display = 'none';
-        
-        // Your existing purchase logic continues here...
-    }
-
-}); 
     </script>
-<div class="calling-board-container">
-    <h2>Guder Bingo Calling Board</h2>
-    
-    <!-- Insufficient Amount Warning Stamp (Controlled by your JS) -->
-    <div id="insufficient-stamp" class="warning-stamp" style="display: none;">
-        INSUFFICIENT AMOUNT
-    </div>
-
-    <!-- Grid to display called numbers -->
-    <div id="number-board" class="number-grid">
-        <!-- Numbers 1 to 75 (or 90) can be generated via JS or listed here -->
-    </div>
-
-    <!-- Action / Purchase Button -->
-    <button id="buy-cartela-btn" class="btn-primary">Buy Cartela & Play</button>
-</div>
-   </<div class="selection-nav-bar" style="display: flex; justify-content: space-around; background: #2a0845; padding: 12px; position: fixed; bottom: 0; width: 100%;">
-    <button class="nav-tab active" onclick="switchTab('game')">🎮 Game</button>
-    <button class="nav-tab" onclick="switchTab('history')">📜 History</button>
-    <button class="nav-tab" onclick="switchTab('wallet')">👛 Wallet</button>
-    <button class="nav-tab" onclick="switchTab('profile')">👤 Profile</button>
-</div>> 
-  </<!-- Manager Regulation Overlay / Button -->
-<div id="managerPanel" class="manager-panel" style="display:none;">
-    <h3>Manager Regulation Dashboard</h3>
-    <div id="sessionDetails">
-        <p><strong>Playing Session:</strong> <span id="mgrSession">Active</span></p>
-        <p><strong>Winner:</strong> <span id="mgrWinner">-</span></p>
-        <p><strong>Phone Number:</strong> <span id="mgrPhone">-</span></p>
-    </div>
-</div>> 
-   </body> 
+</body>
 </html>
