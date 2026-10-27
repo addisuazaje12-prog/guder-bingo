@@ -24,9 +24,43 @@
             flex-direction: column;
             align-items: center;
         }
-        h2 { margin-bottom: 10px; }
-        
-        /* B-I-N-G-O Header Row Styles */
+        h2 { margin-bottom: 5px; }
+        #statusMessage {
+            font-size: 0.95rem;
+            color: #ffaa00;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .cartela-selector {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 350px;
+        }
+        .cartela-selector input {
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: #fff;
+            width: 120px;
+            text-align: center;
+        }
+        .cartela-selector button {
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            background-color: var(--button-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
         .bingo-header {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -34,6 +68,7 @@
             max-width: 350px;
             width: 100%;
             margin-bottom: 6px;
+            display: none;
         }
         .bingo-header .letter {
             aspect-ratio: 1;
@@ -47,7 +82,6 @@
             font-size: 1.2rem;
             user-select: none;
         }
-
         .grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -55,6 +89,7 @@
             max-width: 350px;
             width: 100%;
             margin-bottom: 15px;
+            display: none;
         }
         .cell {
             aspect-ratio: 1;
@@ -89,6 +124,7 @@
             border-radius: 8px;
             cursor: pointer;
             margin-bottom: 15px;
+            display: none;
         }
         .menu-bar {
             display: flex;
@@ -112,9 +148,15 @@
 <body>
 
     <h2>🌊 Guder Bingo</h2>
+    <div id="statusMessage">Select your Cartela (1 - 800) to join the round:</div>
 
-    <!-- B-I-N-G-O Column Header Row -->
-    <div class="bingo-header">
+    <div class="cartela-selector" id="selectorDiv">
+        <input type="number" id="cartelaInput" min="1" max="800" placeholder="Cartela #">
+        <button onclick="selectCartela()">Join Round</button>
+    </div>
+
+    <!-- B-I-N-G-O Column Headers -->
+    <div class="bingo-header" id="bingoHeader">
         <div class="letter">B</div>
         <div class="letter">I</div>
         <div class="letter">N</div>
@@ -125,7 +167,7 @@
     <!-- Number Grid -->
     <div class="grid" id="bingoBoard"></div>
 
-    <button class="bingo-btn" onclick="claimBingo()">BINGO!</button>
+    <button class="bingo-btn" id="bingoBtn" onclick="claimBingo()">BINGO!</button>
 
     <div class="menu-bar">
         <button onclick="openDeposit()">Deposit</button>
@@ -140,12 +182,42 @@
         tg.ready();
         tg.expand();
 
-        function generateBoard() {
+        function selectCartela() {
+            const input = document.getElementById("cartelaInput");
+            const cartelaNo = parseInt(input.value);
+            if (!cartelaNo || cartelaNo < 1 || cartelaNo > 800) {
+                alert("Please enter a valid Cartela number between 1 and 800.");
+                return;
+            }
+
+            // Send selection data back to Python bot.py backend
+            if (tg.sendData) {
+                tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
+            }
+
+            loadBoard(cartelaNo);
+        }
+
+        function loadBoard(cartelaNo) {
+            document.getElementById("selectorDiv").style.display = "none";
+            document.getElementById("statusMessage").innerText = `Active Cartela #${cartelaNo}`;
+            document.getElementById("bingoHeader").style.display = "grid";
             const board = document.getElementById("bingoBoard");
+            board.style.display = "grid";
+            document.getElementById("bingoBtn").style.display = "block";
+
             board.innerHTML = "";
+            
+            // Seed-based random generation for consistent cartela layout (1 to 800)
             let numbers = [];
+            let seed = cartelaNo * 31;
+            function pseudoRandom() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
+            }
+
             while(numbers.length < 24) {
-                let r = Math.floor(Math.random() * 75) + 1;
+                let r = Math.floor(pseudoRandom() * 75) + 1;
                 if(numbers.indexOf(r) === -1) numbers.push(r);
             }
             
@@ -167,27 +239,26 @@
         }
 
         function claimBingo() {
+            if (tg.sendData) {
+                tg.sendData(JSON.stringify({ action: "claim_bingo" }));
+            }
             if(tg.showAlert) {
-                tg.showAlert("🎉 Congratulations! You declared Bingo!");
+                tg.showAlert("🎉 Congratulations! Bingo claim submitted!");
             } else {
-                alert("🎉 Congratulations! You declared Bingo!");
+                alert("🎉 Congratulations! Bingo claim submitted!");
             }
         }
 
         function openDeposit() {
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData("DEPOSIT");
+                tg.sendData(JSON.stringify({ action: "deposit" }));
             } else {
                 alert("Use /deposit in the Telegram bot chat to add funds.");
             }
         }
 
         function openWithdraw() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData("WITHDRAW");
-            } else {
-                alert("Use /withdraw in the Telegram bot chat to withdraw funds.");
-            }
+            alert("Use /withdraw in the Telegram bot chat to withdraw funds.");
         }
 
         function openSupport() {
@@ -195,14 +266,12 @@
         }
 
         function openInstructions() {
-            alert("Game Instructions:\nTap numbers to mark your cartela, get a line, and click BINGO!");
+            alert("Game Instructions:\n1. Choose your Cartela (1 - 800).\n2. Tap numbers as they are called.\n3. Get a full line and click BINGO!");
         }
 
         function openInvite() {
             window.Telegram.WebApp.openTelegramLink("https://t.me/share/url?url=https://t.me/guderbingo_bot&text=Play%20Guder%20Bingo%20now!");
         }
-
-        generateBoard();
     </script>
 </body>
 </html>
