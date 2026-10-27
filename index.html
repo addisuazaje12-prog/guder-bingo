@@ -54,12 +54,21 @@
             justify-content: center;
             overflow-y: auto;
         }
-        /* 800 Cartela Selector Grid */
+        .timer-box {
+            background: #d90429;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            text-align: center;
+        }
         .cartela-grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
             gap: 3px;
-            max-height: 280px;
+            max-height: 260px;
             overflow-y: auto;
             width: 100%;
             margin-bottom: 10px;
@@ -67,7 +76,7 @@
         }
         .cartela-opt {
             aspect-ratio: 1;
-            background-color: #f77f00; /* Orange Afro Bingo style */
+            background-color: #f77f00;
             color: #fff;
             font-size: 0.65rem;
             font-weight: bold;
@@ -78,43 +87,45 @@
             cursor: pointer;
         }
         .cartela-opt.selected {
-            background-color: #2ec4b6 !important; /* Turns green instantly on touch */
+            background-color: #2ec4b6 !important;
             color: #000;
         }
         
-        /* Playing Cartela with Red B-I-N-G-O Headers */
+        /* Explicitly visible Playing Cartela with Red B-I-N-G-O Header */
         .bingo-card-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             background: #3c2a59;
-            padding: 8px;
+            padding: 10px;
             border-radius: 10px;
             margin-bottom: 8px;
+            width: 280px;
         }
         .bingo-header-row {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-            width: 250px;
-            margin-bottom: 5px;
+            gap: 6px;
+            width: 100%;
+            margin-bottom: 6px;
         }
         .bingo-letter {
             aspect-ratio: 1;
-            background-color: #d90429; /* Red color B-I-N-G-O letters */
-            color: #fff;
+            background-color: #d90429; /* Explicit Bright Red */
+            color: #ffffff;
             border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
         .single-card {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-            width: 250px;
+            gap: 6px;
+            width: 100%;
         }
         .cell {
             aspect-ratio: 1;
@@ -125,7 +136,7 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             cursor: pointer;
         }
         .cell.marked { background-color: var(--marked-color); color: #000; }
@@ -179,40 +190,26 @@
         .btn-leave { background-color: #d90429; color: #fff; }
         .btn-refresh { background-color: #0077b6; color: #fff; }
         .btn-bingo { background-color: #ffb703; color: #000; }
-        
-        .preparing-banner {
-            background: #ffb703;
-            color: #000;
-            padding: 8px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-align: center;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            width: 100%;
-        }
-        .manager-btn {
-            background-color: #38b000;
+        .current-call-display {
+            background: #7b2cbf;
             color: #fff;
-            border: none;
             padding: 6px 12px;
             border-radius: 6px;
-            font-size: 0.75rem;
             font-weight: bold;
-            cursor: pointer;
-            margin-top: 5px;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Top Stats (Calling Board View) -->
+    <!-- Top Stats -->
     <div class="top-stats" id="topStats" style="display:none;">
         <div>Game ID<span>1_57EP7CEM</span></div>
         <div>Derash<span id="derashVal">4208</span></div>
         <div>Players<span id="playerVal">526</span></div>
         <div>Stake<span>10</span></div>
-        <div>Called<span id="calledVal">8</span></div>
+        <div>Called<span id="calledVal">0</span></div>
     </div>
 
     <div class="main-container" id="mainContainer">
@@ -234,12 +231,16 @@
         tg.ready();
         tg.expand();
 
-        let userBalance = 15.0; // Set via Telegram user initialization
+        let userBalance = 15.0; 
+        let registrationTimer = 30;
+        let prepTimer = 5;
+        let callInterval = null;
+        let currentCalledNumber = "-";
 
         function speakAmharic(text) {
             if ('speechSynthesis' in window) {
                 let utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'am-ET'; // Amharic voice synthesis
+                utterance.lang = 'am-ET'; // Amharic speech synthesis
                 window.speechSynthesis.speak(utterance);
             }
         }
@@ -249,6 +250,7 @@
         }
 
         function renderSelectionBoard() {
+            if(callInterval) clearInterval(callInterval);
             document.getElementById("topStats").style.display = "none";
             document.getElementById("bottomNavContainer").innerHTML = `
                 <div class="bottom-nav">
@@ -265,13 +267,28 @@
                 return;
             }
 
-            let html = `<div class="preparing-banner">🎲 ጨዋታው እየተዘጋጀ ነው... (Preparing Game)</div>`;
-            html += `<div style="margin-bottom:6px; font-size:0.8rem;">ከ1-800 ካርቴላ ይምረጡ (Select Cartela):</div><div class="cartela-grid">`;
+            registrationTimer = 30;
+            let html = `
+                <div class="timer-box" id="regTimerBox">⏱️ Registration Window: 30s</div>
+                <div style="margin-bottom:6px; font-size:0.8rem;">ከ1-800 ካርቴላ ይምረጡ (Select Cartela):</div>
+                <div class="cartela-grid" id="cartelaGrid">
+            `;
             for(let i=1; i<=800; i++) {
                 html += `<div class="cartela-opt" id="cart-${i}" onclick="selectAndJoin(${i})">${i}</div>`;
             }
             html += `</div>`;
             container.innerHTML = html;
+
+            // 30 Seconds Registration Countdown
+            let countdown = setInterval(() => {
+                registrationTimer--;
+                let timerBox = document.getElementById("regTimerBox");
+                if(timerBox) timerBox.innerText = `⏱️ Registration Window: ${registrationTimer}s`;
+                if(registrationTimer <= 0) {
+                    clearInterval(countdown);
+                    speakAmharic("ምዝገባው ተጠናቋል ጨዋታው ይጀምራል");
+                }
+            }, 1000);
         }
 
         function selectAndJoin(cartelaNo) {
@@ -280,7 +297,6 @@
                 return;
             }
 
-            // Turn green instantly on touch for eligible player
             let el = document.getElementById(`cart-${cartelaNo}`);
             if(el) el.classList.add("selected");
 
@@ -290,9 +306,28 @@
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
             }
 
-            setTimeout(() => {
-                renderCallingBoard(cartelaNo);
-            }, 400);
+            // Start 5 Seconds Preparation Screen
+            showPreparationScreen(cartelaNo);
+        }
+
+        function showPreparationScreen(cartelaNo) {
+            prepTimer = 5;
+            const container = document.getElementById("mainContainer");
+            container.innerHTML = `
+                <div class="timer-box" style="background:#ffb703; color:#000;" id="prepTimerBox">🎲 Preparing Game: 5s</div>
+                <div style="font-size:0.9rem; color:#2ec4b6;">Cartela #${cartelaNo} Locked. Starting soon...</div>
+            `;
+            speakAmharic("ጨዋታው ሊጀመር ነው እባክዎ ይጠብቁ");
+
+            let prepInterval = setInterval(() => {
+                prepTimer--;
+                let pBox = document.getElementById("prepTimerBox");
+                if(pBox) pBox.innerText = `🎲 Preparing Game: ${prepTimer}s`;
+                if(prepTimer <= 0) {
+                    clearInterval(prepInterval);
+                    renderCallingBoard(cartelaNo);
+                }
+            }, 1000);
         }
 
         function renderCallingBoard(cartelaNo) {
@@ -308,9 +343,10 @@
             const container = document.getElementById("mainContainer");
             
             let cardHtml = `
+                <div class="current-call-display" id="currentCallBox">Current Call: -</div>
                 <div style="font-size:0.8rem; color:#ffb703; margin-bottom:4px;">ተጫዋች ካርቴላ #${cartelaNo}</div>
                 <div class="bingo-card-container">
-                    <!-- Red B-I-N-G-O Headers -->
+                    <!-- Bright Red B-I-N-G-O Headers -->
                     <div class="bingo-header-row">
                         <div class="bingo-letter">B</div>
                         <div class="bingo-letter">I</div>
@@ -339,18 +375,38 @@
             }
             cardHtml += `</div></div>`;
             container.innerHTML = cardHtml;
-            speakAmharic("ጨዋታው ተጀምሯል ቁጥሮች እየተጠሩ ነው");
+
+            speakAmharic("ቁጥሮች መጥራት ጀምረዋል");
+
+            // Live number calling simulation with Amharic speech
+            let calledCount = 0;
+            callInterval = setInterval(() => {
+                calledCount++;
+                let randNum = Math.floor(Math.random() * 75) + 1;
+                let letter = randNum <= 15 ? 'B' : randNum <= 30 ? 'I' : randNum <= 45 ? 'N' : randNum <= 60 ? 'G' : 'O';
+                let callText = `${letter} ${randNum}`;
+                
+                let callBox = document.getElementById("currentCallBox");
+                if(callBox) callBox.innerText = `Current Call: ${callText}`;
+                
+                let calledVal = document.getElementById("calledVal");
+                if(calledVal) calledVal.innerText = calledCount;
+
+                speakAmharic(callText);
+            }, 4000);
         }
 
         function claimBingo() {
+            if(callInterval) clearInterval(callInterval);
             speakAmharic("ቢንጎ ማረጋገጫ በመካሄድ ላይ ነው።");
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
-            alert("🎉 Bingo claim submitted! (50/50 prize pool processing)");
+            alert("🎉 Bingo claim submitted! Winner verification in progress...");
         }
 
         function switchTab(tab) {
+            if(callInterval) clearInterval(callInterval);
             if(tab === 'wallet') alert("Wallet: Use /deposit or /withdraw in Telegram chat.");
             else if(tab === 'profile') alert("Guder Bingo Profile Player Account");
             else if(tab === 'history') alert("Session history view.");
