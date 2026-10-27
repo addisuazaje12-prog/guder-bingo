@@ -24,7 +24,6 @@
             box-sizing: border-box;
             justify-content: space-between;
         }
-        /* Top Header Stats Bar */
         .top-stats {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -60,14 +59,13 @@
         .timer-banner {
             background: #d90429;
             color: #fff;
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 0.8rem;
-            margin-bottom: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
             text-align: center;
         }
-        /* Cartela Selector (1 - 800) */
         .cartela-grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
@@ -96,7 +94,6 @@
             color: #fff;
         }
 
-        /* Calling Board Layout matching Afro Bingo */
         .calling-layout {
             display: flex;
             gap: 8px;
@@ -104,7 +101,6 @@
             max-width: 420px;
             align-items: flex-start;
         }
-        /* Left Column: 1-75 Numbers Grid with Red B-I-N-G-O Headers */
         .bing-column-container {
             display: flex;
             flex-direction: column;
@@ -121,7 +117,7 @@
         }
         .bingo-letter {
             aspect-ratio: 1;
-            background-color: #d90429; /* Red B-I-N-G-O */
+            background-color: #d90429;
             color: #fff;
             border-radius: 3px;
             display: flex;
@@ -153,7 +149,6 @@
             color: #fff;
         }
 
-        /* Right Column: Caller Engine */
         .caller-panel {
             flex-grow: 1;
             display: flex;
@@ -212,7 +207,7 @@
             cursor: pointer;
         }
         .waiting-msg {
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.9);
             color: #333;
             padding: 15px 10px;
             border-radius: 8px;
@@ -222,7 +217,6 @@
             margin-top: 10px;
         }
 
-        /* Bottom Nav & Actions */
         .bottom-nav {
             display: flex;
             justify-content: space-around;
@@ -267,7 +261,7 @@
 
     <!-- Top Header Stats Bar -->
     <div class="top-stats" id="topStats" style="display:none;">
-        <div>Game ID<span>1_HKCJ6T7A</span></div>
+        <div>Game ID<span id="gameIdVal">1_HKCJ6T7A</span></div>
         <div>Derash<span id="derashVal">4776</span></div>
         <div>Players<span id="playerVal">597</span></div>
         <div>Stake<span>10</span></div>
@@ -278,7 +272,7 @@
         <!-- Dynamic Content -->
     </div>
 
-    <!-- Bottom Navigation / Actions -->
+    <!-- Bottom Navigation -->
     <div id="bottomNavContainer">
         <div class="bottom-nav">
             <button class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
@@ -299,13 +293,10 @@
         let callInterval = null;
         let calledNumbersList = [];
 
-        function speakAmharic(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                let utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'am-ET';
-                window.speechSynthesis.speak(utterance);
-            }
+        // Play pre-recorded Amharic audio from documented audio folder
+        function playAmharicAudio(filename) {
+            let audio = new Audio(`audio/${filename}`);
+            audio.play().catch(e => console.log("Audio playback waiting for interaction"));
         }
 
         function initApp() {
@@ -348,7 +339,6 @@
                 if(tBox) tBox.innerText = `⏱️ Registration Window: ${regTimer}s`;
                 if(regTimer <= 0) {
                     clearInterval(countdown);
-                    speakAmharic("ምዝገባው ተጠናቋል");
                 }
             }, 1000);
         }
@@ -357,12 +347,13 @@
             let el = document.getElementById(`cart-${cartelaNo}`);
             if(el) el.classList.add("selected");
 
-            speakAmharic(`ካርቴላ ቁጥር ${cartelaNo} ተመርጧል`);
+            playAmharicAudio("card_selected.mp3"); // Documented Amharic audio clip
 
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
             }
 
+            // Immediately proceed to 5 seconds preparation countdown
             showPreparationScreen(cartelaNo);
         }
 
@@ -373,7 +364,7 @@
                 <div class="timer-banner" style="background:#ffb703; color:#000;" id="prepTimerBox">🎲 Preparing Game: 5s</div>
                 <div class="waiting-msg">Cartela #${cartelaNo} Confirmed.<br>እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ</div>
             `;
-            speakAmharic("እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ");
+            playAmharicAudio("preparing.mp3"); // Documented Amharic audio clip
 
             let prepInterval = setInterval(() => {
                 prepTimer--;
@@ -443,7 +434,7 @@
                 </div>
             `;
 
-            speakAmharic("ቁጥሮች መጥራት ጀምረዋል");
+            playAmharicAudio("game_started.mp3");
 
             let calledCount = 0;
             callInterval = setInterval(() => {
@@ -457,7 +448,6 @@
                 let letter = randNum <= 15 ? 'B' : randNum <= 30 ? 'I' : randNum <= 45 ? 'N' : randNum <= 60 ? 'G' : 'O';
                 let callText = `${letter}-${randNum}`;
 
-                // Update UI
                 let cell = document.getElementById(`num-${randNum}`);
                 if(cell) cell.classList.add("called");
 
@@ -476,13 +466,13 @@
                     }).join('');
                 }
 
-                speakAmharic(callText);
+                playAmharicAudio(`num_${randNum}.mp3`); // Plays your documented Amharic number audio files
             }, 4000);
         }
 
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
-            speakAmharic("ቢንጎ ማረጋገጫ በመካሄድ ላይ ነው።");
+            playAmharicAudio("bingo_claimed.mp3");
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
