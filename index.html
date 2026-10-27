@@ -7,11 +7,10 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: var(--tg-theme-bg-color, #121212);
-            --text-color: var(--tg-theme-text-color, #ffffff);
-            --button-color: var(--tg-theme-button-color, #0088cc);
-            --button-text-color: var(--tg-theme-button-text-color, #ffffff);
-            --card-bg: #1e1e1e;
+            --bg-color: #2b1f3d;
+            --text-color: #ffffff;
+            --button-color: #7b2cbf;
+            --card-bg: #4a3b6c;
             --marked-color: #2ec4b6;
         }
         body {
@@ -19,162 +18,186 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 15px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+            justify-content: space-between;
         }
-        h2 { margin-bottom: 5px; }
-        #statusMessage {
-            font-size: 0.95rem;
-            color: #ffaa00;
-            margin-bottom: 10px;
-            font-weight: 600;
+        .top-stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            width: 100%;
+            max-width: 400px;
+            background: #4a3b6c;
+            padding: 6px;
+            border-radius: 8px;
             text-align: center;
+            font-size: 0.75rem;
         }
-        .cartela-selector {
-            margin-bottom: 15px;
+        .top-stats div span {
+            display: block;
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: #ffaa00;
+        }
+        .main-container {
+            width: 100%;
+            max-width: 400px;
             display: flex;
-            gap: 8px;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            justify-content: center;
+        }
+        .cartela-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
+            max-height: 250px;
+            overflow-y: auto;
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 5px;
+        }
+        .cartela-opt {
+            aspect-ratio: 1;
+            background-color: #f77f00;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 100%;
-            max-width: 350px;
-        }
-        .cartela-selector input {
-            padding: 10px;
-            font-size: 1rem;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #2a2a2a;
-            color: #fff;
-            width: 120px;
-            text-align: center;
-        }
-        .cartela-selector button {
-            padding: 10px 15px;
-            font-size: 1rem;
-            font-weight: bold;
-            background-color: var(--button-color);
-            color: var(--button-text-color);
-            border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
         }
-        .bingo-header {
+        
+        /* B-I-N-G-O Header styling with red color letters */
+        .bingo-card-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #3c2a59;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .bingo-header-row {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            max-width: 350px;
-            width: 100%;
+            gap: 6px;
+            width: 260px;
             margin-bottom: 6px;
-            display: none;
         }
-        .bingo-header .letter {
+        .bingo-letter {
             aspect-ratio: 1;
-            background-color: var(--button-color);
-            color: var(--button-text-color);
-            border-radius: 8px;
+            background-color: #d90429; /* Red color for B-I-N-G-O letters */
+            color: #fff;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.2rem;
-            user-select: none;
+            font-size: 1.1rem;
         }
-        .grid {
+
+        .single-card {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            max-width: 350px;
-            width: 100%;
-            margin-bottom: 15px;
-            display: none;
+            gap: 6px;
+            width: 260px;
         }
         .cell {
             aspect-ratio: 1;
             background-color: var(--card-bg);
             color: #ffffff;
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             cursor: pointer;
-            user-select: none;
         }
-        .cell.marked {
-            background-color: var(--marked-color);
-            color: #000;
-        }
-        .cell.free {
-            background-color: #ff2a4b;
-            color: #fff;
-        }
-        .bingo-btn {
-            width: 100%;
-            max-width: 350px;
-            padding: 12px;
-            font-size: 1.1rem;
+        .cell.marked { background-color: var(--marked-color); color: #000; }
+        .cell.free { background-color: #ff2a4b; color: #fff; }
+        
+        .insufficient-box {
+            color: #ff4d4d;
             font-weight: bold;
-            background-color: var(--button-color);
-            color: var(--button-text-color);
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,0,0,0.1);
+            border-radius: 8px;
+            width: 80%;
+        }
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 400px;
+            background: #1c1427;
+            padding: 10px 0;
+            border-radius: 12px;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            gap: 3px;
+        }
+        .game-footer-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .game-footer-actions button {
+            flex: 1;
+            padding: 12px;
+            font-weight: bold;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin-bottom: 15px;
-            display: none;
+            font-size: 0.95rem;
         }
-        .menu-bar {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 350px;
-            width: 100%;
-        }
-        .menu-bar button {
-            padding: 8px 12px;
-            background: #2a2a2a;
-            color: #fff;
-            border: 1px solid #444;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
+        .btn-leave { background-color: #d90429; color: #fff; }
+        .btn-refresh { background-color: #0077b6; color: #fff; }
+        .btn-bingo { background-color: #ffb703; color: #000; }
     </style>
 </head>
 <body>
 
-    <h2>🌊 Guder Bingo</h2>
-    <div id="statusMessage">Select your Cartela (1 - 800) to join the round:</div>
-
-    <div class="cartela-selector" id="selectorDiv">
-        <input type="number" id="cartelaInput" min="1" max="800" placeholder="Cartela #">
-        <button onclick="selectCartela()">Join Round</button>
+    <!-- Top Stats (Calling Board View)[cite: 7] -->
+    <div class="top-stats" id="topStats" style="display:none;">
+        <div>Game ID<span>1_57EP7CEM</span></div>
+        <div>Derash<span id="derashVal">4208</span></div>
+        <div>Players<span id="playerVal">526</span></div>
+        <div>Stake<span>10</span></div>
+        <div>Called<span id="calledVal">8</span></div>
     </div>
 
-    <!-- B-I-N-G-O Column Headers -->
-    <div class="bingo-header" id="bingoHeader">
-        <div class="letter">B</div>
-        <div class="letter">I</div>
-        <div class="letter">N</div>
-        <div class="letter">G</div>
-        <div class="letter">O</div>
+    <div class="main-container" id="mainContainer">
+        <!-- Dynamic Content -->
     </div>
 
-    <!-- Number Grid -->
-    <div class="grid" id="bingoBoard"></div>
-
-    <button class="bingo-btn" id="bingoBtn" onclick="claimBingo()">BINGO!</button>
-
-    <div class="menu-bar">
-        <button onclick="openDeposit()">Deposit</button>
-        <button onclick="openWithdraw()">Withdraw</button>
-        <button onclick="openSupport()">Support</button>
-        <button onclick="openInstructions()">Instructions</button>
-        <button onclick="openInvite()">Invite</button>
+    <!-- Bottom Navigation / Actions -->
+    <div id="bottomNavContainer">
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
+            <button class="nav-btn" onclick="switchTab('history')">📜 History</button>
+            <button class="nav-btn" onclick="switchTab('wallet')">💳 Wallet</button>
+            <button class="nav-btn" onclick="switchTab('profile')">👤 Profile</button>
+        </div>
     </div>
 
     <script>
@@ -182,11 +205,40 @@
         tg.ready();
         tg.expand();
 
-        function selectCartela() {
-            const input = document.getElementById("cartelaInput");
-            const cartelaNo = parseInt(input.value);
-            if (!cartelaNo || cartelaNo < 1 || cartelaNo > 800) {
-                alert("Please enter a valid Cartela number between 1 and 800.");
+        let userBalance = 15.0; // Simulated user balance check (set < 10 to test insufficient funds)
+
+        function initApp() {
+            renderSelectionBoard();
+        }
+
+        function renderSelectionBoard() {
+            document.getElementById("topStats").style.display = "none";
+            document.getElementById("bottomNavContainer").innerHTML = `
+                <div class="bottom-nav">
+                    <button class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
+                    <button class="nav-btn" onclick="switchTab('history')">📜 History</button>
+                    <button class="nav-btn" onclick="switchTab('wallet')">💳 Wallet</button>
+                    <button class="nav-btn" onclick="switchTab('profile')">👤 Profile</button>
+                </div>
+            `;
+
+            const container = document.getElementById("mainContainer");
+            if (userBalance < 10.0) {
+                container.innerHTML = `<div class="insufficient-box">Insufficient amount</div>`;
+                return;
+            }
+
+            let html = `<div style="margin-bottom:8px; font-size:0.85rem;">Select Cartela (1 - 400):</div><div class="cartela-grid">`;
+            for(let i=1; i<=400; i++) {
+                html += `<div class="cartela-opt" onclick="joinGame(${i})">${i}</div>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function joinGame(cartelaNo) {
+            if (userBalance < 10.0) {
+                alert("Insufficient amount");
                 return;
             }
 
@@ -194,82 +246,70 @@
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
             }
 
-            loadBoard(cartelaNo);
+            renderCallingBoard(cartelaNo);
         }
 
-        function loadBoard(cartelaNo) {
-            document.getElementById("selectorDiv").style.display = "none";
-            document.getElementById("statusMessage").innerText = `Active Cartela #${cartelaNo}`;
-            document.getElementById("bingoHeader").style.display = "grid";
-            const board = document.getElementById("bingoBoard");
-            board.style.display = "grid";
-            document.getElementById("bingoBtn").style.display = "block";
+        function renderCallingBoard(cartelaNo) {
+            document.getElementById("topStats").style.display = "grid";
+            document.getElementById("bottomNavContainer").innerHTML = `
+                <div class="game-footer-actions">
+                    <button class="btn-leave" onclick="renderSelectionBoard()">Leave</button>
+                    <button class="btn-refresh" onclick="window.location.reload()">Refresh</button>
+                    <button class="btn-bingo" onclick="claimBingo()">Bingo!</button>
+                </div>
+            `;
 
-            board.innerHTML = "";
+            const container = document.getElementById("mainContainer");
             
+            let cardHtml = `
+                <div style="font-size:0.85rem; color:#ffb703; margin-bottom:5px;">Cartela #${cartelaNo}</div>
+                <div class="bingo-card-container">
+                    <!-- Red B-I-N-G-O Headers -->
+                    <div class="bingo-header-row">
+                        <div class="bingo-letter">B</div>
+                        <div class="bingo-letter">I</div>
+                        <div class="bingo-letter">N</div>
+                        <div class="bingo-letter">G</div>
+                        <div class="bingo-letter">O</div>
+                    </div>
+                    <div class="single-card">
+            `;
+            
+            let seed = cartelaNo * 13;
             let numbers = [];
-            let seed = cartelaNo * 31;
-            function pseudoRandom() {
+            while(numbers.length < 24) {
                 seed = (seed * 9301 + 49297) % 233280;
-                return seed / 233280;
+                let r = Math.floor((seed / 233280) * 75) + 1;
+                if(!numbers.includes(r)) numbers.push(r);
             }
 
-            while(numbers.length < 24) {
-                let r = Math.floor(pseudoRandom() * 75) + 1;
-                if(numbers.indexOf(r) === -1) numbers.push(r);
-            }
-            
-            let count = 0;
-            for(let i = 0; i < 25; i++) {
-                const cell = document.createElement("div");
-                cell.classList.add("cell");
+            let cIdx = 0;
+            for(let i=0; i<25; i++) {
                 if(i === 12) {
-                    cell.innerText = "FREE";
-                    cell.classList.add("free", "marked");
+                    cardHtml += `<div class="cell free marked">FREE</div>`;
                 } else {
-                    cell.innerText = numbers[count++];
-                    cell.addEventListener("click", () => {
-                        cell.classList.toggle("marked");
-                    });
+                    cardHtml += `<div class="cell" onclick="this.classList.toggle('marked')">${numbers[cIdx++]}</div>`;
                 }
-                board.appendChild(cell);
             }
+            cardHtml += `</div></div>`;
+            container.innerHTML = cardHtml;
         }
 
         function claimBingo() {
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
-            if(tg.showAlert) {
-                tg.showAlert("🎉 Congratulations! Bingo claim submitted!");
-            } else {
-                alert("🎉 Congratulations! Bingo claim submitted!");
-            }
+            alert("🎉 Bingo claim submitted!");
         }
 
-        function openDeposit() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData(JSON.stringify({ action: "deposit" }));
-            } else {
-                alert("Use /deposit in the Telegram bot chat to add funds.");
-            }
+        function switchTab(tab) {
+            if(tab === 'wallet') alert("Wallet: Use /deposit or /withdraw in Telegram chat.");
+            else if(tab === 'profile') alert("Guder Bingo Profile Player Account");
+            else if(tab === 'history') alert("Session history view.");
+            else renderSelectionBoard();
         }
 
-        function openWithdraw() {
-            alert("Use /withdraw in the Telegram bot chat to withdraw funds.");
-        }
-
-        function openSupport() {
-            window.Telegram.WebApp.openTelegramLink("https://t.me/Guderbingosupport");
-        }
-
-        function openInstructions() {
-            alert("Game Instructions:\n1. Choose your Cartela (1 - 800).\n2. Tap numbers as they are called.\n3. Get a full line and click BINGO!");
-        }
-
-        function openInvite() {
-            window.Telegram.WebApp.openTelegramLink("https://t.me/share/url?url=https://t.me/guderbingo_bot&text=Play%20Guder%20Bingo%20now!");
-        }
+        initApp();
     </script>
 </body>
 </html>
