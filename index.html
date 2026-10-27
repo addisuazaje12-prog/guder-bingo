@@ -288,7 +288,7 @@
 </head>
 <body>
 
-    <!-- Top Header Stats Bar (Cleaned completely for live Guder Bingo dynamic data) -->
+    <!-- Top Header Stats Bar -->
     <div class="top-stats" id="topStats" style="display:none;">
         <div>Game ID<span id="gameIdVal">-</span></div>
         <div>Derash<span id="derashVal">-</span></div>
@@ -324,9 +324,12 @@
         let selectedCartelaNo = null;
         let calledNumbersList = [];
 
-        function playAmharicAudio(filename) {
+        // Connects to local audio folder from file explorer
+        function playAudio(filename) {
             let audio = new Audio(`audio/${filename}`);
-            audio.play().catch(e => console.log("Audio waiting for interaction"));
+            audio.play().catch(err => {
+                console.log("Audio playback waiting for browser interaction:", err);
+            });
         }
 
         function initApp() {
@@ -398,7 +401,7 @@
             let el = document.getElementById(`cart-${cartelaNo}`);
             if(el) el.classList.add("selected");
 
-            playAmharicAudio("card_selected.mp3");
+            playAudio("card_selected.mp3");
 
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
@@ -415,7 +418,7 @@
                     እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
                 </div>
             `;
-            playAmharicAudio("preparing.mp3");
+            playAudio("preparing.mp3");
 
             let prepInterval = setInterval(() => {
                 prepTimer--;
@@ -514,7 +517,7 @@
                 </div>
             `;
 
-            playAmharicAudio("game_started.mp3");
+            playAudio("game_started.mp3");
 
             let calledCount = 0;
             callInterval = setInterval(() => {
@@ -546,13 +549,14 @@
                     }).join('');
                 }
 
-                playAmharicAudio(`num_${randNum}.mp3`);
+                // Plays your specific Amharic number audio clip from the audio folder
+                playAudio(`num_${randNum}.mp3`);
             }, 4000);
         }
 
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
-            playAmharicAudio("bingo_claimed.mp3");
+            playAudio("bingo_claimed.mp3"); // Played when claiming winner
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
