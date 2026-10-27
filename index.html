@@ -107,7 +107,6 @@
             gap: 6px;
             width: 180px;
         }
-        /* 1-75 Calling Board Panel */
         .bing-column-container {
             display: flex;
             flex-direction: column;
@@ -155,7 +154,6 @@
             color: #fff;
         }
 
-        /* Player's Selected Cartela Board */
         .player-cartela-box {
             background: #ffffff;
             padding: 5px;
@@ -290,12 +288,12 @@
 </head>
 <body>
 
-    <!-- Top Header Stats Bar -->
+    <!-- Top Header Stats Bar (Cleared of sample text) -->
     <div class="top-stats" id="topStats" style="display:none;">
-        <div>Game ID<span id="gameIdVal">1_HKCJ</span></div>
-        <div>Derash<span id="derashVal">4776</span></div>
-        <div>Players<span id="playerVal">597</span></div>
-        <div>Stake<span>10</span></div>
+        <div>Game ID<span id="gameIdVal">-</span></div>
+        <div>Derash<span id="derashVal">0</span></div>
+        <div>Players<span id="playerVal">0</span></div>
+        <div>Stake<span id="stakeVal">10</span></div>
         <div>Called<span id="calledVal">0</span></div>
     </div>
 
@@ -449,7 +447,6 @@
                 gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
             }
 
-            // Generate player's 5x5 cartela numbers
             let seed = cartelaNo * 13;
             let cardNumbers = [];
             while(cardNumbers.length < 24) {
@@ -471,9 +468,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Boards Column -->
                     <div class="boards-column">
-                        <!-- 1-75 Calling Board with Red B-I-N-G-O Header -->
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
                                 <div class="bingo-letter">B</div>
@@ -487,7 +482,6 @@
                             </div>
                         </div>
 
-                        <!-- Player's Selected Cartela Board with Red B-I-N-G-O Header -->
                         <div class="player-cartela-box">
                             <div class="player-cartela-title">Cartela #${cartelaNo}</div>
                             <div class="bingo-header-row" style="margin-bottom:2px;">
@@ -503,7 +497,6 @@
                         </div>
                     </div>
 
-                    <!-- Right Caller Panel -->
                     <div class="caller-panel">
                         <div class="current-call-box">
                             <span>Current Call</span>
