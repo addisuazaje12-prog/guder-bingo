@@ -573,6 +573,28 @@
         }
 
         initApp();
-    </script>
-</body>
+    let selectedCartelaNo = null;
+        let calledNumbersList = [];
+
+        // Paste it right here:
+        function playAudio(id) {
+            let sound = document.getElementById(id);
+            if(sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Audio waiting for user tap"));
+            }
+        }
+
+       function initApp() {
+    renderSelectionBoard();
+}
+
+<!-- Instant File Explorer Audio Shortcut Tags -->
+<!-- Audio Elements -->
+<audio id="snd-selected" src="audio/card_selected.mp3"></audio>
+<audio id="snd-prep" src="audio/preparing.mp3"></audio>
+<audio id="snd-start" src="audio/game_started.mp3"></audio>
+<audio id="snd-bingo" src="audio/bingo_claimed.mp3"></audio>
+    <audio id="snd-start" src="audio/game_started.mp3"></audio>
+   <audio id="snd-bingo" src="audio/bingo_claimed.mp3"></audio>
 </html>
