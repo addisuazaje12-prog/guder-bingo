@@ -18,7 +18,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 10px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -29,19 +29,19 @@
         .top-stats {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
+            gap: 3px;
             width: 100%;
             max-width: 400px;
             background: #4a3b6c;
-            padding: 6px;
+            padding: 5px;
             border-radius: 8px;
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
         .top-stats div span {
             display: block;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #ffaa00;
         }
         .main-container {
@@ -52,75 +52,80 @@
             align-items: center;
             flex-grow: 1;
             justify-content: center;
+            overflow-y: auto;
         }
+        /* 800 Cartela Selector Grid */
         .cartela-grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
-            gap: 4px;
-            max-height: 250px;
+            gap: 3px;
+            max-height: 280px;
             overflow-y: auto;
             width: 100%;
-            margin-bottom: 15px;
-            padding: 5px;
+            margin-bottom: 10px;
+            padding: 4px;
         }
         .cartela-opt {
             aspect-ratio: 1;
-            background-color: #f77f00;
+            background-color: #f77f00; /* Orange Afro Bingo style */
             color: #fff;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
         }
+        .cartela-opt.selected {
+            background-color: #2ec4b6 !important; /* Turns green instantly on touch */
+            color: #000;
+        }
         
-        /* B-I-N-G-O Header styling with red color letters */
+        /* Playing Cartela with Red B-I-N-G-O Headers */
         .bingo-card-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             background: #3c2a59;
-            padding: 10px;
+            padding: 8px;
             border-radius: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .bingo-header-row {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            width: 260px;
-            margin-bottom: 6px;
+            gap: 5px;
+            width: 250px;
+            margin-bottom: 5px;
         }
         .bingo-letter {
             aspect-ratio: 1;
-            background-color: #d90429; /* Red color for B-I-N-G-O letters */
+            background-color: #d90429; /* Red color B-I-N-G-O letters */
             color: #fff;
-            border-radius: 6px;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
-
         .single-card {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            width: 260px;
+            gap: 5px;
+            width: 250px;
         }
         .cell {
             aspect-ratio: 1;
             background-color: var(--card-bg);
             color: #ffffff;
-            border-radius: 6px;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
         }
         .cell.marked { background-color: var(--marked-color); color: #000; }
@@ -130,10 +135,11 @@
             color: #ff4d4d;
             font-weight: bold;
             text-align: center;
-            padding: 20px;
+            padding: 15px;
             background: rgba(255,0,0,0.1);
             border-radius: 8px;
-            width: 80%;
+            width: 85%;
+            font-size: 0.9rem;
         }
         .bottom-nav {
             display: flex;
@@ -141,43 +147,66 @@
             width: 100%;
             max-width: 400px;
             background: #1c1427;
-            padding: 10px 0;
-            border-radius: 12px;
+            padding: 8px 0;
+            border-radius: 10px;
         }
         .nav-btn {
             background: none;
             border: none;
             color: #fff;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             display: flex;
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            gap: 3px;
+            gap: 2px;
         }
         .game-footer-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
             max-width: 400px;
         }
         .game-footer-actions button {
             flex: 1;
-            padding: 12px;
+            padding: 10px;
             font-weight: bold;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
         }
         .btn-leave { background-color: #d90429; color: #fff; }
         .btn-refresh { background-color: #0077b6; color: #fff; }
         .btn-bingo { background-color: #ffb703; color: #000; }
+        
+        .preparing-banner {
+            background: #ffb703;
+            color: #000;
+            padding: 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+        .manager-btn {
+            background-color: #38b000;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Top Stats (Calling Board View)[cite: 7] -->
+    <!-- Top Stats (Calling Board View) -->
     <div class="top-stats" id="topStats" style="display:none;">
         <div>Game ID<span>1_57EP7CEM</span></div>
         <div>Derash<span id="derashVal">4208</span></div>
@@ -205,7 +234,15 @@
         tg.ready();
         tg.expand();
 
-        let userBalance = 15.0; // Simulated user balance check (set < 10 to test insufficient funds)
+        let userBalance = 15.0; // Set via Telegram user initialization
+
+        function speakAmharic(text) {
+            if ('speechSynthesis' in window) {
+                let utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'am-ET'; // Amharic voice synthesis
+                window.speechSynthesis.speak(utterance);
+            }
+        }
 
         function initApp() {
             renderSelectionBoard();
@@ -224,29 +261,38 @@
 
             const container = document.getElementById("mainContainer");
             if (userBalance < 10.0) {
-                container.innerHTML = `<div class="insufficient-box">Insufficient amount</div>`;
+                container.innerHTML = `<div class="insufficient-box">Insufficient amount<br><small>እባክዎ በ /deposit በኩል ገንዘብ ያስገቡ</small></div>`;
                 return;
             }
 
-            let html = `<div style="margin-bottom:8px; font-size:0.85rem;">Select Cartela (1 - 400):</div><div class="cartela-grid">`;
-            for(let i=1; i<=400; i++) {
-                html += `<div class="cartela-opt" onclick="joinGame(${i})">${i}</div>`;
+            let html = `<div class="preparing-banner">🎲 ጨዋታው እየተዘጋጀ ነው... (Preparing Game)</div>`;
+            html += `<div style="margin-bottom:6px; font-size:0.8rem;">ከ1-800 ካርቴላ ይምረጡ (Select Cartela):</div><div class="cartela-grid">`;
+            for(let i=1; i<=800; i++) {
+                html += `<div class="cartela-opt" id="cart-${i}" onclick="selectAndJoin(${i})">${i}</div>`;
             }
             html += `</div>`;
             container.innerHTML = html;
         }
 
-        function joinGame(cartelaNo) {
+        function selectAndJoin(cartelaNo) {
             if (userBalance < 10.0) {
                 alert("Insufficient amount");
                 return;
             }
 
+            // Turn green instantly on touch for eligible player
+            let el = document.getElementById(`cart-${cartelaNo}`);
+            if(el) el.classList.add("selected");
+
+            speakAmharic(`ካርቴላ ቁጥር ${cartelaNo} ተመርጧል`);
+
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
             }
 
-            renderCallingBoard(cartelaNo);
+            setTimeout(() => {
+                renderCallingBoard(cartelaNo);
+            }, 400);
         }
 
         function renderCallingBoard(cartelaNo) {
@@ -262,7 +308,7 @@
             const container = document.getElementById("mainContainer");
             
             let cardHtml = `
-                <div style="font-size:0.85rem; color:#ffb703; margin-bottom:5px;">Cartela #${cartelaNo}</div>
+                <div style="font-size:0.8rem; color:#ffb703; margin-bottom:4px;">ተጫዋች ካርቴላ #${cartelaNo}</div>
                 <div class="bingo-card-container">
                     <!-- Red B-I-N-G-O Headers -->
                     <div class="bingo-header-row">
@@ -293,13 +339,15 @@
             }
             cardHtml += `</div></div>`;
             container.innerHTML = cardHtml;
+            speakAmharic("ጨዋታው ተጀምሯል ቁጥሮች እየተጠሩ ነው");
         }
 
         function claimBingo() {
+            speakAmharic("ቢንጎ ማረጋገጫ በመካሄድ ላይ ነው።");
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
-            alert("🎉 Bingo claim submitted!");
+            alert("🎉 Bingo claim submitted! (50/50 prize pool processing)");
         }
 
         function switchTab(tab) {
