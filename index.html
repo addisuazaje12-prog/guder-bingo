@@ -6,31 +6,30 @@
     <title>Guder Bingo</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --bg-color: var(--tg-theme-bg-color, #121212);
-            --text-color: var(--tg-theme-text-color, #ffffff);
-            --button-color: var(--tg-theme-button-color, #0088cc);
-            --button-text-color: var(--tg-theme-button-text-color, #ffffff);
-            --card-bg: #1e1e1e;
-            --marked-color: #2ec4b6;
+        /* Global Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
             padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
+            padding-bottom: 80px; /* Space for bottom nav */
         }
-        h2 { margin-bottom: 5px; }
-        #statusMessage {
-            font-size: 0.95rem;
-            color: #ffaa00;
+        h2 {
             margin-bottom: 15px;
-            font-weight: 600;
-            text-align: center;
+            color: #ffffff;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .grid {
             display: grid;
@@ -38,71 +37,133 @@
             gap: 8px;
             max-width: 350px;
             width: 100%;
-            margin-bottom: 15px;
-            display: none; /* Hidden until cartela arrives */
+            margin-bottom: 20px;
         }
         .cell {
             aspect-ratio: 1;
-            background-color: var(--card-bg);
-            border-radius: 8px;
+            background-color: #2c2c2c;
+            color: #ffffff !important;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             cursor: pointer;
             user-select: none;
+            border: 1px solid #3a3a3a;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .cell.marked {
-            background-color: var(--marked-color);
-            color: #000;
+            background-color: #2ec4b6 !important;
+            color: #000000 !important;
         }
         .cell.free {
-            background-color: #ff2a4b;
-            color: #fff;
+            background-color: #ff2a4b !important;
+            color: #ffffff !important;
+            font-size: 0.9rem;
         }
-        .bingo-btn {
+        .bingo-btn, .btn-primary {
             width: 100%;
             max-width: 350px;
-            padding: 12px;
-            font-size: 1.1rem;
+            padding: 14px;
+            font-size: 1.2rem;
             font-weight: bold;
-            background-color: var(--button-color);
-            color: var(--button-text-color);
+            background-color: #0088cc;
+            color: #ffffff;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-bottom: 15px;
-            display: none; /* Hidden until cartela arrives */
+            margin-bottom: 20px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .bingo-btn:active, .btn-primary:active {
+            transform: scale(0.98);
         }
         .menu-bar {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
             max-width: 350px;
             width: 100%;
+            margin-bottom: 20px;
         }
         .menu-bar button {
-            padding: 8px 12px;
-            background: #2a2a2a;
-            color: #fff;
-            border: 1px solid #444;
-            border-radius: 6px;
+            padding: 10px 14px;
+            background: #2c2c2c;
+            color: #ffffff !important;
+            border: 1px solid #444444;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .menu-bar button:active {
+            background: #444444;
+        }
+        /* Warning Stamp Styling */
+        .warning-stamp {
+            position: absolute;
+            color: red;
+            border: 3px solid red;
+            padding: 10px 20px;
+            font-size: 24px;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            text-transform: uppercase;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 100;
+            display: none;
+        }
+        /* Calling Board Grid Styling */
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            margin: 20px 0;
+        }
+        /* Bottom Navigation Bar Styling */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid #333;
+            z-index: 1000;
+        }
+        .nav-item {
+            background: none;
+            border: none;
+            color: #888;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .nav-item.active, .nav-item:hover {
+            color: #0088cc;
+        }
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
         }
     </style>
 </head>
 <body>
 
     <h2>🌊 Guder Bingo</h2>
-    <div id="statusMessage">⏳ Waiting for your game cartela...</div>
 
+    <!-- Main Bingo Card View -->
     <div class="grid" id="bingoBoard"></div>
+    <button class="bingo-btn" onclick="claimBingo()">BINGO!</button>
 
-    <button class="bingo-btn" id="bingoBtn" onclick="claimBingo()">BINGO!</button>
-
+    <!-- Menu Bar -->
     <div class="menu-bar">
         <button onclick="openDeposit()">Deposit</button>
         <button onclick="openWithdraw()">Withdraw</button>
@@ -111,20 +172,73 @@
         <button onclick="openInvite()">Invite</button>
     </div>
 
+    <!-- Calling Board Container with Balance Gate & Warning Stamp -->
+    <div class="calling-board-container" style="position: relative; margin-top: 20px; width: 100%; max-width: 350px;">
+        <h2>Guder Bingo Calling Board</h2>
+        
+        <!-- Insufficient Amount Warning Stamp -->
+        <div id="insufficient-stamp" class="warning-stamp" style="display: none;">
+            INSUFFICIENT AMOUNT
+        </div>
+
+        <div id="number-board" class="number-grid"></div>
+
+        <button id="buy-cartela-btn" class="btn-primary">Buy Cartela & Play</button>
+    </div>
+
+    <!-- Manager Regulation Dashboard -->
+    <div id="managerPanel" class="manager-panel" style="display:none; margin-top: 20px; background: #2c2c2c; padding: 15px; border-radius: 10px; width: 100%; max-width: 350px;">
+        <h3>Manager Regulation Dashboard</h3>
+        <div id="sessionDetails">
+            <p><strong>Playing Session:</strong> <span id="mgrSession">Active</span></p>
+            <p><strong>Winner:</strong> <span id="mgrWinner">-</span></p>
+            <p><strong>Phone Number:</strong> <span id="mgrPhone">-</span></p>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+        <button class="nav-item active" data-tab="game">
+            <span>🎮 Game</span>
+        </button>
+        <button class="nav-item" data-tab="history">
+            <span>📜 History</span>
+        </button>
+        <button class="nav-item" data-tab="wallet">
+            <span>👛 Wallet</span>
+        </button>
+        <button class="nav-item" data-tab="profile">
+            <span>👤 Profile</span>
+        </button>
+    </div>
+
+    <!-- JavaScript Logic -->
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
 
-        // Simulate receiving cartela data (can be linked to backend parameters or API later)
-        function loadCartela(numbersArray) {
+        // Sample balance variables to prevent errors
+        let userBalance = 50; 
+        let cartelaTotalCost = 100;
+
+        function initApp() {
+            if (tg) {
+                tg.ready();
+                tg.expand();
+            }
+            generateBoard();
+        }
+
+        function generateBoard() {
             const board = document.getElementById("bingoBoard");
-            const statusMsg = document.getElementById("statusMessage");
-            const bingoBtn = document.getElementById("bingoBtn");
-            
+            if (!board) return;
             board.innerHTML = "";
+            let numbers = [];
+            while(numbers.length < 24) {
+                let r = Math.floor(Math.random() * 75) + 1;
+                if(numbers.indexOf(r) === -1) numbers.push(r);
+            }
+            
             let count = 0;
-
             for(let i = 0; i < 25; i++) {
                 const cell = document.createElement("div");
                 cell.classList.add("cell");
@@ -132,22 +246,27 @@
                     cell.innerText = "FREE";
                     cell.classList.add("free", "marked");
                 } else {
-                    cell.innerText = numbersArray[count++] || (Math.floor(Math.random() * 75) + 1);
-                    cell.addEventListener("click", () => {
-                        cell.classList.toggle("marked");
+                    cell.innerText = numbers[count++];
+                    cell.addEventListener("click", function() {
+                        this.classList.toggle("marked");
                     });
                 }
                 board.appendChild(cell);
             }
-
-            // Reveal board and hide waiting message once cartela is active
-            statusMsg.style.display = "none";
-            board.style.display = "grid";
-            bingoBtn.style.display = "block";
         }
 
+        // Balance Gate Event Listener
+        document.getElementById('buy-cartela-btn').addEventListener('click', function() {
+            if (userBalance < cartelaTotalCost) {
+                document.getElementById('insufficient-stamp').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('insufficient-stamp').style.display = 'none';
+            }
+        });
+
         function claimBingo() {
-            if(tg.showAlert) {
+            if (tg && tg.showAlert) {
                 tg.showAlert("🎉 Congratulations! You declared Bingo!");
             } else {
                 alert("🎉 Congratulations! You declared Bingo!");
@@ -155,42 +274,49 @@
         }
 
         function openDeposit() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData("DEPOSIT");
+            if (tg && tg.showAlert) {
+                tg.showAlert("Deposit: Send /deposit directly in the bot chat to add funds.");
             } else {
-                alert("Use /deposit in the Telegram bot chat to add funds.");
+                alert("Deposit: Send /deposit directly in the bot chat to add funds.");
             }
         }
 
         function openWithdraw() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData("WITHDRAW");
+            if (tg && tg.showAlert) {
+                tg.showAlert("Withdraw: Send /withdraw directly in the bot chat to request cash out.");
             } else {
-                alert("Use /withdraw in the Telegram bot chat to withdraw funds.");
+                alert("Withdraw: Send /withdraw directly in the bot chat to request cash out.");
             }
         }
 
         function openSupport() {
-            window.Telegram.WebApp.openTelegramLink("https://t.me/Guderbingosupport");
+            const supportUrl = "https://t.me/Guderbingosupport";
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(supportUrl);
+            } else {
+                window.location.href = supportUrl;
+            }
         }
 
         function openInstructions() {
-            alert("Game Instructions:\nTap numbers to mark your cartela, get a line, and click BINGO!");
+            const msg = "🎮 Game Instructions:\n\n1. Tap numbers to mark your cartela.\n2. Form a complete horizontal, vertical, or diagonal line.\n3. Tap BINGO! to declare your win.";
+            if (tg && tg.showAlert) {
+                tg.showAlert(msg);
+            } else {
+                alert(msg);
+            }
         }
 
         function openInvite() {
-            window.Telegram.WebApp.openTelegramLink("https://t.me/share/url?url=https://t.me/guderbingo_bot&text=Play%20Guder%20Bingo%20now!");
+            const inviteUrl = "https://t.me/share/url?url=https://t.me/guderbingo_bot&text=Play%20Guder%20Bingo%20now!";
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(inviteUrl);
+            } else {
+                window.location.href = inviteUrl;
+            }
         }
 
-        // Auto-load sample cartela after a brief check (or integrate with your active game round)
-        setTimeout(() => {
-            let sampleNumbers = [];
-            while(sampleNumbers.length < 24) {
-                let r = Math.floor(Math.random() * 75) + 1;
-                if(!sampleNumbers.includes(r)) sampleNumbers.push(r);
-            }
-            loadCartela(sampleNumbers);
-        }, 1500);
+        document.addEventListener("DOMContentLoaded", initApp);
     </script>
 </body>
 </html>
