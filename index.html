@@ -25,6 +25,29 @@
             align-items: center;
         }
         h2 { margin-bottom: 10px; }
+        
+        /* B-I-N-G-O Header Row Styles */
+        .bingo-header {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-width: 350px;
+            width: 100%;
+            margin-bottom: 6px;
+        }
+        .bingo-header .letter {
+            aspect-ratio: 1;
+            background-color: var(--button-color);
+            color: var(--button-text-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            user-select: none;
+        }
+
         .grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -36,7 +59,7 @@
         .cell {
             aspect-ratio: 1;
             background-color: var(--card-bg);
-            color: #ffffff; /* Explicitly makes the numbers bright white */
+            color: #ffffff;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -90,6 +113,16 @@
 
     <h2>🌊 Guder Bingo</h2>
 
+    <!-- B-I-N-G-O Column Header Row -->
+    <div class="bingo-header">
+        <div class="letter">B</div>
+        <div class="letter">I</div>
+        <div class="letter">N</div>
+        <div class="letter">G</div>
+        <div class="letter">O</div>
+    </div>
+
+    <!-- Number Grid -->
     <div class="grid" id="bingoBoard"></div>
 
     <button class="bingo-btn" onclick="claimBingo()">BINGO!</button>
