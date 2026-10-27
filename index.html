@@ -209,12 +209,13 @@
         .waiting-msg {
             background: rgba(255,255,255,0.9);
             color: #333;
-            padding: 15px 10px;
+            padding: 20px 15px;
             border-radius: 8px;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 15px;
+            line-height: 1.5;
         }
 
         .bottom-nav {
@@ -291,12 +292,13 @@
         let regTimer = 30;
         let prepTimer = 5;
         let callInterval = null;
+        let globalCountdown = null;
+        let selectedCartelaNo = null;
         let calledNumbersList = [];
 
-        // Play pre-recorded Amharic audio from documented audio folder
         function playAmharicAudio(filename) {
             let audio = new Audio(`audio/${filename}`);
-            audio.play().catch(e => console.log("Audio playback waiting for interaction"));
+            audio.play().catch(e => console.log("Audio waiting for interaction"));
         }
 
         function initApp() {
@@ -305,6 +307,9 @@
 
         function renderSelectionBoard() {
             if(callInterval) clearInterval(callInterval);
+            if(globalCountdown) clearInterval(globalCountdown);
+            selectedCartelaNo = null;
+
             document.getElementById("topStats").style.display = "none";
             document.getElementById("bottomNavContainer").innerHTML = `
                 <div class="bottom-nav">
@@ -328,33 +333,50 @@
                 <div class="cartela-grid">
             `;
             for(let i=1; i<=800; i++) {
-                html += `<div class="cartela-opt" id="cart-${i}" onclick="selectAndJoin(${i})">${i}</div>`;
+                html += `<div class="cartela-opt" id="cart-${i}" onclick="selectCartela(${i})">${i}</div>`;
             }
             html += `</div>`;
             container.innerHTML = html;
 
-            let countdown = setInterval(() => {
+            // 30-Second Registration Window Countdown
+            globalCountdown = setInterval(() => {
                 regTimer--;
                 let tBox = document.getElementById("regTimerBox");
                 if(tBox) tBox.innerText = `⏱️ Registration Window: ${regTimer}s`;
+                
                 if(regTimer <= 0) {
-                    clearInterval(countdown);
+                    clearInterval(globalCountdown);
+                    if(selectedCartelaNo) {
+                        showPreparationScreen(selectedCartelaNo);
+                    } else {
+                        alert("Registration closed. No cartela selected!");
+                        renderSelectionBoard();
+                    }
                 }
             }, 1000);
         }
 
-        function selectAndJoin(cartelaNo) {
+        function selectCartela(cartelaNo) {
+            if (regTimer <= 0) {
+                alert("Registration window has closed!");
+                return;
+            }
+
+            // Remove previous selection highlight
+            if(selectedCartelaNo) {
+                let prev = document.getElementById(`cart-${selectedCartelaNo}`);
+                if(prev) prev.classList.remove("selected");
+            }
+
+            selectedCartelaNo = cartelaNo;
             let el = document.getElementById(`cart-${cartelaNo}`);
             if(el) el.classList.add("selected");
 
-            playAmharicAudio("card_selected.mp3"); // Documented Amharic audio clip
+            playAmharicAudio("card_selected.mp3");
 
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
             }
-
-            // Immediately proceed to 5 seconds preparation countdown
-            showPreparationScreen(cartelaNo);
         }
 
         function showPreparationScreen(cartelaNo) {
@@ -362,14 +384,18 @@
             const container = document.getElementById("mainContainer");
             container.innerHTML = `
                 <div class="timer-banner" style="background:#ffb703; color:#000;" id="prepTimerBox">🎲 Preparing Game: 5s</div>
-                <div class="waiting-msg">Cartela #${cartelaNo} Confirmed.<br>እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ</div>
+                <div class="waiting-msg">
+                    Cartela #${cartelaNo} Confirmed!<br><br>
+                    እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
+                </div>
             `;
-            playAmharicAudio("preparing.mp3"); // Documented Amharic audio clip
+            playAmharicAudio("preparing.mp3");
 
             let prepInterval = setInterval(() => {
                 prepTimer--;
                 let pBox = document.getElementById("prepTimerBox");
                 if(pBox) pBox.innerText = `🎲 Preparing Game: ${prepTimer}s`;
+                
                 if(prepTimer <= 0) {
                     clearInterval(prepInterval);
                     renderCallingBoard(cartelaNo);
@@ -427,7 +453,7 @@
                             <button class="ctrl-btn">10 N...</button>
                             <button class="ctrl-btn">Auto OFF</button>
                         </div>
-                        <div class="waiting-msg">
+                        <div class="waiting-msg" style="padding:10px; margin-top:5px;">
                             እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
                         </div>
                     </div>
@@ -466,7 +492,7 @@
                     }).join('');
                 }
 
-                playAmharicAudio(`num_${randNum}.mp3`); // Plays your documented Amharic number audio files
+                playAmharicAudio(`num_${randNum}.mp3`);
             }, 4000);
         }
 
@@ -481,6 +507,7 @@
 
         function switchTab(tab) {
             if(callInterval) clearInterval(callInterval);
+            if(globalCountdown) clearInterval(globalCountdown);
             if(tab === 'wallet') alert("Wallet: Use /deposit or /withdraw in Telegram chat.");
             else if(tab === 'profile') alert("Guder Bingo Profile Player Account");
             else if(tab === 'history') alert("Session history view.");
