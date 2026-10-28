@@ -176,7 +176,6 @@
             font-size: 0.75rem;
         }
 
-        /* Scrollable container allowing full view of all 15 rows vertically under B, I, N, G, O */
         .num-grid-75 {
             display: flex;
             flex-direction: row;
@@ -245,7 +244,7 @@
         .player-cell.free {
             background-color: #d90429 !important;
             color: #fff !important;
-            font-size: 0.55rem;
+            font-size: 0.5rem;
         }
 
         .caller-panel {
@@ -561,7 +560,7 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Build all 15 rows vertically under B(1-15), I(16-30), N(31-45), G(46-60), O(61-75)
+            // Build Calling Board ranges
             let gridHtml = "";
             const ranges = [
                 { start: 1, end: 15 },   // B column (1-15)
@@ -579,28 +578,42 @@
                 gridHtml += `</div>`;
             });
 
+            // Strictly generate Player Cartela column by column with correct ranges
             let seed = cartelaNo * 13;
-            let cardNumbers = [];
-            while(cardNumbers.length < 24) {
+            function getRandomNumber(min, max, excludeList) {
                 seed = (seed * 9301 + 49297) % 233280;
-                let r = Math.floor((seed / 233280) * 75) + 1;
-                if(!cardNumbers.includes(r)) cardNumbers.push(r);
+                let r = min + Math.floor((seed / 233280) * (max - min + 1));
+                while(excludeList.includes(r)) {
+                    seed = (seed * 9301 + 49297) % 233280;
+                    r = min + Math.floor((seed / 233280) * (max - min + 1));
+                }
+                return r;
             }
 
+            let colB = [], colI = [], colN = [], colG = [], colO = [];
+            while(colB.length < 5) { let n = getRandomNumber(1, 15, colB); colB.push(n); }
+            while(colI.length < 5) { let n = getRandomNumber(16, 30, colI); colI.push(n); }
+            while(colN.length < 4) { let n = getRandomNumber(31, 45, colN); colN.push(n); } // 4 numbers + FREE space
+            while(colG.length < 5) { let n = getRandomNumber(46, 60, colG); colG.push(n); }
+            while(colO.length < 5) { let n = getRandomNumber(61, 75, colO); colO.push(n); }
+
+            // Assemble grid row-by-row for the 5x5 player card
             let playerCardHtml = "";
-            let cIdx = 0;
-            for(let i=0; i<25; i++) {
-                if(i === 12) {
-                    playerCardHtml += `<div class="player-cell free marked">FREE</div>`;
-                } else {
-                    let num = cardNumbers[cIdx++];
-                    playerCardHtml += `<div class="player-cell" onclick="this.classList.toggle('marked')">${num}</div>`;
-                }
+            let nIdx = 0;
+            for(let row = 0; row < 5; row++) {
+                let rowNums = [colB[row], colI[row], (row === 2 ? 'FREE' : colN[row >= 2 ? row - 1 : row]), colG[row], colO[row]];
+                rowNums.forEach((num, colIdx) => {
+                    if(num === 'FREE') {
+                        playerCardHtml += `<div class="player-cell free marked">FREE</div>`;
+                    } else {
+                        playerCardHtml += `<div class="player-cell" onclick="this.classList.toggle('marked')">${num}</div>`;
+                    }
+                });
             }
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Column: Calling Board (Scrollable to view all 15 rows cleanly) -->
+                    <!-- Left Column: Calling Board -->
                     <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
