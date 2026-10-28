@@ -159,12 +159,12 @@
             border-radius: 8px;
         }
         .bingo-header-row {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            display: flex;
             gap: 2px;
             margin-bottom: 3px;
         }
         .bingo-letter {
+            flex: 1;
             aspect-ratio: 1;
             background-color: #d90429;
             color: #fff;
@@ -176,20 +176,22 @@
             font-size: 0.85rem;
         }
 
-        /* Explicit Column Container Layout */
+        /* Flex Layout to align 5 independent vertical columns side-by-side */
         .num-grid-75 {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            display: flex;
+            flex-direction: row;
             gap: 2px;
             max-height: 250px;
             overflow-y: auto;
         }
         .bingo-col-group {
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 2px;
         }
         .num-cell {
+            width: 100%;
             aspect-ratio: 1;
             background: #e0d2ec;
             color: #111;
@@ -199,6 +201,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 2px;
+            box-sizing: border-box;
         }
         .num-cell.called {
             background-color: #f77f00;
@@ -558,15 +561,14 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Explicitly build each column group so B(1-15), I(16-30), N(31-45), G(46-60), O(61-75) 
-            // are 100% guaranteed to stack vertically under their respective header letter.
+            // Build 5 separate vertical columns for B (1-15), I (16-30), N (31-45), G (46-60), O (61-75)
             let gridHtml = "";
             const ranges = [
-                { start: 1, end: 15 },   // B
-                { start: 16, end: 30 },  // I
-                { start: 31, end: 45 },  // N
-                { start: 46, end: 60 },  // G
-                { start: 61, end: 75 }   // O
+                { start: 1, end: 15 },   // B column
+                { start: 16, end: 30 },  // I column
+                { start: 31, end: 45 },  // N column
+                { start: 46, end: 60 },  // G column
+                { start: 61, end: 75 }   // O column
             ];
 
             ranges.forEach(range => {
@@ -598,7 +600,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Column: Explicitly Sorted Calling Board (B, I, N, G, O columns) -->
+                    <!-- Left Column: Calling Board (B: 1-15, I: 16-30, N: 31-45, G: 46-60, O: 61-75 stacked vertically) -->
                     <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
