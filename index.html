@@ -117,7 +117,6 @@
             margin-top: 15px;
         }
 
-        /* Side-by-Side Layout: Calling Board Left, Player Cartela Right */
         .calling-layout {
             display: flex;
             gap: 6px;
@@ -163,11 +162,15 @@
             font-weight: 900;
             font-size: 0.85rem;
         }
+
+        /* 5-column grid flowing vertically down each column */
         .num-grid-75 {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            grid-auto-flow: column;
             gap: 2px;
-            max-height: 160px;
+            max-height: 240px;
             overflow-y: auto;
         }
         .num-cell {
@@ -537,20 +540,11 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Build calling board row-by-row strictly under B(1-15), I(16-30), N(31-45), G(46-60), O(61-75)
+            // Generate numbers sequential 1-75. With CSS grid-auto-flow: column, 
+            // 1-15 auto-fill Column B, 16-30 Column I, 31-45 Column N, 46-60 Column G, 61-75 Column O.
             let gridHtml = "";
-            for(let row = 1; row <= 15; row++) {
-                let bNum = row;
-                let iNum = row + 15;
-                let nNum = row + 30;
-                let gNum = row + 45;
-                let oNum = row + 60;
-                
-                gridHtml += `<div class="num-cell" id="num-${bNum}">${bNum}</div>`;
-                gridHtml += `<div class="num-cell" id="num-${iNum}">${iNum}</div>`;
-                gridHtml += `<div class="num-cell" id="num-${nNum}">${nNum}</div>`;
-                gridHtml += `<div class="num-cell" id="num-${gNum}">${gNum}</div>`;
-                gridHtml += `<div class="num-cell" id="num-${oNum}">${oNum}</div>`;
+            for(let i = 1; i <= 75; i++) {
+                gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
             }
 
             let seed = cartelaNo * 13;
@@ -574,7 +568,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Column: 75-Number Calling Tracker Board -->
+                    <!-- Left Column: Calling Board (B 1-15, I 16-30, N 31-45, G 46-60, O 61-75) -->
                     <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
@@ -631,4 +625,59 @@
                 calledCount++;
                 let randNum = Math.floor(Math.random() * 75) + 1;
                 while(calledNumbersList.includes(randNum) && calledNumbersList.length < 75) {
-                    randNum = Math.
+                    randNum = Math.floor(Math.random() * 75) + 1;
+                }
+                calledNumbersList.push(randNum);
+
+                let letter = randNum <= 15 ? 'B' : randNum <= 30 ? 'I' : randNum <= 45 ? 'N' : randNum <= 60 ? 'G' : 'O';
+                let callText = `${letter}-${randNum}`;
+
+                let cell = document.getElementById(`num-${randNum}`);
+                if(cell) cell.classList.add("called");
+
+                let cCircle = document.getElementById("currentCallCircle");
+                if(cCircle) cCircle.innerText = callText;
+
+                let calledVal = document.getElementById("calledVal");
+                if(calledVal) calledVal.innerText = calledCount;
+
+                let recentPills = document.getElementById("recentPills");
+                let lastThree = calledNumbersList.slice(-3).reverse();
+                if(recentPills) {
+                    recentPills.innerHTML = lastThree.map(n => {
+                        let l = n <= 15 ? 'B' : n <= 30 ? 'I' : n <= 45 ? 'N' : n <= 60 ? 'G' : 'O';
+                        return `<div class="recent-pill">${l}${n}</div>`;
+                    }).join('');
+                }
+
+                let prefix = randNum <= 15 ? 'b' : randNum <= 30 ? 'i' : randNum <= 45 ? 'n' : randNum <= 60 ? 'g' : 'o';
+                playAudio(`${prefix}${randNum}.mp3`);
+            }, 4000);
+        }
+
+        function claimBingo() {
+            if(callInterval) clearInterval(callInterval);
+            stopBackgroundMusic();
+            playAudio("snd-bingo");
+            if (tg.sendData) {
+                tg.sendData(JSON.stringify({ action: "claim_bingo" }));
+            }
+            alert("🎉 Bingo claim submitted!");
+        }
+
+        function switchTab(tab) {
+            if(callInterval) clearInterval(callInterval);
+            if(globalCountdown) clearInterval(globalCountdown);
+            stopBackgroundMusic();
+            if(tab === 'wallet') alert("Wallet: Use /deposit or /withdraw in Telegram chat.");
+            else if(tab === 'profile') alert("Guder Bingo Profile Player Account");
+            else if(tab === 'history') alert("Session history view.");
+            else renderSelectionBoard();
+        }
+
+        // Initialize Application
+        initApp();
+    </script>
+
+    <!-- Audio Elements for UI/Short FX -->
+    <audio id="snd-selected" src="bingo_amharic_audio/card_selected.mp3"></audio>
