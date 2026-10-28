@@ -176,21 +176,24 @@
             font-size: 0.85rem;
         }
 
-        /* Forces numbers to fill vertically column-by-column: B(1-15), I(16-30), N(31-45), G(46-60), O(61-75) */
+        /* Explicit Column Container Layout */
         .num-grid-75 {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(15, 1fr);
-            grid-auto-flow: column;
             gap: 2px;
             max-height: 250px;
             overflow-y: auto;
+        }
+        .bingo-col-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
         .num-cell {
             aspect-ratio: 1;
             background: #e0d2ec;
             color: #111;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             font-weight: 900;
             display: flex;
             align-items: center;
@@ -555,11 +558,24 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Generates 1 to 75 sequentially. CSS grid-auto-flow: column places 1-15 in column B, 16-30 in column I, etc.
+            // Explicitly build each column group so B(1-15), I(16-30), N(31-45), G(46-60), O(61-75) 
+            // are 100% guaranteed to stack vertically under their respective header letter.
             let gridHtml = "";
-            for(let i = 1; i <= 75; i++) {
-                gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
-            }
+            const ranges = [
+                { start: 1, end: 15 },   // B
+                { start: 16, end: 30 },  // I
+                { start: 31, end: 45 },  // N
+                { start: 46, end: 60 },  // G
+                { start: 61, end: 75 }   // O
+            ];
+
+            ranges.forEach(range => {
+                gridHtml += `<div class="bingo-col-group">`;
+                for(let i = range.start; i <= range.end; i++) {
+                    gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
+                }
+                gridHtml += `</div>`;
+            });
 
             let seed = cartelaNo * 13;
             let cardNumbers = [];
@@ -582,7 +598,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Column: Calling Board (B:1-15, I:16-30, N:31-45, G:46-60, O:61-75) -->
+                    <!-- Left Column: Explicitly Sorted Calling Board (B, I, N, G, O columns) -->
                     <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
