@@ -370,7 +370,6 @@
             showStartScreen();
         }
 
-        // Show a tap-to-start screen so mobile browsers unlock audio playback
         function showStartScreen() {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
@@ -388,7 +387,6 @@
         }
 
         function startAppSession() {
-            // Unlocks and plays classical background music immediately upon user tap
             playAudio('snd-classical');
             renderSelectionBoard();
         }
@@ -609,8 +607,9 @@
                     }).join('');
                 }
 
-                // Calls b1 through b75 accurately
-                playAudio(`b${randNum}.mp3`);
+                // Correctly mapping prefixes based on number ranges (b, i, n, g, o)
+                let prefix = randNum <= 15 ? 'b' : randNum <= 30 ? 'i' : randNum <= 45 ? 'n' : randNum <= 60 ? 'g' : 'o';
+                playAudio(`${prefix}${randNum}.mp3`);
             }, 4000);
         }
 
