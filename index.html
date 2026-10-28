@@ -324,12 +324,16 @@
         let selectedCartelaNo = null;
         let calledNumbersList = [];
 
-        // Connects to local audio folder from file explorer
-        function playAudio(filename) {
-            let audio = new Audio(`audio/${filename}`);
-            audio.play().catch(err => {
-                console.log("Audio playback waiting for browser interaction:", err);
-            });
+        // Audio Helper Function
+        function playAudio(idOrFilename) {
+            let sound = document.getElementById(idOrFilename);
+            if(sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Audio waiting for user tap", e));
+            } else {
+                let audio = new Audio(`audio/${idOrFilename}`);
+                audio.play().catch(err => console.log("Audio playback wait:", err));
+            }
         }
 
         function initApp() {
@@ -401,7 +405,7 @@
             let el = document.getElementById(`cart-${cartelaNo}`);
             if(el) el.classList.add("selected");
 
-            playAudio("card_selected.mp3");
+            playAudio("snd-selected");
 
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
@@ -418,7 +422,7 @@
                     እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
                 </div>
             `;
-            playAudio("preparing.mp3");
+            playAudio("snd-prep");
 
             let prepInterval = setInterval(() => {
                 prepTimer--;
@@ -517,7 +521,7 @@
                 </div>
             `;
 
-            playAudio("game_started.mp3");
+            playAudio("snd-start");
 
             let calledCount = 0;
             callInterval = setInterval(() => {
@@ -549,14 +553,13 @@
                     }).join('');
                 }
 
-                // Plays your specific Amharic number audio clip from the audio folder
                 playAudio(`num_${randNum}.mp3`);
             }, 4000);
         }
 
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
-            playAudio("bingo_claimed.mp3"); // Played when claiming winner
+            playAudio("snd-bingo");
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
@@ -572,29 +575,15 @@
             else renderSelectionBoard();
         }
 
+        // Initialize Application
         initApp();
-    let selectedCartelaNo = null;
-        let calledNumbersList = [];
+    </script>
 
-        // Paste it right here:
-        function playAudio(id) {
-            let sound = document.getElementById(id);
-            if(sound) {
-                sound.currentTime = 0;
-                sound.play().catch(e => console.log("Audio waiting for user tap"));
-            }
-        }
-
-       function initApp() {
-    renderSelectionBoard();
-}
-
-<!-- Instant File Explorer Audio Shortcut Tags -->
-<!-- Audio Elements -->
-<audio id="snd-selected" src="audio/card_selected.mp3"></audio>
-<audio id="snd-prep" src="audio/preparing.mp3"></audio>
-<audio id="snd-start" src="audio/game_started.mp3"></audio>
-<audio id="snd-bingo" src="audio/bingo_claimed.mp3"></audio>
+    <!-- Instant File Explorer Audio Shortcut Tags -->
+    <audio id="snd-selected" src="audio/card_selected.mp3"></audio>
+    <audio id="snd-prep" src="audio/preparing.mp3"></audio>
     <audio id="snd-start" src="audio/game_started.mp3"></audio>
-   <audio id="snd-bingo" src="audio/bingo_claimed.mp3"></audio>
+    <audio id="snd-bingo" src="audio/bingo_claimed.mp3"></audio>
+
+</body>
 </html>
