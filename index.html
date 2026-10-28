@@ -159,12 +159,12 @@
             border-radius: 8px;
         }
         .bingo-header-row {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            display: flex;
             gap: 2px;
             margin-bottom: 3px;
         }
         .bingo-letter {
+            flex: 1;
             aspect-ratio: 1;
             background-color: #d90429;
             color: #fff;
@@ -176,29 +176,32 @@
             font-size: 0.85rem;
         }
 
-        /* Forces 5 explicit vertical grid columns side-by-side */
+        /* Fixed: Flex container for 5 vertical column groups side-by-side */
         .num-grid-75 {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            display: flex;
+            flex-direction: row;
             gap: 2px;
             max-height: 250px;
             overflow-y: auto;
         }
         .bingo-col-group {
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 2px;
         }
         .num-cell {
+            width: 100%;
             aspect-ratio: 1;
             background: #e0d2ec;
             color: #111;
-            font-size: 0.55rem;
+            font-size: 0.6rem;
             font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 2px;
+            box-sizing: border-box;
         }
         .num-cell.called {
             background-color: #f77f00;
@@ -558,7 +561,7 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Explicitly build 5 column groups so each letter handles its specific vertical range downwards
+            // Generate 5 vertical column groups
             let gridHtml = "";
             const ranges = [
                 { start: 1, end: 15 },   // B column (1-15)
@@ -597,7 +600,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Column: Calling Board (Explicitly stacked vertically under B, I, N, G, O) -->
+                    <!-- Left Column: Calling Board (Vertical Columns under B, I, N, G, O) -->
                     <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
