@@ -346,7 +346,7 @@
         let globalCountdown = null;
         let selectedCartelaNo = null;
         let calledNumbersList = [];
-        let classicalAudio = null; // Background music controller
+        let backgroundMusic = null; // Background loop controller
 
         function playAudio(elementIdOrFile) {
             let sound = document.getElementById(elementIdOrFile);
@@ -359,11 +359,11 @@
             }
         }
 
-        function stopClassicalMusic() {
-            if(classicalAudio) {
-                classicalAudio.pause();
-                classicalAudio.currentTime = 0;
-                classicalAudio = null;
+        function stopBackgroundMusic() {
+            if(backgroundMusic) {
+                backgroundMusic.pause();
+                backgroundMusic.currentTime = 0;
+                backgroundMusic = null;
             }
         }
 
@@ -374,7 +374,7 @@
         function showStartScreen() {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
-            stopClassicalMusic();
+            stopBackgroundMusic();
 
             document.getElementById("topStats").style.display = "none";
             const container = document.getElementById("mainContainer");
@@ -388,11 +388,11 @@
         }
 
         function startAppSession() {
-            stopClassicalMusic();
-            // Using bingo.mp3 as the background track since it's already uploaded in your repository
-            classicalAudio = new Audio('bingo_amharic_audio/bingo.mp3');
-            classicalAudio.loop = true;
-            classicalAudio.play().then(() => {
+            stopBackgroundMusic();
+            // Automatically plays bingo.mp3 as background music using user tap permission
+            backgroundMusic = new Audio('bingo_amharic_audio/bingo.mp3');
+            backgroundMusic.loop = true;
+            backgroundMusic.play().then(() => {
                 renderSelectionBoard();
             }).catch(error => {
                 console.log("Background audio play blocked:", error);
@@ -417,13 +417,13 @@
 
             const container = document.getElementById("mainContainer");
             if (userBalance < 10.0) {
-                stopClassicalMusic();
+                stopBackgroundMusic();
                 container.innerHTML = `<div style="color:#d90429; font-weight:bold; background:#fff; padding:20px; border-radius:8px;">Insufficient amount</div>`;
                 return;
             }
 
-            if(classicalAudio && classicalAudio.paused) {
-                classicalAudio.play().catch(e => console.log("Audio resume error:", e));
+            if(backgroundMusic && backgroundMusic.paused) {
+                backgroundMusic.play().catch(e => console.log("Audio resume error:", e));
             }
 
             regTimer = 30;
@@ -445,7 +445,7 @@
                 
                 if(regTimer <= 0) {
                     clearInterval(globalCountdown);
-                    stopClassicalMusic(); 
+                    stopBackgroundMusic(); 
                     if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
@@ -479,7 +479,7 @@
         }
 
         function showPreparationScreen(cartelaNo) {
-            stopClassicalMusic();
+            stopBackgroundMusic();
             prepTimer = 5;
             const container = document.getElementById("mainContainer");
             container.innerHTML = `
@@ -504,7 +504,7 @@
         }
 
         function renderCallingBoard(cartelaNo) {
-            stopClassicalMusic();
+            stopBackgroundMusic();
             calledNumbersList = [];
             document.getElementById("topStats").style.display = "grid";
             document.getElementById("bottomNavContainer").innerHTML = `
@@ -628,7 +628,7 @@
 
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
-            stopClassicalMusic();
+            stopBackgroundMusic();
             playAudio("snd-bingo");
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
@@ -639,7 +639,7 @@
         function switchTab(tab) {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
-            stopClassicalMusic();
+            stopBackgroundMusic();
             if(tab === 'wallet') alert("Wallet: Use /deposit or /withdraw in Telegram chat.");
             else if(tab === 'profile') alert("Guder Bingo Profile Player Account");
             else if(tab === 'history') alert("Session history view.");
