@@ -472,7 +472,6 @@
                 backgroundMusic.play().catch(e => console.log("Audio resume error:", e));
             }
 
-            // Play the exact welcome audio tag when cartela selection opens
             playAudio("snd-welcome-select");
 
             regTimer = 30;
@@ -707,8 +706,8 @@
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
             stopBackgroundMusic();
-            // This plays the winners claiming sound only when finishing / claiming bingo
-            playAudio("snd-bingo");
+            // Classical / victory chime sound when claiming bingo / finishing session
+            playAudio("snd-classical-victory");
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
             }
@@ -734,7 +733,7 @@
     <audio id="snd-selected" src="bingo_amharic_audio/card_selected.mp3"></audio>
     <audio id="snd-prep" src="bingo_amharic_audio/preparing.mp3"></audio>
     <audio id="snd-start" src="bingo_amharic_audio/game_started.mp3"></audio>
-    <audio id="snd-bingo" src="bingo_amharic_audio/bingo_claimed.mp3"></audio>
+    <audio id="snd-classical-victory" src="bingo_amharic_audio/classical_victory.mp3"></audio>
 
 </body>
 </html>
