@@ -383,7 +383,7 @@
             html += `</div>`;
             container.innerHTML = html;
 
-            // Start looping the classical music during the 30-second selection window
+            // Attempt to play background music immediately
             playAudio('snd-classical');
 
             globalCountdown = setInterval(() => {
@@ -393,7 +393,7 @@
                 
                 if(regTimer <= 0) {
                     clearInterval(globalCountdown);
-                    stopAudio('snd-classical'); // Stop classical music when window expires
+                    stopAudio('snd-classical');
                     if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
@@ -405,6 +405,12 @@
         }
 
         function selectCartela(cartelaNo) {
+            // User interaction unlocks browser audio permission here
+            let classical = document.getElementById('snd-classical');
+            if(classical && classical.paused) {
+                classical.play().catch(e => console.log("Classical resume error:", e));
+            }
+
             if (regTimer <= 0) {
                 alert("Registration window has closed!");
                 return;
@@ -569,7 +575,7 @@
                     }).join('');
                 }
 
-                // Correctly calls b1.mp3 through b75.mp3 for all numbers
+                // Calls b1 through b75 accurately
                 playAudio(`b${randNum}.mp3`);
             }, 4000);
         }
