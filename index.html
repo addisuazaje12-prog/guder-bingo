@@ -336,6 +336,15 @@
             }
         }
 
+        // Stop Specific Audio Element
+        function stopAudio(id) {
+            let sound = document.getElementById(id);
+            if(sound) {
+                sound.pause();
+                sound.currentTime = 0;
+            }
+        }
+
         function initApp() {
             renderSelectionBoard();
         }
@@ -343,6 +352,7 @@
         function renderSelectionBoard() {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
+            stopAudio('snd-classical'); // Stop classical music if switching back
             selectedCartelaNo = null;
 
             document.getElementById("topStats").style.display = "none";
@@ -373,6 +383,9 @@
             html += `</div>`;
             container.innerHTML = html;
 
+            // Play Classical Background Music during the 30s registration window
+            playAudio('snd-classical');
+
             globalCountdown = setInterval(() => {
                 regTimer--;
                 let tBox = document.getElementById("regTimerBox");
@@ -380,6 +393,7 @@
                 
                 if(regTimer <= 0) {
                     clearInterval(globalCountdown);
+                    stopAudio('snd-classical'); // Stop classical music when window closes
                     if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
@@ -413,6 +427,7 @@
         }
 
         function showPreparationScreen(cartelaNo) {
+            stopAudio('snd-classical'); // Ensure classical music is cut off
             prepTimer = 5;
             const container = document.getElementById("mainContainer");
             container.innerHTML = `
@@ -437,6 +452,7 @@
         }
 
         function renderCallingBoard(cartelaNo) {
+            stopAudio('snd-classical'); // Ensure classical music is cut off
             calledNumbersList = [];
             document.getElementById("topStats").style.display = "grid";
             document.getElementById("bottomNavContainer").innerHTML = `
@@ -559,6 +575,7 @@
 
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
+            stopAudio('snd-classical');
             playAudio("snd-bingo");
             if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "claim_bingo" }));
@@ -569,6 +586,7 @@
         function switchTab(tab) {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
+            stopAudio('snd-classical');
             if(tab === 'wallet') alert("Wallet: Use /deposit or /withdraw in Telegram chat.");
             else if(tab === 'profile') alert("Guder Bingo Profile Player Account");
             else if(tab === 'history') alert("Session history view.");
@@ -579,7 +597,8 @@
         initApp();
     </script>
 
-    <!-- Instant File Explorer Audio Shortcut Tags -->
+    <!-- Audio Elements -->
+    <audio id="snd-classical" src="bingo_amharic_audio/classical.mp3" loop></audio>
     <audio id="snd-selected" src="bingo_amharic_audio/card_selected.mp3"></audio>
     <audio id="snd-prep" src="bingo_amharic_audio/preparing.mp3"></audio>
     <audio id="snd-start" src="bingo_amharic_audio/game_started.mp3"></audio>
