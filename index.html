@@ -387,13 +387,23 @@
         }
 
         function startAppSession() {
-            renderSelectionBoard();
+            // Force play classical music directly inside the user tap event to bypass mobile browser audio locks
+            let classicalEl = document.getElementById('snd-classical');
+            if(classicalEl) {
+                classicalEl.play().then(() => {
+                    renderSelectionBoard();
+                }).catch(error => {
+                    console.log("Audio unlock error:", error);
+                    renderSelectionBoard();
+                });
+            } else {
+                renderSelectionBoard();
+            }
         }
 
         function renderSelectionBoard() {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
-            stopAudio('snd-classical');
             selectedCartelaNo = null;
 
             document.getElementById("topStats").style.display = "none";
@@ -424,8 +434,11 @@
             html += `</div>`;
             container.innerHTML = html;
 
-            // Trigger classical background music during the 30-second selection window
-            playAudio('snd-classical');
+            // Ensure classical music is playing during the selection window
+            let classicalEl = document.getElementById('snd-classical');
+            if(classicalEl && classicalEl.paused) {
+                classicalEl.play().catch(e => console.log("Classical resume error:", e));
+            }
 
             globalCountdown = setInterval(() => {
                 regTimer--;
