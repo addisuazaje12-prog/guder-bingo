@@ -93,6 +93,29 @@
             background-color: #38b000 !important;
             color: #fff;
         }
+        .start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            background: #2b1f3d;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 350px;
+        }
+        .btn-start-game {
+            background-color: #ffb703;
+            color: #000;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
 
         .calling-layout {
             display: flex;
@@ -324,7 +347,6 @@
         let selectedCartelaNo = null;
         let calledNumbersList = [];
 
-        // Audio Helper Function
         function playAudio(elementIdOrFile) {
             let sound = document.getElementById(elementIdOrFile);
             if(sound) {
@@ -336,7 +358,6 @@
             }
         }
 
-        // Stop Specific Audio Element
         function stopAudio(elementId) {
             let sound = document.getElementById(elementId);
             if(sound) {
@@ -346,13 +367,35 @@
         }
 
         function initApp() {
+            showStartScreen();
+        }
+
+        // Show a tap-to-start screen so mobile browsers unlock audio playback
+        function showStartScreen() {
+            if(callInterval) clearInterval(callInterval);
+            if(globalCountdown) clearInterval(globalCountdown);
+            stopAudio('snd-classical');
+
+            document.getElementById("topStats").style.display = "none";
+            const container = document.getElementById("mainContainer");
+            container.innerHTML = `
+                <div class="start-screen">
+                    <h2>Guder Bingo</h2>
+                    <p>Tap below to start playing with audio & classical music!</p>
+                    <button class="btn-start-game" onclick="startAppSession()">▶ Start Game</button>
+                </div>
+            `;
+        }
+
+        function startAppSession() {
+            // Unlocks and plays classical background music immediately upon user tap
+            playAudio('snd-classical');
             renderSelectionBoard();
         }
 
         function renderSelectionBoard() {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
-            stopAudio('snd-classical');
             selectedCartelaNo = null;
 
             document.getElementById("topStats").style.display = "none";
@@ -383,9 +426,6 @@
             html += `</div>`;
             container.innerHTML = html;
 
-            // Attempt to play background music immediately
-            playAudio('snd-classical');
-
             globalCountdown = setInterval(() => {
                 regTimer--;
                 let tBox = document.getElementById("regTimerBox");
@@ -405,12 +445,6 @@
         }
 
         function selectCartela(cartelaNo) {
-            // User interaction unlocks browser audio permission here
-            let classical = document.getElementById('snd-classical');
-            if(classical && classical.paused) {
-                classical.play().catch(e => console.log("Classical resume error:", e));
-            }
-
             if (regTimer <= 0) {
                 alert("Registration window has closed!");
                 return;
