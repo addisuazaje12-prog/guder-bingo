@@ -207,18 +207,20 @@
             color: #fff;
         }
 
+        /* Bold and high-visibility player cartela styling */
         .player-cartela-box {
             background: #ffffff;
             padding: 6px;
             border-radius: 8px;
-            color: #333;
+            color: #111;
             text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
         .player-cartela-title {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 900;
             color: #7b2cbf;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
         .player-card-grid {
             display: grid;
@@ -228,14 +230,15 @@
         .player-cell {
             aspect-ratio: 1;
             background: #f0e6f6;
-            color: #111;
-            font-size: 0.7rem;
+            color: #000;
+            font-size: 0.8rem;
             font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 2px;
+            border-radius: 3px;
             cursor: pointer;
+            border: 1px solid #dcd6f7;
         }
         .player-cell.marked {
             background-color: #38b000 !important;
@@ -244,7 +247,8 @@
         .player-cell.free {
             background-color: #d90429 !important;
             color: #fff !important;
-            font-size: 0.5rem;
+            font-size: 0.55rem;
+            font-weight: 900;
         }
 
         .caller-panel {
@@ -593,16 +597,14 @@
             let colB = [], colI = [], colN = [], colG = [], colO = [];
             while(colB.length < 5) { let n = getRandomNumber(1, 15, colB); colB.push(n); }
             while(colI.length < 5) { let n = getRandomNumber(16, 30, colI); colI.push(n); }
-            while(colN.length < 4) { let n = getRandomNumber(31, 45, colN); colN.push(n); } // 4 numbers + FREE space
+            while(colN.length < 4) { let n = getRandomNumber(31, 45, colN); colN.push(n); } 
             while(colG.length < 5) { let n = getRandomNumber(46, 60, colG); colG.push(n); }
             while(colO.length < 5) { let n = getRandomNumber(61, 75, colO); colO.push(n); }
 
-            // Assemble grid row-by-row for the 5x5 player card
             let playerCardHtml = "";
-            let nIdx = 0;
             for(let row = 0; row < 5; row++) {
                 let rowNums = [colB[row], colI[row], (row === 2 ? 'FREE' : colN[row >= 2 ? row - 1 : row]), colG[row], colO[row]];
-                rowNums.forEach((num, colIdx) => {
+                rowNums.forEach((num) => {
                     if(num === 'FREE') {
                         playerCardHtml += `<div class="player-cell free marked">FREE</div>`;
                     } else {
@@ -629,22 +631,8 @@
                         </div>
                     </div>
 
-                    <!-- Right Column: Player Cartela & Caller Panel -->
+                    <!-- Right Column: Current Call Panel on Top, Player Cartela Below (Bold & Visible) -->
                     <div class="right-column">
-                        <div class="player-cartela-box">
-                            <div class="player-cartela-title">Cartela #${cartelaNo}</div>
-                            <div class="bingo-header-row" style="margin-bottom:2px;">
-                                <div class="bingo-letter" style="font-size:0.65rem;">B</div>
-                                <div class="bingo-letter" style="font-size:0.65rem;">I</div>
-                                <div class="bingo-letter" style="font-size:0.65rem;">N</div>
-                                <div class="bingo-letter" style="font-size:0.65rem;">G</div>
-                                <div class="bingo-letter" style="font-size:0.65rem;">O</div>
-                            </div>
-                            <div class="player-card-grid">
-                                ${playerCardHtml}
-                            </div>
-                        </div>
-
                         <div class="caller-panel">
                             <div class="current-call-box">
                                 <span>Current Call</span>
@@ -657,6 +645,20 @@
                             </div>
                             <div class="waiting-msg">
                                 እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
+                            </div>
+                        </div>
+
+                        <div class="player-cartela-box">
+                            <div class="player-cartela-title">Cartela #${cartelaNo}</div>
+                            <div class="bingo-header-row" style="margin-bottom:2px;">
+                                <div class="bingo-letter" style="font-size:0.65rem;">B</div>
+                                <div class="bingo-letter" style="font-size:0.65rem;">I</div>
+                                <div class="bingo-letter" style="font-size:0.65rem;">N</div>
+                                <div class="bingo-letter" style="font-size:0.65rem;">G</div>
+                                <div class="bingo-letter" style="font-size:0.65rem;">O</div>
+                            </div>
+                            <div class="player-card-grid">
+                                ${playerCardHtml}
                             </div>
                         </div>
                     </div>
