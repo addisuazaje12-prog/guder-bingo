@@ -325,20 +325,20 @@
         let calledNumbersList = [];
 
         // Audio Helper Function
-        function playAudio(idOrFilename) {
-            let sound = document.getElementById(idOrFilename);
+        function playAudio(elementIdOrFile) {
+            let sound = document.getElementById(elementIdOrFile);
             if(sound) {
                 sound.currentTime = 0;
                 sound.play().catch(e => console.log("Audio waiting for user tap", e));
             } else {
-                let audio = new Audio(`bingo_amharic_audio/${idOrFilename}`);
+                let audio = new Audio(`bingo_amharic_audio/${elementIdOrFile}`);
                 audio.play().catch(err => console.log("Audio playback wait:", err));
             }
         }
 
         // Stop Specific Audio Element
-        function stopAudio(id) {
-            let sound = document.getElementById(id);
+        function stopAudio(elementId) {
+            let sound = document.getElementById(elementId);
             if(sound) {
                 sound.pause();
                 sound.currentTime = 0;
@@ -352,7 +352,7 @@
         function renderSelectionBoard() {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
-            stopAudio('snd-classical'); // Stop classical music if switching back
+            stopAudio('snd-classical');
             selectedCartelaNo = null;
 
             document.getElementById("topStats").style.display = "none";
@@ -383,7 +383,7 @@
             html += `</div>`;
             container.innerHTML = html;
 
-            // Play Classical Background Music during the 30s registration window
+            // Start looping the classical music during the 30-second selection window
             playAudio('snd-classical');
 
             globalCountdown = setInterval(() => {
@@ -393,7 +393,7 @@
                 
                 if(regTimer <= 0) {
                     clearInterval(globalCountdown);
-                    stopAudio('snd-classical'); // Stop classical music when window closes
+                    stopAudio('snd-classical'); // Stop classical music when window expires
                     if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
@@ -427,7 +427,7 @@
         }
 
         function showPreparationScreen(cartelaNo) {
-            stopAudio('snd-classical'); // Ensure classical music is cut off
+            stopAudio('snd-classical');
             prepTimer = 5;
             const container = document.getElementById("mainContainer");
             container.innerHTML = `
@@ -452,7 +452,7 @@
         }
 
         function renderCallingBoard(cartelaNo) {
-            stopAudio('snd-classical'); // Ensure classical music is cut off
+            stopAudio('snd-classical');
             calledNumbersList = [];
             document.getElementById("topStats").style.display = "grid";
             document.getElementById("bottomNavContainer").innerHTML = `
@@ -569,6 +569,7 @@
                     }).join('');
                 }
 
+                // Correctly calls b1.mp3 through b75.mp3 for all numbers
                 playAudio(`b${randNum}.mp3`);
             }, 4000);
         }
