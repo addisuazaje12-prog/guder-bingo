@@ -41,8 +41,8 @@
         }
         .top-stats div span {
             display: block;
-            font-weight: bold;
-            font-size: 0.7rem;
+            font-weight: 900;
+            font-size: 0.75rem;
             color: #7b2cbf;
         }
         .main-container {
@@ -61,8 +61,8 @@
             color: #fff;
             padding: 5px 10px;
             border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.8rem;
+            font-weight: 900;
+            font-size: 0.85rem;
             margin-bottom: 6px;
             text-align: center;
         }
@@ -81,8 +81,8 @@
             aspect-ratio: 1;
             background-color: #f77f00;
             color: #fff;
-            font-size: 0.65rem;
-            font-weight: bold;
+            font-size: 0.75rem;
+            font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -108,8 +108,8 @@
         .btn-start-game {
             background-color: #ffb703;
             color: #000;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 1.1rem;
+            font-weight: 900;
             padding: 12px 24px;
             border: none;
             border-radius: 8px;
@@ -117,19 +117,28 @@
             margin-top: 15px;
         }
 
+        /* Side-by-Side Layout: Calling Board Left, Player Cartela Right */
         .calling-layout {
             display: flex;
             gap: 6px;
             width: 100%;
             max-width: 420px;
             align-items: flex-start;
+            justify-content: center;
         }
-        .boards-column {
+        .left-column {
             display: flex;
             flex-direction: column;
             gap: 6px;
-            width: 180px;
+            width: 190px;
         }
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 190px;
+        }
+
         .bing-column-container {
             display: flex;
             flex-direction: column;
@@ -151,22 +160,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 0.75rem;
+            font-weight: 900;
+            font-size: 0.85rem;
         }
         .num-grid-75 {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 2px;
-            max-height: 140px;
+            max-height: 160px;
             overflow-y: auto;
         }
         .num-cell {
             aspect-ratio: 1;
             background: #e0d2ec;
-            color: #333;
-            font-size: 0.55rem;
-            font-weight: bold;
+            color: #111;
+            font-size: 0.65rem;
+            font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -179,14 +188,14 @@
 
         .player-cartela-box {
             background: #ffffff;
-            padding: 5px;
+            padding: 6px;
             border-radius: 8px;
             color: #333;
             text-align: center;
         }
         .player-cartela-title {
-            font-size: 0.65rem;
-            font-weight: bold;
+            font-size: 0.75rem;
+            font-weight: 900;
             color: #7b2cbf;
             margin-bottom: 3px;
         }
@@ -198,9 +207,9 @@
         .player-cell {
             aspect-ratio: 1;
             background: #f0e6f6;
-            color: #333;
-            font-size: 0.6rem;
-            font-weight: bold;
+            color: #111;
+            font-size: 0.7rem;
+            font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -208,65 +217,64 @@
             cursor: pointer;
         }
         .player-cell.marked {
-            background-color: #38b000;
-            color: #fff;
+            background-color: #38b000 !important;
+            color: #fff !important;
         }
         .player-cell.free {
-            background-color: #d90429;
-            color: #fff;
+            background-color: #d90429 !important;
+            color: #fff !important;
+            font-size: 0.55rem;
         }
 
         .caller-panel {
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
         .current-call-box {
             background: #7b2cbf;
             color: #fff;
-            padding: 8px;
-            border-radius: 10px;
+            padding: 6px;
+            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-weight: bold;
-            font-size: 0.8rem;
+            font-weight: 900;
+            font-size: 0.75rem;
         }
         .call-circle {
             background: #ffb703;
             color: #000;
-            width: 35px;
-            height: 35px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
-            font-weight: bold;
+            font-size: 0.75rem;
+            font-weight: 900;
         }
         .recent-calls {
             display: flex;
-            gap: 3px;
+            gap: 2px;
             justify-content: center;
         }
         .recent-pill {
             background: #7b2cbf;
             color: #fff;
-            padding: 3px 6px;
-            border-radius: 10px;
-            font-size: 0.65rem;
-            font-weight: bold;
+            padding: 3px 5px;
+            border-radius: 8px;
+            font-size: 0.6rem;
+            font-weight: 900;
         }
         .waiting-msg {
-            background: rgba(255,255,255,0.9);
-            color: #333;
-            padding: 10px;
-            border-radius: 8px;
+            background: rgba(255,255,255,0.95);
+            color: #222;
+            padding: 6px;
+            border-radius: 6px;
             text-align: center;
-            font-size: 0.75rem;
-            font-weight: bold;
-            margin-top: 5px;
+            font-size: 0.65rem;
+            font-weight: 900;
         }
 
         .bottom-nav {
@@ -282,7 +290,8 @@
             background: none;
             border: none;
             color: #fff;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
+            font-weight: 900;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -298,7 +307,7 @@
         .game-footer-actions button {
             flex: 1;
             padding: 10px;
-            font-weight: bold;
+            font-weight: 900;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -429,7 +438,7 @@
             const container = document.getElementById("mainContainer");
             if (userBalance < 10.0) {
                 stopBackgroundMusic();
-                container.innerHTML = `<div style="color:#d90429; font-weight:bold; background:#fff; padding:20px; border-radius:8px;">Insufficient amount</div>`;
+                container.innerHTML = `<div style="color:#d90429; font-weight:900; background:#fff; padding:20px; border-radius:8px;">Insufficient amount</div>`;
                 return;
             }
 
@@ -440,7 +449,7 @@
             regTimer = 30;
             let html = `
                 <div class="timer-banner" id="regTimerBox">⏱️ Registration Window: 30s</div>
-                <div style="margin-bottom:6px; font-size:0.8rem; font-weight:bold;">ከ1-800 ካርቴላ ይምረጡ (Select Cartela):</div>
+                <div style="margin-bottom:6px; font-size:0.8rem; font-weight:900;">ከ1-800 ካርቴላ ይምረጡ (Select Cartela):</div>
                 <div class="cartela-grid">
             `;
             for(let i=1; i<=800; i++) {
@@ -495,7 +504,7 @@
             const container = document.getElementById("mainContainer");
             container.innerHTML = `
                 <div class="timer-banner" style="background:#ffb703; color:#000;" id="prepTimerBox">🎲 Preparing Game: 5s</div>
-                <div class="waiting-msg">
+                <div class="waiting-msg" style="font-weight:900; font-size:0.85rem; padding:15px;">
                     Cartela #${cartelaNo} Confirmed!<br><br>
                     እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
                 </div>
@@ -528,7 +537,7 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Build the 75-number calling board organized column-by-column (row 1 has 1, 16, 31, 46, 61, row 2 has 2, 17, 32...)
+            // Build the 75-number calling board organized strictly under B(1-15), I(16-30), N(31-45), G(46-60), O(61-75)
             let gridHtml = "";
             for(let row = 1; row <= 15; row++) {
                 let bNum = row;
@@ -565,8 +574,8 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Side: Calling Tracker & Player Cartela -->
-                    <div class="boards-column">
+                    <!-- Left Column: 75-Number Calling Tracker Board -->
+                    <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
                                 <div class="bingo-letter">B</div>
@@ -579,7 +588,10 @@
                                 ${gridHtml}
                             </div>
                         </div>
+                    </div>
 
+                    <!-- Right Column: Player Cartela & Caller Panel -->
+                    <div class="right-column">
                         <div class="player-cartela-box">
                             <div class="player-cartela-title">Cartela #${cartelaNo}</div>
                             <div class="bingo-header-row" style="margin-bottom:2px;">
@@ -593,21 +605,20 @@
                                 ${playerCardHtml}
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Right Side: Caller Panel & Active Calls -->
-                    <div class="caller-panel">
-                        <div class="current-call-box">
-                            <span>Current Call</span>
-                            <div class="call-circle" id="currentCallCircle">-</div>
-                        </div>
-                        <div class="recent-calls" id="recentPills">
-                            <div class="recent-pill">-</div>
-                            <div class="recent-pill">-</div>
-                            <div class="recent-pill">-</div>
-                        </div>
-                        <div class="waiting-msg">
-                            እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
+                        <div class="caller-panel">
+                            <div class="current-call-box">
+                                <span>Current Call</span>
+                                <div class="call-circle" id="currentCallCircle">-</div>
+                            </div>
+                            <div class="recent-calls" id="recentPills">
+                                <div class="recent-pill">-</div>
+                                <div class="recent-pill">-</div>
+                                <div class="recent-pill">-</div>
+                            </div>
+                            <div class="waiting-msg">
+                                እስከዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
+                            </div>
                         </div>
                     </div>
                 </div>
