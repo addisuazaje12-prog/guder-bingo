@@ -176,12 +176,14 @@
             font-size: 0.85rem;
         }
 
-        /* Standard row-by-row grid layout under B, I, N, G, O */
+        /* Forces numbers to fill vertically column-by-column: B(1-15), I(16-30), N(31-45), G(46-60), O(61-75) */
         .num-grid-75 {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            grid-auto-flow: column;
             gap: 2px;
-            max-height: 240px;
+            max-height: 250px;
             overflow-y: auto;
         }
         .num-cell {
@@ -553,22 +555,10 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Construct calling board strictly row-by-row: 
-            // Row 1: 1 (B), 16 (I), 31 (N), 46 (G), 61 (O)
-            // Row 2: 2 (B), 17 (I), 32 (N), 47 (G), 62 (O) ... up to Row 15
+            // Generates 1 to 75 sequentially. CSS grid-auto-flow: column places 1-15 in column B, 16-30 in column I, etc.
             let gridHtml = "";
-            for(let row = 1; row <= 15; row++) {
-                let bNum = row;
-                let iNum = row + 15;
-                let nNum = row + 30;
-                let gNum = row + 45;
-                let oNum = row + 60;
-
-                gridHtml += `<div class="num-cell" id="num-${bNum}">${bNum}</div>`;
-                gridHtml += `<div class="num-cell" id="num-${iNum}">${iNum}</div>`;
-                gridHtml += `<div class="num-cell" id="num-${nNum}">${nNum}</div>`;
-                gridHtml += `<div class="num-cell" id="num-${gNum}">${gNum}</div>`;
-                gridHtml += `<div class="num-cell" id="num-${oNum}">${oNum}</div>`;
+            for(let i = 1; i <= 75; i++) {
+                gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
             }
 
             let seed = cartelaNo * 13;
@@ -592,7 +582,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Column: Calling Board (Row-by-row under B, I, N, G, O) -->
+                    <!-- Left Column: Calling Board (B:1-15, I:16-30, N:31-45, G:46-60, O:61-75) -->
                     <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
