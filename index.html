@@ -346,7 +346,7 @@
         let globalCountdown = null;
         let selectedCartelaNo = null;
         let calledNumbersList = [];
-        let backgroundMusic = null; // Background loop controller
+        let backgroundMusic = null;
 
         function playAudio(elementIdOrFile) {
             let sound = document.getElementById(elementIdOrFile);
@@ -368,7 +368,7 @@
         }
 
         function inviteFriends() {
-            const botUsername = "YourGuderBingoBot"; // Replace with your actual Telegram bot username
+            const botUsername = "YourGuderBingoBot";
             const inviteText = encodeURIComponent("🎮 Come play Guder Bingo with me and win! Join the live game here:");
             const shareUrl = `https://t.me/share/url?url=https://t.me/${botUsername}&text=${inviteText}`;
 
@@ -528,9 +528,20 @@
 
             const container = document.getElementById("mainContainer");
             
+            // Build the 75-number calling board organized column-by-column (row 1 has 1, 16, 31, 46, 61, row 2 has 2, 17, 32...)
             let gridHtml = "";
-            for(let i=1; i<=75; i++) {
-                gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
+            for(let row = 1; row <= 15; row++) {
+                let bNum = row;
+                let iNum = row + 15;
+                let nNum = row + 30;
+                let gNum = row + 45;
+                let oNum = row + 60;
+                
+                gridHtml += `<div class="num-cell" id="num-${bNum}">${bNum}</div>`;
+                gridHtml += `<div class="num-cell" id="num-${iNum}">${iNum}</div>`;
+                gridHtml += `<div class="num-cell" id="num-${nNum}">${nNum}</div>`;
+                gridHtml += `<div class="num-cell" id="num-${gNum}">${gNum}</div>`;
+                gridHtml += `<div class="num-cell" id="num-${oNum}">${oNum}</div>`;
             }
 
             let seed = cartelaNo * 13;
@@ -554,6 +565,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
+                    <!-- Left Side: Calling Tracker & Player Cartela -->
                     <div class="boards-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
@@ -583,6 +595,7 @@
                         </div>
                     </div>
 
+                    <!-- Right Side: Caller Panel & Active Calls -->
                     <div class="caller-panel">
                         <div class="current-call-box">
                             <span>Current Call</span>
