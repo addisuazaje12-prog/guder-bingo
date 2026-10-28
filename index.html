@@ -387,13 +387,13 @@
         }
 
         function startAppSession() {
-            playAudio('snd-classical');
             renderSelectionBoard();
         }
 
         function renderSelectionBoard() {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
+            stopAudio('snd-classical');
             selectedCartelaNo = null;
 
             document.getElementById("topStats").style.display = "none";
@@ -424,6 +424,9 @@
             html += `</div>`;
             container.innerHTML = html;
 
+            // Trigger classical background music during the 30-second selection window
+            playAudio('snd-classical');
+
             globalCountdown = setInterval(() => {
                 regTimer--;
                 let tBox = document.getElementById("regTimerBox");
@@ -431,7 +434,7 @@
                 
                 if(regTimer <= 0) {
                     clearInterval(globalCountdown);
-                    stopAudio('snd-classical');
+                    stopAudio('snd-classical'); // Stop classical music when timer finishes
                     if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
@@ -607,7 +610,7 @@
                     }).join('');
                 }
 
-                // Correctly mapping prefixes based on number ranges (b, i, n, g, o)
+                // Accurate prefix routing for b, i, n, g, o ranges
                 let prefix = randNum <= 15 ? 'b' : randNum <= 30 ? 'i' : randNum <= 45 ? 'n' : randNum <= 60 ? 'g' : 'o';
                 playAudio(`${prefix}${randNum}.mp3`);
             }, 4000);
@@ -637,7 +640,7 @@
         initApp();
     </script>
 
-    <!-- Audio Elements -->
+    <!-- Audio Elements (Ensure classical.mp3 is inside bingo_amharic_audio/) -->
     <audio id="snd-classical" src="bingo_amharic_audio/classical.mp3" loop></audio>
     <audio id="snd-selected" src="bingo_amharic_audio/card_selected.mp3"></audio>
     <audio id="snd-prep" src="bingo_amharic_audio/preparing.mp3"></audio>
