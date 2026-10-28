@@ -176,11 +176,13 @@
             font-size: 0.75rem;
         }
 
-        /* Optimized to display all 15 rows fully visible without clipping */
+        /* Scrollable container allowing full view of all 15 rows vertically under B, I, N, G, O */
         .num-grid-75 {
             display: flex;
             flex-direction: row;
             gap: 1px;
+            max-height: 260px;
+            overflow-y: auto;
         }
         .bingo-col-group {
             flex: 1;
@@ -193,7 +195,7 @@
             aspect-ratio: 1.2;
             background: #e0d2ec;
             color: #111;
-            font-size: 0.5rem;
+            font-size: 0.55rem;
             font-weight: 900;
             display: flex;
             align-items: center;
@@ -559,7 +561,7 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Build all 15 rows for B(1-15), I(16-30), N(31-45), G(46-60), O(61-75) fully visible
+            // Build all 15 rows vertically under B(1-15), I(16-30), N(31-45), G(46-60), O(61-75)
             let gridHtml = "";
             const ranges = [
                 { start: 1, end: 15 },   // B column (1-15)
@@ -598,7 +600,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Column: Calling Board (All 15 numbers 1-15, 16-30, etc. fully visible) -->
+                    <!-- Left Column: Calling Board (Scrollable to view all 15 rows cleanly) -->
                     <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
