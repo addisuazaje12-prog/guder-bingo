@@ -346,7 +346,7 @@
         let globalCountdown = null;
         let selectedCartelaNo = null;
         let calledNumbersList = [];
-        let classicalAudio = null; // Dedicated controller for background music
+        let classicalAudio = null; // Background music controller
 
         function playAudio(elementIdOrFile) {
             let sound = document.getElementById(elementIdOrFile);
@@ -381,21 +381,21 @@
             container.innerHTML = `
                 <div class="start-screen">
                     <h2>Guder Bingo</h2>
-                    <p>Tap below to start playing with audio & classical music!</p>
+                    <p>Tap below to start playing with audio & background music!</p>
                     <button class="btn-start-game" onclick="startAppSession()">▶ Start Game</button>
                 </div>
             `;
         }
 
         function startAppSession() {
-            // Instantly initialize and play the classical track using direct user tap permission
             stopClassicalMusic();
-            classicalAudio = new Audio('bingo_amharic_audio/classical.mp3');
+            // Using bingo.mp3 as the background track since it's already uploaded in your repository
+            classicalAudio = new Audio('bingo_amharic_audio/bingo.mp3');
             classicalAudio.loop = true;
             classicalAudio.play().then(() => {
                 renderSelectionBoard();
             }).catch(error => {
-                console.log("Classical play blocked:", error);
+                console.log("Background audio play blocked:", error);
                 renderSelectionBoard();
             });
         }
@@ -422,9 +422,8 @@
                 return;
             }
 
-            // Ensure classical music loops during the 30-second window if it was paused
             if(classicalAudio && classicalAudio.paused) {
-                classicalAudio.play().catch(e => console.log("Classical resume error:", e));
+                classicalAudio.play().catch(e => console.log("Audio resume error:", e));
             }
 
             regTimer = 30;
@@ -446,7 +445,7 @@
                 
                 if(regTimer <= 0) {
                     clearInterval(globalCountdown);
-                    stopClassicalMusic(); // Stop music when registration ends
+                    stopClassicalMusic(); 
                     if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
@@ -622,7 +621,6 @@
                     }).join('');
                 }
 
-                // Accurate prefix routing for b, i, n, g, o ranges
                 let prefix = randNum <= 15 ? 'b' : randNum <= 30 ? 'i' : randNum <= 45 ? 'n' : randNum <= 60 ? 'g' : 'o';
                 playAudio(`${prefix}${randNum}.mp3`);
             }, 4000);
