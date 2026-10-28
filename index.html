@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Guder Bingo</title>
+    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -24,6 +25,8 @@
             box-sizing: border-box;
             justify-content: space-between;
             overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .top-stats {
             display: grid;
@@ -68,6 +71,7 @@
             margin-bottom: 6px;
             text-align: center;
             width: 100%;
+            box-sizing: border-box;
         }
         .cartela-grid {
             display: grid;
@@ -79,6 +83,7 @@
             padding: 5px;
             background: rgba(0,0,0,0.1);
             border-radius: 8px;
+            box-sizing: border-box;
         }
         .cartela-opt {
             aspect-ratio: 1;
@@ -91,10 +96,15 @@
             justify-content: center;
             border-radius: 4px;
             cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .cartela-opt:active {
+            transform: scale(0.95);
         }
         .cartela-opt.selected {
             background-color: #38b000 !important;
             color: #fff;
+            box-shadow: 0 0 8px rgba(56, 176, 0, 0.8);
         }
         .start-screen {
             display: flex;
@@ -128,8 +138,12 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease;
         }
-
+        .btn-start-game:active {
+            transform: scale(0.96);
+        }
         .calling-layout {
             display: flex;
             gap: 6px;
@@ -150,7 +164,6 @@
             gap: 6px;
             width: 190px;
         }
-
         .bing-column-container {
             display: flex;
             flex-direction: column;
@@ -175,7 +188,6 @@
             font-weight: 900;
             font-size: 0.75rem;
         }
-
         .num-grid-75 {
             display: flex;
             flex-direction: row;
@@ -206,7 +218,6 @@
             background-color: #f77f00;
             color: #fff;
         }
-
         .player-cartela-box {
             background: #ffffff;
             padding: 8px 6px;
@@ -238,6 +249,7 @@
             border-radius: 4px;
             cursor: pointer;
             border: 1px solid #dcd6f7;
+            transition: background-color 0.1s ease;
         }
         .player-cell.marked {
             background-color: #38b000 !important;
@@ -249,7 +261,6 @@
             font-size: 0.55rem;
             font-weight: 900;
         }
-
         .caller-panel {
             display: flex;
             flex-direction: column;
@@ -300,7 +311,6 @@
             font-size: 0.65rem;
             font-weight: 900;
         }
-
         .bottom-nav {
             display: flex;
             justify-content: space-around;
@@ -342,6 +352,469 @@
         .btn-leave { background-color: #d90429; color: #fff; }
         .btn-refresh { background-color: #0077b6; color: #fff; }
         .btn-bingo { background-color: #ffb703; color: #000; }
+
+        /* Custom Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+        .modal-box {
+            background: #2b1f3d;
+            color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .modal-box h3 {
+            margin-top: 0;
+            color: #ffb703;
+        }
+        .modal-box button {
+            background: #ffb703;
+            color: #000;
+            font-weight: 900;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Top Status Bar -->
+    <div class="top-stats" id="topStatsBar">
+        <div>Player <span id="statPlayer">GuderUser</span></div>
+        <div>Balance <span id="statBalance">150 ETB</span></div>
+        <div>Wins <span id="statWins">3</span></div>
+        <div>Selected <span id="statSelected">None</span></div>
+        <div>Status <span id="statStatus">Lobby</span></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container" id="mainContainer">
+        <!-- Start / Cartela Selection Screen -->
+        <div class="start-screen" id="startScreen">
+            <h2>Guder Bingo</h2>
+            <p>Select your lucky Cartela (1-100) for the upcoming round!</p>
+            <div class="timer-banner" id="lobbyTimer">Next Game in: 00:30</div>
+            
+            <div style="width: 100%; margin-bottom: 10px;">
+                <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 4px; color: #ffb703;">Choose Cartela Number (1-100):</div>
+                <div class="cartela-grid" id="cartelaGrid">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <button class="btn-start-game" id="btnStartGame">Join & Ready</button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation / Footer Controls -->
+    <div id="footerArea" style="width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="switchTab('lobby')">🏠 <span>Lobby</span></button>
+            <button class="nav-btn" onclick="switchTab('cards')">🎫 <span>My Cards</span></button>
+            <button class="nav-btn" onclick="switchTab('wallet')">💰 <span>Wallet</span></button>
+            <button class="nav-btn" onclick="switchTab('rules')">📖 <span>Rules</span></button>
+        </div>
+    </div>
+
+    <!-- Custom Non-Blocking Modal -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-box">
+            <h3 id="modalTitle">Notice</h3>
+            <p id="modalText">Message goes here...</p>
+            <button onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Telegram Web App SDK if available
+        let tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.expand();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                document.getElementById('statPlayer').innerText = tg.initDataUnsafe.user.first_name || "GuderUser";
+            }
+        }
+
+        // Game State
+        let gameState = {
+            selectedCartela: 12,
+            balance: 150,
+            wins: 3,
+            isLive: false,
+            lobbyTimeLeft: 30,
+            calledNumbers: [],
+            currentCall: null,
+            playerCardMatrix: [],
+            markedCells: {}
+        };
+
+        // Web Audio API Chime / Pop Sound for Cartela Selection
+        function playSelectSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+
+                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } catch (e) {
+                console.log("AudioContext blocked or unavailable.");
+            }
+        }
+
+        // Modal helpers
+        function showModal(title, text) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalText').innerText = text;
+            document.getElementById('customModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').style.display = 'none';
+        }
+
+        // Render Cartela Selector Grid (1 to 100)
+        function renderCartelaSelector() {
+            const grid = document.getElementById('cartelaGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let i = 1; i <= 100; i++) {
+                const opt = document.createElement('div');
+                opt.className = `cartela-opt ${gameState.selectedCartela === i ? 'selected' : ''}`;
+                opt.innerText = i;
+                opt.onclick = () => {
+                    // Play synthesized chime sound on selection
+                    playSelectSound();
+
+                    gameState.selectedCartela = i;
+                    document.getElementById('statSelected').innerText = `#${i}`;
+                    document.querySelectorAll('.cartela-opt').forEach(el => el.classList.remove('selected'));
+                    opt.classList.add('selected');
+                };
+                grid.appendChild(opt);
+            }
+            document.getElementById('statSelected').innerText = `#${gameState.selectedCartela}`;
+        }
+
+        // Lobby Timer Countdown
+        let lobbyTimerInterval = setInterval(() => {
+            if (!gameState.isLive) {
+                gameState.lobbyTimeLeft--;
+                const timerElem = document.getElementById('lobbyTimer');
+                if (timerElem) {
+                    timerElem.innerText = `Next Game in: 00:${gameState.lobbyTimeLeft < 10 ? '0' : ''}${gameState.lobbyTimeLeft}`;
+                }
+                if (gameState.lobbyTimeLeft <= 0) {
+                    startLiveGame();
+                }
+            }
+        }, 1000);
+
+        document.getElementById('btnStartGame').onclick = function() {
+            startLiveGame();
+        };
+
+        // Generate 5x5 Bingo Card
+        function generatePlayerCard() {
+            let matrix = [];
+            for (let col = 0; col < 5; col++) {
+                let min = col * 15 + 1;
+                let max = min + 14;
+                let colNums = [];
+                while (colNums.length < 5) {
+                    let rand = Math.floor(Math.random() * (max - min + 1)) + min;
+                    if (!colNums.includes(rand)) colNums.push(rand);
+                }
+                matrix.push(colNums);
+            }
+            let gridRows = [];
+            for (let r = 0; r < 5; r++) {
+                let row = [];
+                for (let c = 0; c < 5; c++) {
+                    row.push(matrix[c][r]);
+                }
+                gridRows.push(row);
+            }
+            gridRows[2][2] = "FREE";
+            return gridRows;
+        }
+
+        // Switch to Live Calling & Board View
+        function startLiveGame() {
+            gameState.isLive = true;
+            gameState.calledNumbers = [];
+            gameState.currentCall = null;
+            gameState.markedCells = {};
+            gameState.playerCardMatrix = generatePlayerCard();
+            document.getElementById('statStatus').innerText = 'Live';
+
+            const mainContainer = document.getElementById('mainContainer');
+            mainContainer.innerHTML = `
+                <div class="timer-banner" style="background:#7b2cbf;">ROUND #${gameState.selectedCartela} LIVE IN PROGRESS</div>
+                <div class="calling-layout">
+                    <!-- Left Column: 75-Number Calling Board -->
+                    <div class="left-column">
+                        <div class="bing-column-container">
+                            <div class="bingo-header-row">
+                                <div class="bingo-letter">B</div>
+                                <div class="bingo-letter">I</div>
+                                <div class="bingo-letter">N</div>
+                                <div class="bingo-letter">G</div>
+                                <div class="bingo-letter">O</div>
+                            </div>
+                            <div class="num-grid-75" id="numGrid75"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Caller Panel & Player Card -->
+                    <div class="right-column">
+                        <div class="caller-panel">
+                            <div class="current-call-box">
+                                <span>Current Call:</span>
+                                <div class="call-circle" id="currentCallCircle">--</div>
+                            </div>
+                            <div class="recent-calls" id="recentCallsContainer">
+                                <span class="recent-pill">--</span>
+                                <span class="recent-pill">--</span>
+                                <span class="recent-pill">--</span>
+                            </div>
+                        </div>
+
+                        <div class="player-cartela-box">
+                            <div class="player-cartela-title">Cartela #${gameState.selectedCartela}</div>
+                            <div class="player-card-grid" id="playerCardGrid"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('footerArea').innerHTML = `
+                <div class="game-footer-actions">
+                    <button class="btn-leave" onclick="leaveGame()">Leave</button>
+                    <button class="btn-refresh" onclick="autoDaub()">Auto Daub</button>
+                    <button class="btn-bingo" onclick="checkBingo()">BINGO!</button>
+                </div>
+            `;
+
+            renderCallingBoardStructure();
+            renderPlayerCardUI();
+            startNumberCaller();
+        }
+
+        function renderCallingBoardStructure() {
+            const container = document.getElementById('numGrid75');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            for (let c = 0; c < 5; c++) {
+                let colGroup = document.createElement('div');
+                colGroup.className = 'bingo-col-group';
+                let startNum = c * 15 + 1;
+                for (let r = 0; r < 15; r++) {
+                    let num = startNum + r;
+                    let cell = document.createElement('div');
+                    cell.className = 'num-cell';
+                    cell.id = `call-cell-${num}`;
+                    cell.innerText = num;
+                    colGroup.appendChild(cell);
+                }
+                container.appendChild(colGroup);
+            }
+        }
+
+        function renderPlayerCardUI() {
+            const grid = document.getElementById('playerCardGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    let val = gameState.playerCardMatrix[r][c];
+                    let cell = document.createElement('div');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+
+                    if (val === "FREE") {
+                        cell.className = 'player-cell free';
+                        cell.innerText = 'FREE';
+                        gameState.markedCells[`${r}-${c}`] = true;
+                    } else {
+                        let isMarked = gameState.markedCells[`${r}-${c}`];
+                        cell.className = `player-cell ${isMarked ? 'marked' : ''}`;
+                        cell.innerText = val;
+                        cell.onclick = () => {
+                            if (gameState.calledNumbers.includes(val) || val === "FREE") {
+                                gameState.markedCells[`${r}-${c}`] = !gameState.markedCells[`${r}-${c}`];
+                                cell.classList.toggle('marked', gameState.markedCells[`${r}-${c}`]);
+                            } else {
+                                showModal("Invalid Daub", `Number ${val} has not been called yet!`);
+                            }
+                        };
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        let callerTimer = null;
+        function startNumberCaller() {
+            let availableNumbers = [];
+            for (let i = 1; i <= 75; i++) availableNumbers.push(i);
+            availableNumbers.sort(() => Math.random() - 0.5);
+
+            callerTimer = setInterval(() => {
+                if (!gameState.isLive || availableNumbers.length === 0) {
+                    clearInterval(callerTimer);
+                    return;
+                }
+                let nextNum = availableNumbers.pop();
+                gameState.calledNumbers.unshift(nextNum);
+                gameState.currentCall = nextNum;
+
+                const callCircle = document.getElementById('currentCallCircle');
+                if (callCircle) callCircle.innerText = nextNum;
+
+                let boardCell = document.getElementById(`call-cell-${nextNum}`);
+                if (boardCell) boardCell.classList.add('called');
+
+                updateRecentPills();
+            }, 3500);
+        }
+
+        function updateRecentPills() {
+            const container = document.getElementById('recentCallsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            let recent = gameState.calledNumbers.slice(1, 4);
+            recent.forEach(num => {
+                let pill = document.createElement('span');
+                pill.className = 'recent-pill';
+                pill.innerText = num;
+                container.appendChild(pill);
+            });
+        }
+
+        function autoDaub() {
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    let val = gameState.playerCardMatrix[r][c];
+                    if (val === "FREE" || gameState.calledNumbers.includes(val)) {
+                        gameState.markedCells[`${r}-${c}`] = true;
+                    }
+                }
+            }
+            renderPlayerCardUI();
+            showModal("Auto Daub", "All called numbers on your card have been marked!");
+        }
+
+        function checkBingo() {
+            let m = gameState.markedCells;
+            let hasWon = false;
+
+            for (let r = 0; r < 5; r++) {
+                if (m[`${r}-0`] && m[`${r}-1`] && m[`${r}-2`] && m[`${r}-3`] && m[`${r}-4`]) hasWon = true;
+            }
+            for (let c = 0; c < 5; c++) {
+                if (m[`0-${c}`] && m[`1-${c}`] && m[`2-${c}`] && m[`3-${c}`] && m[`4-${c}`]) hasWon = true;
+            }
+            if (m[`0-0`] && m[`1-1`] && m[`2-2`] && m[`3-3`] && m[`4-4`]) hasWon = true;
+            if (m[`0-4`] && m[`1-3`] && m[`2-2`] && m[`3-1`] && m[`4-0`]) hasWon = true;
+
+            if (hasWon) {
+                gameState.wins++;
+                gameState.balance += 350;
+                document.getElementById('statWins').innerText = gameState.wins;
+                document.getElementById('statBalance').innerText = `${gameState.balance} ETB`;
+                showModal("🎉 BINGO! 🎉", "Congratulations! You successfully completed a winning pattern and won 350 ETB!");
+                if (tg && tg.HapticFeedback) {
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+            } else {
+                showModal("Not Yet!", "Keep daubing! You don't have a valid BINGO pattern yet.");
+                if (tg && tg.HapticFeedback) {
+                    tg.HapticFeedback.notificationOccurred('warning');
+                }
+            }
+        }
+
+        function leaveGame() {
+            if (callerTimer) clearInterval(callerTimer);
+            gameState.isLive = false;
+            gameState.lobbyTimeLeft = 30;
+            document.getElementById('statStatus').innerText = 'Lobby';
+
+            const mainContainer = document.getElementById('mainContainer');
+            mainContainer.innerHTML = `
+                <div class="start-screen" id="startScreen">
+                    <h2>Guder Bingo</h2>
+                    <p>Select your lucky Cartela (1-100) for the upcoming round!</p>
+                    <div class="timer-banner" id="lobbyTimer">Next Game in: 00:30</div>
+                    
+                    <div style="width: 100%; margin-bottom: 10px;">
+                        <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 4px; color: #ffb703;">Choose Cartela Number (1-100):</div>
+                        <div class="cartela-grid" id="cartelaGrid"></div>
+                    </div>
+
+                    <button class="btn-start-game" id="btnStartGame">Join & Ready</button>
+                </div>
+            `;
+
+            document.getElementById('footerArea').innerHTML = `
+                <div class="bottom-nav">
+                    <button class="nav-btn" onclick="switchTab('lobby')">🏠 <span>Lobby</span></button>
+                    <button class="nav-btn" onclick="switchTab('cards')">🎫 <span>My Cards</span></button>
+                    <button class="nav-btn" onclick="switchTab('wallet')">💰 <span>Wallet</span></button>
+                    <button class="nav-btn" onclick="switchTab('rules')">📖 <span>Rules</span></button>
+                </div>
+            `;
+
+            renderCartelaSelector();
+            document.getElementById('btnStartGame').onclick = startLiveGame;
+        }
+
+        function switchTab(tabName) {
+            if (gameState.isLive) {
+                showModal("Game in Progress", "Finish or leave the current game before switching tabs.");
+                return;
+            }
+            if (tabName === 'lobby') {
+                leaveGame();
+            } else if (tabName === 'cards') {
+                showModal("My Cards", `You currently hold Cartela #${gameState.selectedCartela} ready for the next round.`);
+            } else if (tabName === 'wallet') {
+                showModal("Wallet & Balance", `Your current balance is ${gameState.balance} ETB. Deposit or withdraw securely via Telegram Payments.`);
+            } else if (tabName === 'rules') {
+                showModal("Game Rules", "Daub numbers called by the host on your 5x5 cartela. Complete any row, column, or diagonal to claim BINGO!");
+            }
+        }
+
+        window.onload = function() {
+            renderCartelaSelector();
+        };
+    </script>
+</body>
+</html>
