@@ -329,8 +329,8 @@
         <div class="bottom-nav">
             <button class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
             <button class="nav-btn" onclick="switchTab('history')">📜 History</button>
+            <button class="nav-btn" onclick="inviteFriends()">👥 Invite</button>
             <button class="nav-btn" onclick="switchTab('wallet')">💳 Wallet</button>
-            <button class="nav-btn" onclick="switchTab('profile')">👤 Profile</button>
         </div>
     </div>
 
@@ -367,6 +367,18 @@
             }
         }
 
+        function inviteFriends() {
+            const botUsername = "YourGuderBingoBot"; // Replace with your actual Telegram bot username
+            const inviteText = encodeURIComponent("🎮 Come play Guder Bingo with me and win! Join the live game here:");
+            const shareUrl = `https://t.me/share/url?url=https://t.me/${botUsername}&text=${inviteText}`;
+
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
+                window.Telegram.WebApp.openTelegramLink(shareUrl);
+            } else {
+                window.open(shareUrl, '_blank');
+            }
+        }
+
         function initApp() {
             showStartScreen();
         }
@@ -389,7 +401,6 @@
 
         function startAppSession() {
             stopBackgroundMusic();
-            // Automatically plays bingo.mp3 as background music using user tap permission
             backgroundMusic = new Audio('bingo_amharic_audio/bingo.mp3');
             backgroundMusic.loop = true;
             backgroundMusic.play().then(() => {
@@ -410,8 +421,8 @@
                 <div class="bottom-nav">
                     <button class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
                     <button class="nav-btn" onclick="switchTab('history')">📜 History</button>
+                    <button class="nav-btn" onclick="inviteFriends()">👥 Invite</button>
                     <button class="nav-btn" onclick="switchTab('wallet')">💳 Wallet</button>
-                    <button class="nav-btn" onclick="switchTab('profile')">👤 Profile</button>
                 </div>
             `;
 
