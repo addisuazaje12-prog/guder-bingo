@@ -381,7 +381,7 @@
         let globalCountdown = null;
         let selectedCartelaNo = null;
         let calledNumbersList = [];
-        let backgroundMusic = null;
+        let registrationMusic = null;
 
         function playAudio(elementIdOrFile) {
             let sound = document.getElementById(elementIdOrFile);
@@ -394,11 +394,11 @@
             }
         }
 
-        function stopBackgroundMusic() {
-            if(backgroundMusic) {
-                backgroundMusic.pause();
-                backgroundMusic.currentTime = 0;
-                backgroundMusic = null;
+        function stopRegistrationMusic() {
+            if(registrationMusic) {
+                registrationMusic.pause();
+                registrationMusic.currentTime = 0;
+                registrationMusic = null;
             }
         }
 
@@ -421,7 +421,7 @@
         function showStartScreen() {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
-            stopBackgroundMusic();
+            stopRegistrationMusic();
 
             document.getElementById("topStats").style.display = "none";
             const container = document.getElementById("mainContainer");
@@ -435,15 +435,7 @@
         }
 
         function startAppSession() {
-            stopBackgroundMusic();
-            backgroundMusic = new Audio('bingo_amharic_audio/bingo.mp3');
-            backgroundMusic.loop = true;
-            backgroundMusic.play().then(() => {
-                renderSelectionBoard();
-            }).catch(error => {
-                console.log("Background audio play blocked:", error);
-                renderSelectionBoard();
-            });
+            renderSelectionBoard();
         }
 
         function renderSelectionBoard() {
@@ -463,16 +455,15 @@
 
             const container = document.getElementById("mainContainer");
             if (userBalance < 10.0) {
-                stopBackgroundMusic();
+                stopRegistrationMusic();
                 container.innerHTML = `<div style="color:#d90429; font-weight:900; background:#fff; padding:20px; border-radius:8px;">Insufficient amount</div>`;
                 return;
             }
 
-            if(backgroundMusic && backgroundMusic.paused) {
-                backgroundMusic.play().catch(e => console.log("Audio resume error:", e));
-            }
-
-            playAudio("snd-welcome-select");
+            // Play 30-second background/waiting track during registration
+            stopRegistrationMusic();
+            registrationMusic = new Audio('bingo_amharic_audio/thirty_sec_bg.mp3');
+            registrationMusic.play().catch(e => console.log("Registration audio block:", e));
 
             regTimer = 30;
             let html = `
@@ -497,7 +488,7 @@
                 
                 if(regTimer <= 0) {
                     clearInterval(globalCountdown);
-                    stopBackgroundMusic(); 
+                    stopRegistrationMusic(); 
                     if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
@@ -531,7 +522,7 @@
         }
 
         function showPreparationScreen(cartelaNo) {
-            stopBackgroundMusic();
+            stopRegistrationMusic();
             prepTimer = 5;
             const container = document.getElementById("mainContainer");
             container.innerHTML = `
@@ -556,7 +547,7 @@
         }
 
         function renderCallingBoard(cartelaNo) {
-            stopBackgroundMusic();
+            stopRegistrationMusic();
             calledNumbersList = [];
             document.getElementById("topStats").style.display = "grid";
             document.getElementById("bottomNavContainer").innerHTML = `
@@ -705,7 +696,7 @@
 
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
-            stopBackgroundMusic();
+            stopRegistrationMusic();
             // Classical / victory chime sound when claiming bingo / finishing session
             playAudio("snd-classical-victory");
             if (tg.sendData) {
@@ -717,7 +708,7 @@
         function switchTab(tab) {
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
-            stopBackgroundMusic();
+            stopRegistrationMusic();
             if(tab === 'wallet') alert("Wallet: Use /deposit or /withdraw in Telegram chat.");
             else if(tab === 'profile') alert("Guder Bingo Profile Player Account");
             else if(tab === 'history') alert("Session history view.");
@@ -729,7 +720,6 @@
     </script>
 
     <!-- Audio Elements for UI/Short FX -->
-    <audio id="snd-welcome-select" src="bingo_amharic_audio/welcome_select_cartela.mp3"></audio>
     <audio id="snd-selected" src="bingo_amharic_audio/card_selected.mp3"></audio>
     <audio id="snd-prep" src="bingo_amharic_audio/preparing.mp3"></audio>
     <audio id="snd-start" src="bingo_amharic_audio/game_started.mp3"></audio>
