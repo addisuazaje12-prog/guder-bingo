@@ -207,36 +207,36 @@
             color: #fff;
         }
 
-        /* Bold and high-visibility player cartela styling */
+        /* Taller Player Cartela Box */
         .player-cartela-box {
             background: #ffffff;
-            padding: 6px;
+            padding: 8px 6px;
             border-radius: 8px;
             color: #111;
             text-align: center;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
         .player-cartela-title {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 900;
             color: #7b2cbf;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
         .player-card-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 2px;
+            gap: 3px;
         }
         .player-cell {
-            aspect-ratio: 1;
+            aspect-ratio: 0.85; /* Makes cells taller vertically */
             background: #f0e6f6;
             color: #000;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 3px;
+            border-radius: 4px;
             cursor: pointer;
             border: 1px solid #dcd6f7;
         }
@@ -247,7 +247,7 @@
         .player-cell.free {
             background-color: #d90429 !important;
             color: #fff !important;
-            font-size: 0.55rem;
+            font-size: 0.6rem;
             font-weight: 900;
         }
 
@@ -631,7 +631,7 @@
                         </div>
                     </div>
 
-                    <!-- Right Column: Current Call Panel on Top, Player Cartela Below (Bold & Visible) -->
+                    <!-- Right Column: Current Call Panel on Top, Taller Player Cartela Below -->
                     <div class="right-column">
                         <div class="caller-panel">
                             <div class="current-call-box">
