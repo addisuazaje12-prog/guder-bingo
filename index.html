@@ -155,17 +155,17 @@
             display: flex;
             flex-direction: column;
             background: #ffffff;
-            padding: 5px;
+            padding: 4px;
             border-radius: 8px;
         }
         .bingo-header-row {
             display: flex;
-            gap: 2px;
-            margin-bottom: 3px;
+            gap: 1px;
+            margin-bottom: 2px;
         }
         .bingo-letter {
             flex: 1;
-            aspect-ratio: 1;
+            padding: 3px 0;
             background-color: #d90429;
             color: #fff;
             border-radius: 2px;
@@ -173,34 +173,32 @@
             align-items: center;
             justify-content: center;
             font-weight: 900;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
 
-        /* Fixed: Flex container for 5 vertical column groups side-by-side */
+        /* Optimized to display all 15 rows fully visible without clipping */
         .num-grid-75 {
             display: flex;
             flex-direction: row;
-            gap: 2px;
-            max-height: 250px;
-            overflow-y: auto;
+            gap: 1px;
         }
         .bingo-col-group {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
         }
         .num-cell {
             width: 100%;
-            aspect-ratio: 1;
+            aspect-ratio: 1.2;
             background: #e0d2ec;
             color: #111;
-            font-size: 0.6rem;
+            font-size: 0.5rem;
             font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 2px;
+            border-radius: 1px;
             box-sizing: border-box;
         }
         .num-cell.called {
@@ -561,7 +559,7 @@
 
             const container = document.getElementById("mainContainer");
             
-            // Generate 5 vertical column groups
+            // Build all 15 rows for B(1-15), I(16-30), N(31-45), G(46-60), O(61-75) fully visible
             let gridHtml = "";
             const ranges = [
                 { start: 1, end: 15 },   // B column (1-15)
@@ -600,7 +598,7 @@
 
             container.innerHTML = `
                 <div class="calling-layout">
-                    <!-- Left Column: Calling Board (Vertical Columns under B, I, N, G, O) -->
+                    <!-- Left Column: Calling Board (All 15 numbers 1-15, 16-30, etc. fully visible) -->
                     <div class="left-column">
                         <div class="bing-column-container">
                             <div class="bingo-header-row">
