@@ -697,12 +697,28 @@
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
             stopRegistrationMusic();
-            // Classical / victory chime sound when claiming bingo / finishing session
             playAudio("snd-classical-victory");
-            if (tg.sendData) {
-                tg.sendData(JSON.stringify({ action: "claim_bingo" }));
-            }
-            alert("🎉 Bingo claim submitted!");
+
+            // Send fetch request to your Python Flask backend
+            fetch('http://192.168.1.151:5000/api/claim-bingo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    cartela_no: selectedCartelaNo,
+                    user_phone: "251913706670" 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(`🎉 Bingo claim submitted! Prize: ${data.prize_allocated} ETB`);
+                if (tg.sendData) {
+                    tg.sendData(JSON.stringify({ action: "claim_bingo", prize: data.prize_allocated }));
+                }
+            })
+            .catch(err => {
+                console.error("Error connecting to server:", err);
+                alert("⚠️ Could not connect to backend server.");
+            });
         }
 
         function switchTab(tab) {
