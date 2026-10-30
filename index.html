@@ -371,8 +371,10 @@
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
 
         let userBalance = 15.0;
         let regTimer = 30;
@@ -383,14 +385,19 @@
         let calledNumbersList = [];
         let registrationMusic = null;
 
+        // Auto-detect backend address: defaults to current host or fallback to local IP
+        const BACKEND_BASE_URL = window.location.origin.includes('http') 
+            ? window.location.origin 
+            : 'http://192.168.1.151:5000';
+
         function playAudio(elementIdOrFile) {
             let sound = document.getElementById(elementIdOrFile);
             if(sound) {
                 sound.currentTime = 0;
-                sound.play().catch(e => console.log("Audio waiting for user tap", e));
+                sound.play().catch(e => console.log("Audio waiting for user interaction:", e));
             } else {
                 let audio = new Audio(`bingo_amharic_audio/${elementIdOrFile}`);
-                audio.play().catch(err => console.log("Audio playback wait:", err));
+                audio.play().catch(err => console.log("Audio playback waiting:", err));
             }
         }
 
@@ -456,20 +463,19 @@
             const container = document.getElementById("mainContainer");
             if (userBalance < 10.0) {
                 stopRegistrationMusic();
-                container.innerHTML = `<div style="color:#d90429; font-weight:900; background:#fff; padding:20px; border-radius:8px;">Insufficient amount</div>`;
+                container.innerHTML = `<div style="color:#d90429; font-weight:900; background:#fff; padding:20px; border-radius:8px;">Insufficient balance to play</div>`;
                 return;
             }
 
-            // Play 30-second background/waiting track during registration
             stopRegistrationMusic();
             registrationMusic = new Audio('bingo_amharic_audio/thirty_sec_bg.mp3');
-            registrationMusic.play().catch(e => console.log("Registration audio block:", e));
+            registrationMusic.play().catch(e => console.log("Registration audio blocked:", e));
 
             regTimer = 30;
             let html = `
                 <div class="timer-banner" id="regTimerBox">⏱️ Registration Window: 30s</div>
                 <div style="margin-bottom:6px; font-size:0.75rem; font-weight:900; text-align:center; background:#2b1f3d; padding:6px; border-radius:6px; color:#ffb703;">
-                    Welcome to Guder Bingo. select the cartela<br>
+                    Welcome to Guder Bingo. Select a cartela<br>
                     እንኳን ወደ ጉደር ቢንጎ ጨዋታ በደህና መጡ!<br>
                     በመጀመሪያ ካርቴላ ይምረጡ!
                 </div>
@@ -492,7 +498,7 @@
                     if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
-                        alert("Registration closed. No cartela selected!");
+                        alert("Registration window closed. No cartela selected!");
                         renderSelectionBoard();
                     }
                 }
@@ -516,7 +522,7 @@
 
             playAudio("snd-selected");
 
-            if (tg.sendData) {
+            if (tg && tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
             }
         }
@@ -695,12 +701,18 @@
         }
 
         function claimBingo() {
+            if (!selectedCartelaNo) {
+                alert("⚠️ Please select a valid cartela first!");
+                return;
+            }
+
             if(callInterval) clearInterval(callInterval);
             stopRegistrationMusic();
             playAudio("snd-classical-victory");
 
-            // Send fetch request to your Python Flask backend
-            fetch('http://192.168.1.151:5000/api/claim-bingo', {
+            const claimEndpoint = `${BACKEND_BASE_URL}/api/claim-bingo`;
+
+            fetch(claimEndpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -708,16 +720,21 @@
                     user_phone: "251913706670" 
                 })
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.json();
+            })
             .then(data => {
-                alert(`🎉 Bingo claim submitted! Prize: ${data.prize_allocated} ETB`);
-                if (tg.sendData) {
+                alert(`🎉 Bingo claim submitted! Prize: ${data.prize_allocated || 0} ETB`);
+                if (tg && tg.sendData) {
                     tg.sendData(JSON.stringify({ action: "claim_bingo", prize: data.prize_allocated }));
                 }
             })
             .catch(err => {
                 console.error("Error connecting to server:", err);
-                alert("⚠️ Could not connect to backend server.");
+                alert("⚠️ Could not connect to backend server. Make sure your Flask backend is running on your network.");
             });
         }
 
