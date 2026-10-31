@@ -61,15 +61,10 @@ def init_db():
 # Run database setup on server start
 init_db()
 
-# Root Route: Serves index.html reliably whether it's in the root folder or templates folder
+# Root Route: Serves index.html directly from the repository root
 @app.route('/')
 def serve_frontend():
-    if os.path.exists('index.html'):
-        return send_from_directory('.', 'index.html')
-    try:
-        return render_template('index.html')
-    except Exception:
-        return jsonify({"status": "error", "message": "index.html file not found in deployment root or templates directory."}), 404
+    return send_from_directory('.', 'index.html')
 
 # Helper: Calculate user balance dynamically from the immutable ledger
 def get_user_balance(user_id):
