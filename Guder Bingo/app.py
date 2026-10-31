@@ -1,13 +1,13 @@
 import os
 import time
 import sqlite3
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from chapa import Chapa
 
 app = Flask(__name__)
 
 # Chapa / Payment & Telebirr Configuration
-CHAPA_SECRET_KEY = "YOUR_CHAPA_SECRET_KEY"
+CHAPA_SECRET_KEY = os.environ.get("CHAPA_SECRET_KEY", "YOUR_CHAPA_SECRET_KEY")
 chapa = Chapa(CHAPA_SECRET_KEY)
 
 TELEBIRR_APP_ID = "YOUR_APP_ID"
@@ -61,10 +61,15 @@ def init_db():
 # Run database setup on server start
 init_db()
 
-# Root Route: Serves index.html to fix Telegram bottom menu JSON display issue
+# Root Route: Serves index.html reliably whether it's in the root folder or templates folder
 @app.route('/')
 def serve_frontend():
-    return send_from_directory('.', 'index.html')
+    if os.path.exists('index.html'):
+        return send_from_directory('.', 'index.html')
+    try:
+        return render_template('index.html')
+    except Exception:
+        return jsonify({"status": "error", "message": "index.html file not found in deployment root or templates directory."}), 404
 
 # Helper: Calculate user balance dynamically from the immutable ledger
 def get_user_balance(user_id):
@@ -77,7 +82,7 @@ def get_user_balance(user_id):
 
 @app.route('/api/deposit', methods=['POST'])
 def deposit_funds():
-    data = request.json
+    data = request.json or {}
     user_email = data.get('email', 'player@guderbingo.com')
     amount = data.get('amount', 10.0) # e.g., 10 ETB stake
     phone = data.get('phone', '251913706670')
@@ -98,7 +103,7 @@ def deposit_funds():
 
 @app.route('/api/claim-bingo', methods=['POST'])
 def claim_bingo():
-    data = request.json
+    data = request.json or {}
     cartela_no = data.get('cartela_no')
     user_phone = data.get('user_phone', '251913706670')  
     room_id = data.get('room_id', 1)
