@@ -90,7 +90,7 @@ def deposit_funds():
             first_name=data.get('first_name', 'Player'),
             last_name=data.get('last_name', 'Guder'),
             tx_ref=f"guder_tx_{phone}_{int(time.time())}",
-            callback_url="https://your-domain.com/api/payment-callback"
+            callback_url="https://backend-prod.up.railway.app/api/payment-callback"
         )
         return jsonify(response)
     except Exception as e:
@@ -100,7 +100,7 @@ def deposit_funds():
 def claim_bingo():
     data = request.json
     cartela_no = data.get('cartela_no')
-    user_phone = data.get('user_phone', '251913706670') 
+    user_phone = data.get('user_phone', '251913706670')  
     room_id = data.get('room_id', 1)
 
     # Open thread-safe connection with timeout for concurrency
