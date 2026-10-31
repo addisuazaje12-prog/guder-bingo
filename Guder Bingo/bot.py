@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, Messa
 # ==========================================
 # 1. CONFIGURATION & COMMISSION SETTINGS
 # ==========================================
-WEB_APP_URL = "https://addisuazaje12-prog.github.io/guder-bingo/"  # Active web app URL
+WEB_APP_URL = "https://backend-prod.up.railway.app/"  # Updated to live Railway backend URL
 CARD_PRICE = 10.0                                   # Minimum stake / card price in ETB
 MANAGER_COMMISSION_RATE = 0.50                      # 50% Manager Commission (Addisu Azaje)
 
