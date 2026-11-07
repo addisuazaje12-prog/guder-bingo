@@ -2,17 +2,12 @@ import os
 import time
 import sqlite3
 from flask import Flask, request, jsonify, send_from_directory
-from chapa import Chapa
 
 app = Flask(__name__)
 
-# Chapa / Payment & Telebirr Configuration
-CHAPA_SECRET_KEY = "YOUR_CHAPA_SECRET_KEY"
-chapa = Chapa(CHAPA_SECRET_KEY)
-
-TELEBIRR_APP_ID = "YOUR_APP_ID"
-TELEBIRR_APP_KEY = "YOUR_APP_KEY"
+# Manual Deposit & Verification Configuration
 TELEBIRR_SHORT_CODE = "800001"
+CBE_ACCOUNT = "1000000000000"
 
 # Initialize Local SQLite Database (Immutable Ledger & Active Rooms)
 def init_db():
@@ -78,23 +73,45 @@ def get_user_balance(user_id):
 @app.route('/api/deposit', methods=['POST'])
 def deposit_funds():
     data = request.json
-    user_email = data.get('email', 'player@guderbingo.com')
-    amount = data.get('amount', 10.0) # e.g., 10 ETB stake
     phone = data.get('phone', '251913706670')
+    amount = float(data.get('amount', 10.0))
+    tx_ref = data.get('tx_ref', f"manual_tx_{phone}_{int(time.time())}")
     
-    # Initialize transaction with Chapa gateway
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
     try:
-        response = chapa.initialize(
-            email=user_email,
-            amount=str(amount),
-            first_name=data.get('first_name', 'Player'),
-            last_name=data.get('last_name', 'Guder'),
-            tx_ref=f"guder_tx_{phone}_{int(time.time())}",
-            callback_url="https://your-domain.com/api/payment-callback"
-        )
-        return jsonify(response)
+        cursor.execute("BEGIN EXCLUSIVE TRANSACTION;")
+        
+        # Find or create user ID in database
+        cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (phone,))
+        row = cursor.fetchone()
+        if row:
+            user_id = row[0]
+        else:
+            cursor.execute('INSERT INTO users (phone_number) VALUES (?)', (phone,))
+            user_id = cursor.lastrowid
+            
+        # Record manual deposit into ledger
+        cursor.execute('''
+            INSERT OR IGNORE INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (tx_ref, user_id, amount, 'MANUAL_DEPOSIT', tx_ref))
+        
+        conn.commit()
+        
+        current_balance = get_user_balance(user_id)
+        return jsonify({
+            "status": "success",
+            "message": "Manual deposit submitted successfully. Awaiting SMS verification.",
+            "tx_ref": tx_ref,
+            "amount": amount,
+            "user_balance": current_balance
+        })
     except Exception as e:
+        conn.rollback()
         return jsonify({"status": "error", "message": str(e)}), 400
+    finally:
+        conn.close()
 
 @app.route('/api/claim-bingo', methods=['POST'])
 def claim_bingo():
@@ -134,7 +151,7 @@ def claim_bingo():
         total_players = 10
         stake_per_cartela = 10.0
         total_pot = total_players * stake_per_cartela
-        prize_allocated = total_pot * 0.50 # 50% pot prize = 50 ETB
+        prize_allocated = total_pot * 0.50
 
         # 4. Record the payout entry into the immutable ledger securely
         txn_id = f"txn_win_{room_id}_{user_id}_{int(time.time() * 1000)}"
