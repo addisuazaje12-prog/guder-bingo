@@ -1,196 +1,855 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Guder Bingo</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg-color: var(--tg-theme-bg-color, #121212);
-            --text-color: var(--tg-theme-text-color, #ffffff);
-            --button-color: var(--tg-theme-button-color, #0088cc);
-            --button-text-color: var(--tg-theme-button-text-color, #ffffff);
-            --card-bg: #1e1e1e;
-            --marked-color: #2ec4b6;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        h2 { margin-bottom: 5px; }
-        #statusMessage {
-            font-size: 0.95rem;
-            color: #ffaa00;
-            margin-bottom: 15px;
-            font-weight: 600;
-            text-align: center;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            max-width: 350px;
-            width: 100%;
-            margin-bottom: 15px;
-            display: none; /* Hidden until cartela arrives */
-        }
-        .cell {
-            aspect-ratio: 1;
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.1rem;
-            cursor: pointer;
-            user-select: none;
-        }
-        .cell.marked {
-            background-color: var(--marked-color);
-            color: #000;
-        }
-        .cell.free {
-            background-color: #ff2a4b;
-            color: #fff;
-        }
-        .bingo-btn {
-            width: 100%;
-            max-width: 350px;
-            padding: 12px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            background-color: var(--button-color);
-            color: var(--button-text-color);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 15px;
-            display: none; /* Hidden until cartela arrives */
-        }
-        .menu-bar {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 350px;
-            width: 100%;
-        }
-        .menu-bar button {
-            padding: 8px 12px;
-            background: #2a2a2a;
-            color: #fff;
-            border: 1px solid #444;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guder Bingo</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+:root {
+  --bg: var(--tg-theme-bg-color, #101827);
+  --text: var(--tg-theme-text-color, #f5f7fb);
+  --accent: var(--tg-theme-button-color, #1687d9);
+  --green: #20b879;
+  --panel: #1a2638;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+.app {
+  max-width: 520px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: 25px; }
+
+.status {
+  background: #332b19;
+  color: #ffd77b;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.wallet {
+  background: #173e56;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.balance {
+  font-size: 23px;
+  font-weight: bold;
+}
+
+button {
+  border: none;
+  border-radius: 9px;
+  padding: 11px;
+  background: var(--accent);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .5;
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 15px 0;
+}
+
+.menu button {
+  background: #223149;
+  font-size: 13px;
+}
+
+.panel {
+  background: var(--panel);
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.hidden { display: none !important; }
+
+.muted {
+  color: #aab7c9;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 11px;
+  margin: 5px 0 10px;
+  border-radius: 8px;
+  border: 1px solid #46566d;
+  background: #111c2b;
+  color: white;
+}
+
+textarea {
+  min-height: 100px;
+}
+
+.board-wrap {
+  max-width: 390px;
+  margin: 12px auto;
+}
+
+.bingo-head, .bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.bingo-head div {
+  text-align: center;
+  color: #ffd36d;
+  font-weight: bold;
+  padding: 5px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #26364d;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.cell.marked {
+  background: var(--green);
+  color: #062d20;
+}
+
+.cell.free {
+  background: #b93e59;
+  color: white;
+}
+
+.call-number {
+  text-align: center;
+  font-size: 25px;
+  font-weight: bold;
+  color: #ffda76;
+  padding: 12px;
+  background: #101c2c;
+  border-radius: 10px;
+}
+
+.recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recent span {
+  background: #2b3c54;
+  padding: 6px 9px;
+  border-radius: 7px;
+}
+
+.note {
+  background: #2c281d;
+  color: #f4dda4;
+  padding: 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.item {
+  border-bottom: 1px solid #46566d;
+  padding: 9px 0;
+  font-size: 13px;
+}
+
+#toast {
+  position: fixed;
+  bottom: 18px;
+  left: 5%;
+  width: 90%;
+  background: #26364d;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  display: none;
+}
+
+footer {
+  text-align: center;
+  color: #aab7c9;
+  font-size: 12px;
+  margin: 18px 0;
+}
+</style>
 </head>
+
 <body>
+<div class="app">
 
-    <h2>🌊 Guder Bingo</h2>
-    <div id="statusMessage">⏳ Waiting for your game cartela...</div>
+<header>
+  <h1>🎱 Guder Bingo</h1>
+  <div class="muted">Welcome to Guder Bingo</div>
+</header>
 
-    <div class="grid" id="bingoBoard"></div>
+<div id="statusMessage" class="status">
+  Connecting securely to the game...
+</div>
 
-    <button class="bingo-btn" id="bingoBtn" onclick="claimBingo()">BINGO!</button>
+<section class="wallet">
+  <div>
+    <small>MY WALLET</small>
+    <div class="balance" id="balance">— ETB</div>
+  </div>
+  <button onclick="refreshWallet()">Refresh</button>
+</section>
 
-    <div class="menu-bar">
-        <button onclick="openDeposit()">Deposit</button>
-        <button onclick="openWithdraw()">Withdraw</button>
-        <button onclick="openSupport()">Support</button>
-        <button onclick="openInstructions()">Instructions</button>
-        <button onclick="openInvite()">Invite</button>
+<nav class="menu">
+  <button onclick="showSection('gameSection')">🎮 Play</button>
+  <button onclick="showSection('depositSection')">➕ Deposit</button>
+  <button onclick="showSection('walletSection')">👛 Wallet</button>
+  <button onclick="showSection('historySection')">📜 History</button>
+  <button onclick="inviteFriends()">👥 Invite</button>
+  <button onclick="showSection('helpSection')">❔ Help</button>
+</nav>
+
+<section class="panel" id="gameSection">
+  <h2>🎮 Game Room</h2>
+
+  <div id="roomInfo" class="muted">
+    Checking the current game room...
+  </div>
+
+  <div id="selectionArea" class="hidden">
+    <p class="muted">Choose your cartela number.</p>
+
+    <label>Cartela Number</label>
+    <input id="cartelaNo" type="number" min="1" max="90" value="1">
+
+    <button id="selectBtn" onclick="selectCartela()" style="width:100%">
+      SELECT CARTELA
+    </button>
+  </div>
+
+  <div id="cardArea" class="hidden">
+    <p id="myCardLabel" class="muted"></p>
+
+    <div class="board-wrap">
+      <div class="bingo-head">
+        <div>B</div>
+        <div>I</div>
+        <div>N</div>
+        <div>G</div>
+        <div>O</div>
+      </div>
+
+      <div class="bingo-grid" id="bingoBoard"></div>
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+    <p class="muted">Latest Called Number</p>
+    <div class="call-number" id="latestCall">
+      Waiting for the first call
+    </div>
 
-        // Simulate receiving cartela data (can be linked to backend parameters or API later)
-        function loadCartela(numbersArray) {
-            const board = document.getElementById("bingoBoard");
-            const statusMsg = document.getElementById("statusMessage");
-            const bingoBtn = document.getElementById("bingoBtn");
-            
-            board.innerHTML = "";
-            let count = 0;
+    <p class="muted">Recently Called Numbers</p>
+    <div class="recent" id="recentCalls"></div>
 
-            for(let i = 0; i < 25; i++) {
-                const cell = document.createElement("div");
-                cell.classList.add("cell");
-                if(i === 12) {
-                    cell.innerText = "FREE";
-                    cell.classList.add("free", "marked");
-                } else {
-                    cell.innerText = numbersArray[count++] || (Math.floor(Math.random() * 75) + 1);
-                    cell.addEventListener("click", () => {
-                        cell.classList.toggle("marked");
-                    });
-                }
-                board.appendChild(cell);
-            }
+    <button id="bingoBtn" onclick="claimBingo()" style="width:100%;margin-top:14px">
+      🎉 BINGO!
+    </button>
 
-            // Reveal board and hide waiting message once cartela is active
-            statusMsg.style.display = "none";
-            board.style.display = "grid";
-            bingoBtn.style.display = "block";
-        }
+    <p class="muted">
+      Numbers are marked automatically when the server reports them.
+    </p>
+  </div>
+</section>
 
-        function claimBingo() {
-            if(tg.showAlert) {
-                tg.showAlert("🎉 Congratulations! You declared Bingo!");
-            } else {
-                alert("🎉 Congratulations! You declared Bingo!");
-            }
-        }
+<section class="panel hidden" id="depositSection">
+  <h2>➕ Deposit</h2>
 
-        function openDeposit() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData("DEPOSIT");
-            } else {
-                alert("Use /deposit in the Telegram bot chat to add funds.");
-            }
-        }
+  <div class="note">
+    Send money using the displayed payment details. Then submit your
+    transaction receipt. Your wallet is credited only after verification.
+  </div>
 
-        function openWithdraw() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                tg.sendData("WITHDRAW");
-            } else {
-                alert("Use /withdraw in the Telegram bot chat to withdraw funds.");
-            }
-        }
+  <div id="paymentDetails" class="muted" style="margin-top:10px">
+    Loading payment details...
+  </div>
 
-        function openSupport() {
-            window.Telegram.WebApp.openTelegramLink("https://t.me/Guderbingosupport");
-        }
+  <form id="depositForm" onsubmit="submitDeposit(event)">
 
-        function openInstructions() {
-            alert("Game Instructions:\nTap numbers to mark your cartela, get a line, and click BINGO!");
-        }
+    <label>Payment Method</label>
+    <select id="paymentMethod">
+      <option value="TELEBIRR">Telebirr</option>
+      <option value="CBE">Commercial Bank of Ethiopia</option>
+    </select>
 
-        function openInvite() {
-            window.Telegram.WebApp.openTelegramLink("https://t.me/share/url?url=https://t.me/guderbingo_bot&text=Play%20Guder%20Bingo%20now!");
-        }
+    <label>Amount (ETB)</label>
+    <input id="depositAmount" type="number" min="1" step="0.01" required>
 
-        // Auto-load sample cartela after a brief check (or integrate with your active game round)
-        setTimeout(() => {
-            let sampleNumbers = [];
-            while(sampleNumbers.length < 24) {
-                let r = Math.floor(Math.random() * 75) + 1;
-                if(!sampleNumbers.includes(r)) sampleNumbers.push(r);
-            }
-            loadCartela(sampleNumbers);
-        }, 1500);
-    </script>
+    <label>Transaction Reference</label>
+    <input id="payerReference" maxlength="120" required>
+
+    <label>Paste Transaction Receipt Text</label>
+    <textarea id="receiptText" maxlength="5000" required></textarea>
+
+    <button type="submit" id="depositSubmit" style="width:100%">
+      SUBMIT RECEIPT
+    </button>
+  </form>
+
+  <div id="depositResult" class="muted"></div>
+</section>
+
+<section class="panel hidden" id="walletSection">
+  <h2>👛 Wallet Transactions</h2>
+  <div id="walletTransactions" class="muted">
+    Loading wallet...
+  </div>
+</section>
+
+<section class="panel hidden" id="historySection">
+  <h2>📜 Game History</h2>
+  <div id="gameHistory" class="muted">
+    Loading history...
+  </div>
+</section>
+
+<section class="panel hidden" id="helpSection">
+  <h2>❔ Help and Instructions</h2>
+
+  <ol class="muted">
+    <li>Open Guder Bingo through the Telegram bot.</li>
+    <li>Make a deposit and wait for verification.</li>
+    <li>Choose an available cartela when registration opens.</li>
+    <li>Called numbers are marked automatically.</li>
+    <li>Press BINGO after completing a valid line.</li>
+  </ol>
+
+  <div class="note">
+    Standard 75-ball Bingo ranges:<br>
+    B = 1–15<br>
+    I = 16–30<br>
+    N = 31–45<br>
+    G = 46–60<br>
+    O = 61–75
+  </div>
+
+  <p class="muted">Contact support for assistance.</p>
+  <button onclick="openSupport()">Contact Support</button>
+</section>
+
+<footer>
+  Guder Bingo • Keep your payment receipt until your deposit is reviewed.
+</footer>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+(() => {
+"use strict";
+
+const tg = window.Telegram && window.Telegram.WebApp
+  ? window.Telegram.WebApp : null;
+
+if (tg) {
+  tg.ready();
+  tg.expand();
+}
+
+const API = "";
+const initData = tg && tg.initData ? tg.initData : "";
+
+let currentRoom = null;
+let currentCartela = null;
+let currentMatrix = null;
+
+const $ = id => document.getElementById(id);
+
+function toast(message) {
+  const el = $("toast");
+  el.textContent = message;
+  el.style.display = "block";
+
+  clearTimeout(toast.timer);
+
+  toast.timer = setTimeout(() => {
+    el.style.display = "none";
+  }, 4000);
+}
+
+function setStatus(message, error = false) {
+  $("statusMessage").textContent = message;
+  $("statusMessage").style.background =
+    error ? "#49252b" : "#332b19";
+}
+
+function headers() {
+  return {
+    "Content-Type": "application/json",
+    "X-Telegram-Init-Data": initData
+  };
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(API + path, {
+    ...options,
+    headers: {
+      ...headers(),
+      ...(options.headers || {})
+    }
+  });
+
+  let data;
+
+  try {
+    data = await response.json();
+  } catch (e) {
+    throw new Error("The server returned an unreadable response.");
+  }
+
+  if (!response.ok) {
+    throw new Error(data.message || "Request failed.");
+  }
+
+  return data;
+}
+
+window.showSection = function(id) {
+  [
+    "gameSection",
+    "depositSection",
+    "walletSection",
+    "historySection",
+    "helpSection"
+  ].forEach(section => {
+    $(section).classList.toggle("hidden", section !== id);
+  });
+
+  if (id === "walletSection") refreshWallet();
+  if (id === "historySection") loadHistory();
+  if (id === "gameSection") refreshGame();
+  if (id === "depositSection") loadConfig();
+};
+
+window.refreshWallet = async function() {
+  try {
+    const data = await api("/api/wallet");
+
+    $("balance").textContent =
+      Number(data.balance).toFixed(2) + " ETB";
+
+    $("walletTransactions").innerHTML =
+      data.transactions.length
+        ? data.transactions.map(t => `
+          <div class="item">
+            <b>${escapeHtml(t.txn_type)}</b>
+            · ${Number(t.amount).toFixed(2)} ETB<br>
+            <span class="muted">
+              ${escapeHtml(t.created_at)}
+            </span>
+          </div>
+        `).join("")
+        : "No wallet transactions yet.";
+
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+};
+
+async function loadConfig() {
+  try {
+    const config = await api("/api/config");
+
+    const phone = config.telebirr_phone || "Not configured";
+
+    const cbe = config.cbe_account_configured
+      ? "CBE account is configured. Contact support for verified details."
+      : "CBE account details have not been configured.";
+
+    $("paymentDetails").innerHTML = `
+      <b>Telebirr payment number:</b>
+      ${escapeHtml(phone)}<br>
+      ${escapeHtml(cbe)}<br>
+      <span class="muted">
+        Chapa is not enabled. Receipt submission does not
+        automatically add money to your wallet.
+      </span>
+    `;
+
+  } catch (e) {
+    $("paymentDetails").textContent = e.message;
+  }
+}
+
+window.submitDeposit = async function(event) {
+  event.preventDefault();
+
+  const button = $("depositSubmit");
+  button.disabled = true;
+
+  $("depositResult").textContent = "Submitting receipt...";
+
+  try {
+    const data = await api("/api/deposit", {
+      method: "POST",
+      body: JSON.stringify({
+        payment_method: $("paymentMethod").value,
+        amount: Number($("depositAmount").value),
+        payer_reference: $("payerReference").value.trim(),
+        receipt_text: $("receiptText").value.trim()
+      })
+    });
+
+    $("depositResult").textContent =
+      data.message + " Deposit reference: " + data.deposit_id;
+
+    $("depositForm").reset();
+
+    toast("Receipt submitted for review.");
+
+    refreshWallet();
+
+  } catch (e) {
+    $("depositResult").textContent = e.message;
+    toast(e.message);
+
+  } finally {
+    button.disabled = false;
+  }
+};
+
+async function refreshGame() {
+  try {
+    const data = await api("/api/game/state");
+
+    $("balance").textContent =
+      Number(data.balance || 0).toFixed(2) + " ETB";
+
+    currentRoom = data.room;
+    currentCartela = data.cartela;
+
+    if (!currentRoom) {
+      $("roomInfo").textContent =
+        "There is no active game room at the moment.";
+
+      $("selectionArea").classList.add("hidden");
+      $("cardArea").classList.add("hidden");
+      return;
+    }
+
+    $("roomInfo").textContent =
+      `Room #${currentRoom.room_id} · Status: ${currentRoom.status}`;
+
+    if (currentCartela) {
+      currentMatrix = JSON.parse(currentCartela.numbers_json);
+
+      $("selectionArea").classList.add("hidden");
+      $("cardArea").classList.remove("hidden");
+
+      $("myCardLabel").textContent =
+        "Your cartela: #" + currentCartela.cartela_no;
+
+      renderCard(data.called_numbers || []);
+
+    } else {
+      $("cardArea").classList.add("hidden");
+
+      const canSelect =
+        ["OPEN", "REGISTRATION"].includes(currentRoom.status) &&
+        Number(data.balance) > 0;
+
+      $("selectionArea").classList.toggle("hidden", !canSelect);
+
+      if (!canSelect && Number(data.balance) <= 0) {
+        $("roomInfo").textContent +=
+          " · A verified positive wallet balance is required.";
+      }
+    }
+
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+}
+
+function makeCard() {
+  const cols = [
+    randomUnique(1, 15, 5),
+    randomUnique(16, 30, 5),
+    randomUnique(31, 45, 5),
+    randomUnique(46, 60, 5),
+    randomUnique(61, 75, 5)
+  ];
+
+  return Array.from({length: 5}, (_, r) =>
+    cols.map((col, c) =>
+      r === 2 && c === 2 ? "FREE" : col[r]
+    )
+  );
+}
+
+function randomUnique(min, max, count) {
+  const values = [];
+
+  while (values.length < count) {
+    const n = Math.floor(Math.random() * (max - min + 1)) + min;
+
+    if (!values.includes(n)) values.push(n);
+  }
+
+  return values;
+}
+
+window.selectCartela = async function() {
+  if (!currentRoom) return;
+
+  const button = $("selectBtn");
+  button.disabled = true;
+
+  try {
+    const cartelaNo = Number($("cartelaNo").value);
+
+    if (!Number.isInteger(cartelaNo) ||
+        cartelaNo < 1 || cartelaNo > 90) {
+      throw new Error("Enter a cartela number from 1 to 90.");
+    }
+
+    const matrix = makeCard();
+
+    const data = await api("/api/cartela/select", {
+      method: "POST",
+      body: JSON.stringify({
+        room_id: currentRoom.room_id,
+        cartela_no: cartelaNo,
+        numbers: matrix
+      })
+    });
+
+    currentMatrix = matrix;
+
+    currentCartela = {
+      cartela_no: cartelaNo,
+      numbers_json: JSON.stringify(matrix)
+    };
+
+    $("myCardLabel").textContent =
+      "Your cartela: #" + cartelaNo;
+
+    $("selectionArea").classList.add("hidden");
+    $("cardArea").classList.remove("hidden");
+
+    renderCard([]);
+
+    toast(data.message || "Cartela selected.");
+
+    refreshGame();
+
+  } catch (e) {
+    toast(e.message);
+
+  } finally {
+    button.disabled = false;
+  }
+};
+
+function renderCard(calls) {
+  if (!currentMatrix) return;
+
+  const called = new Set(
+    calls.map(c => Number(c.number))
+  );
+
+  const board = $("bingoBoard");
+  board.innerHTML = "";
+
+  currentMatrix.forEach(row => {
+    row.forEach(value => {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.textContent = value;
+
+      if (String(value).toUpperCase() === "FREE") {
+        cell.classList.add("free", "marked");
+      } else if (called.has(Number(value))) {
+        cell.classList.add("marked");
+      }
+
+      board.appendChild(cell);
+    });
+  });
+
+  const latest = calls.length
+    ? Number(calls[calls.length - 1].number)
+    : null;
+
+  $("latestCall").textContent = latest
+    ? letterFor(latest) + " - " + latest
+    : "Waiting for the first call";
+
+  $("recentCalls").innerHTML =
+    calls.slice(-10).reverse().map(c =>
+      `<span>${letterFor(Number(c.number))}-${Number(c.number)}</span>`
+    ).join("");
+}
+
+function letterFor(n) {
+  if (n <= 15) return "B";
+  if (n <= 30) return "I";
+  if (n <= 45) return "N";
+  if (n <= 60) return "G";
+  return "O";
+}
+
+window.claimBingo = async function() {
+  if (!currentRoom || !currentCartela) return;
+
+  $("bingoBtn").disabled = true;
+
+  try {
+    const data = await api("/api/claim-bingo", {
+      method: "POST",
+      body: JSON.stringify({
+        room_id: currentRoom.room_id,
+        cartela_no: currentCartela.cartela_no
+      })
+    });
+
+    if (data.status === "winner") {
+      setStatus("🎉 BINGO VERIFIED!");
+
+      if (tg && tg.showAlert) {
+        tg.showAlert("Congratulations! Your Bingo claim was verified.");
+      }
+
+      toast("Bingo verified by the server!");
+
+    } else {
+      toast(data.message || "Bingo was not verified.");
+    }
+
+  } catch (e) {
+    toast(e.message);
+
+  } finally {
+    $("bingoBtn").disabled = false;
+    await refreshGame();
+  }
+};
+
+async function loadHistory() {
+  try {
+    const data = await api("/api/game/history");
+
+    $("gameHistory").innerHTML =
+      data.history.length
+        ? data.history.map(x => `
+          <div class="item">
+            Room #${x.room_id} · Cartela #${x.cartela_no}<br>
+            <span class="muted">${escapeHtml(x.created_at)}</span>
+          </div>
+        `).join("")
+        : "No completed games yet.";
+
+  } catch (e) {
+    $("gameHistory").textContent = e.message;
+  }
+}
+
+window.inviteFriends = function() {
+  const url = "https://t.me/guderbingo_bot";
+
+  const share =
+    "https://t.me/share/url?url=" +
+    encodeURIComponent(url) +
+    "&text=" +
+    encodeURIComponent("Join me on Guder Bingo!");
+
+  if (tg && tg.openTelegramLink) {
+    tg.openTelegramLink(share);
+  } else {
+    window.open(share, "_blank");
+  }
+};
+
+window.openSupport = function() {
+  const url = "https://t.me/Guderbingosupport";
+
+  if (tg && tg.openTelegramLink) {
+    tg.openTelegramLink(url);
+  } else {
+    window.open(url, "_blank");
+  }
+};
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[ch]));
+}
+
+async function init() {
+  if (!tg || !initData) {
+    setStatus(
+      "Open this game from the Guder Bingo Telegram bot to sign in.",
+      true
+    );
+
+    $("roomInfo").textContent =
+      "Telegram Web App authentication is required.";
+
+    return;
+  }
+
+  await loadConfig();
+  await refreshWallet();
+  await refreshGame();
+
+  setInterval(refreshGame, 3000);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && tg && initData) {
+    refreshGame();
+  }
+});
+
+init();
+
+})();
+</script>
+
 </body>
 </html>
