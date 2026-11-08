@@ -15,7 +15,7 @@
   --panel: #1a2638;
 }
 
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -190,6 +190,44 @@ textarea {
   font-size: 13px;
 }
 
+/* 5-Second Celebration Overlay Modal */
+#bingoModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(16, 24, 39, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-card {
+  background: #1a2638;
+  border: 2px solid #ffd36d;
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+  width: 85%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.modal-card h2 {
+  color: #ffd36d;
+  font-size: 28px;
+  margin-top: 0;
+}
+
+.countdown-timer {
+  font-size: 48px;
+  font-weight: bold;
+  color: var(--green);
+  margin: 15px 0;
+}
+
 #toast {
   position: fixed;
   bottom: 18px;
@@ -200,6 +238,7 @@ textarea {
   border-radius: 10px;
   text-align: center;
   display: none;
+  z-index: 1000;
 }
 
 footer {
@@ -216,7 +255,7 @@ footer {
 
 <header>
   <h1>🎱 Guder Bingo</h1>
-  <div class="muted">Welcome to Guder Bingo</div>
+  <div class="muted">እንኳን ወደ ግደር ቢንጎ በደህና መጡ!</div>
 </header>
 
 <div id="statusMessage" class="status">
@@ -248,13 +287,13 @@ footer {
   </div>
 
   <div id="selectionArea" class="hidden">
-    <p class="muted">Choose your cartela number.</p>
+    <p class="muted">Choose your cartela number (1–800).</p>
 
     <label>Cartela Number</label>
-    <input id="cartelaNo" type="number" min="1" max="90" value="1">
+    <input id="cartelaNo" type="number" min="1" max="800" value="1">
 
     <button id="selectBtn" onclick="selectCartela()" style="width:100%">
-      SELECT CARTELA
+      SELECT CARTELA (10 ETB)
     </button>
   </div>
 
@@ -312,7 +351,7 @@ footer {
     </select>
 
     <label>Amount (ETB)</label>
-    <input id="depositAmount" type="number" min="1" step="0.01" required>
+    <input id="depositAmount" type="number" min="10" step="0.01" required>
 
     <label>Transaction Reference</label>
     <input id="payerReference" maxlength="120" required>
@@ -347,10 +386,10 @@ footer {
 
   <ol class="muted">
     <li>Open Guder Bingo through the Telegram bot.</li>
-    <li>Make a deposit and wait for verification.</li>
+    <li>Make a deposit (minimum 10 ETB) and wait for verification.</li>
     <li>Choose an available cartela when registration opens.</li>
-    <li>Called numbers are marked automatically.</li>
-    <li>Press BINGO after completing a valid line.</li>
+    <li>Called numbers are marked automatically with Amharic voice calls.</li>
+    <li>Press BINGO after completing a valid line to win 50% of the pot!</li>
   </ol>
 
   <div class="note">
@@ -370,6 +409,16 @@ footer {
   Guder Bingo • Keep your payment receipt until your deposit is reviewed.
 </footer>
 
+</div>
+
+<!-- 5-Second BINGO Celebration Modal Overlay -->
+<div id="bingoModal" class="hidden">
+  <div class="modal-card">
+    <h2>🎉 BINGO!</h2>
+    <p id="modalWinnerMsg" style="font-size: 16px; margin: 10px 0;">እንኳን ደስ አላችሁ! ውድድሩን አሸንፈዋል!</p>
+    <div class="countdown-timer" id="modalCountdown">5</div>
+    <p class="muted">Returning to lobby...</p>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -490,19 +539,13 @@ async function loadConfig() {
   try {
     const config = await api("/api/config");
 
-    const phone = config.telebirr_phone || "Not configured";
-
-    const cbe = config.cbe_account_configured
-      ? "CBE account is configured. Contact support for verified details."
-      : "CBE account details have not been configured.";
+    const phone = config.telebirr_phone || "0913706670";
 
     $("paymentDetails").innerHTML = `
       <b>Telebirr payment number:</b>
       ${escapeHtml(phone)}<br>
-      ${escapeHtml(cbe)}<br>
       <span class="muted">
-        Chapa is not enabled. Receipt submission does not
-        automatically add money to your wallet.
+        Minimum deposit is 10.00 ETB. Submit your SMS receipt reference after transferring.
       </span>
     `;
 
@@ -586,13 +629,13 @@ async function refreshGame() {
 
       const canSelect =
         ["OPEN", "REGISTRATION"].includes(currentRoom.status) &&
-        Number(data.balance) > 0;
+        Number(data.balance) >= 10;
 
       $("selectionArea").classList.toggle("hidden", !canSelect);
 
-      if (!canSelect && Number(data.balance) <= 0) {
+      if (!canSelect && Number(data.balance) < 10) {
         $("roomInfo").textContent +=
-          " · A verified positive wallet balance is required.";
+          " · Minimum 10.00 ETB balance required to choose a cartela.";
       }
     }
 
@@ -639,8 +682,8 @@ window.selectCartela = async function() {
     const cartelaNo = Number($("cartelaNo").value);
 
     if (!Number.isInteger(cartelaNo) ||
-        cartelaNo < 1 || cartelaNo > 90) {
-      throw new Error("Enter a cartela number from 1 to 90.");
+        cartelaNo < 1 || cartelaNo > 800) {
+      throw new Error("Enter a cartela number from 1 to 800.");
     }
 
     const matrix = makeCard();
@@ -670,6 +713,10 @@ window.selectCartela = async function() {
     renderCard([]);
 
     toast(data.message || "Cartela selected.");
+
+    if (tg && tg.sendData) {
+      tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
+    }
 
     refreshGame();
 
@@ -729,6 +776,25 @@ function letterFor(n) {
   return "O";
 }
 
+// 5-Second Celebration Modal Trigger Function
+function showBingoCelebrationModal() {
+  const modal = $("bingoModal");
+  const countdownEl = $("modalCountdown");
+  let timeLeft = 5;
+  
+  modal.classList.remove("hidden");
+  countdownEl.textContent = timeLeft;
+
+  const timer = setInterval(() => {
+    timeLeft--;
+    countdownEl.textContent = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      modal.classList.add("hidden");
+    }
+  }, 1000);
+}
+
 window.claimBingo = async function() {
   if (!currentRoom || !currentCartela) return;
 
@@ -746,8 +812,15 @@ window.claimBingo = async function() {
     if (data.status === "winner") {
       setStatus("🎉 BINGO VERIFIED!");
 
+      if (tg && tg.sendData) {
+        tg.sendData(JSON.stringify({ action: "claim_bingo" }));
+      }
+
+      // Trigger 5-second celebration overlay modal
+      showBingoCelebrationModal();
+
       if (tg && tg.showAlert) {
-        tg.showAlert("Congratulations! Your Bingo claim was verified.");
+        tg.showAlert("እንኳን ደስ አላችሁ! Your Bingo claim was verified.");
       }
 
       toast("Bingo verified by the server!");
