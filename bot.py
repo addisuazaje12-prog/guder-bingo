@@ -22,6 +22,8 @@ from telegram import (
     WebAppInfo,
 )
 
+from telegram.request import HTTPXRequest
+
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -67,7 +69,6 @@ logger = logging.getLogger("guder_bingo_bot")
 # ============================================================
 
 def web_app_button(label: str, url: str):
-
     return InlineKeyboardButton(
         label,
         web_app=WebAppInfo(url=url)
@@ -75,42 +76,35 @@ def web_app_button(label: str, url: str):
 
 
 def main_menu():
-
     return InlineKeyboardMarkup([
-
         [
             web_app_button(
                 "🎮 PLAY GAME",
                 WEB_APP_URL
             )
         ],
-
         [
             web_app_button(
                 "💳 DEPOSIT / MY WALLET",
                 WEB_APP_URL
             )
         ],
-
         [
             InlineKeyboardButton(
                 "📖 Instructions",
                 callback_data="instructions"
             ),
-
             InlineKeyboardButton(
                 "📞 Support",
                 callback_data="support"
             )
         ],
-
         [
             InlineKeyboardButton(
                 "🎁 Invite Friends",
                 callback_data="invite"
             )
         ]
-
     ])
 
 
@@ -119,7 +113,6 @@ def main_menu():
 # ============================================================
 
 def valid_web_app_url():
-
     return WEB_APP_URL.startswith("https://")
 
 
@@ -129,30 +122,22 @@ async def send_web_app_link(
     heading: str,
     detail: str,
 ):
-
     message = update.effective_message
 
     if not message:
         return
 
     if not valid_web_app_url():
-
         await message.reply_text(
-
             "The game is not configured yet.\n\n"
             "The manager must set WEB_APP_URL to the "
             "public HTTPS address of the Flask application."
-
         )
-
         return
 
     await message.reply_text(
-
         f"{heading}\n\n{detail}",
-
         reply_markup=main_menu()
-
     )
 
 
@@ -164,7 +149,6 @@ async def start(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     user = update.effective_user
 
     if not user or not update.effective_message:
@@ -174,44 +158,30 @@ async def start(
     referral = context.args[0] if context.args else None
 
     if referral and referral.startswith("ref_"):
-
         context.user_data["referral_code"] = referral[4:]
 
     if not valid_web_app_url():
-
         await update.effective_message.reply_text(
-
             "👋 Welcome to Guder Bingo!\n\n"
-
             "The bot is running, but the game URL "
             "has not been configured yet.\n\n"
-
             "Please contact the manager."
-
         )
-
         return
 
     await update.effective_message.reply_text(
-
         f"👋 Welcome to Guder Bingo, {user.first_name}!\n\n"
-
         "Use the buttons below to:\n\n"
-
         "🎮 Play Bingo\n"
         "💳 Deposit money\n"
         "👛 Check your wallet\n"
         "📜 View game history\n"
         "🎁 Invite friends\n\n"
-
         "🔐 Your wallet and game records are managed "
         "by the secure game server.\n\n"
-
         "A submitted payment receipt is not credited "
         "until the payment has been independently verified.",
-
         reply_markup=main_menu()
-
     )
 
 
@@ -223,17 +193,12 @@ async def play(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     await send_web_app_link(
-
         update,
         context,
-
         "🎮 Guder Bingo",
-
         "Open the game to see the current room "
         "and select a cartela when registration is open."
-
     )
 
 
@@ -245,22 +210,16 @@ async def deposit(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     await send_web_app_link(
-
         update,
         context,
-
         "💳 Deposit",
-
         "Open the Guder Bingo Web App.\n\n"
-
         "1. Select Deposit.\n"
         "2. Choose Telebirr or CBE.\n"
         "3. Make your payment.\n"
         "4. Submit your transaction receipt.\n"
         "5. Wait for payment verification."
-
     )
 
 
@@ -272,17 +231,12 @@ async def wallet(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     await send_web_app_link(
-
         update,
         context,
-
         "👛 My Wallet",
-
         "Open the Web App to view your current "
         "wallet balance and transaction history."
-
     )
 
 
@@ -294,17 +248,12 @@ async def history(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     await send_web_app_link(
-
         update,
         context,
-
         "📜 Game History",
-
         "Open the Web App and select History "
         "to view your recorded games."
-
     )
 
 
@@ -316,14 +265,11 @@ async def help_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     if not update.effective_message:
         return
 
     await update.effective_message.reply_text(
-
         "🎮 GUDER BINGO — HELP\n\n"
-
         "/start — Open the main menu\n"
         "/play — Open the game\n"
         "/deposit — Submit a deposit receipt\n"
@@ -332,10 +278,8 @@ async def help_command(
         "/history — View game history\n"
         "/support — Contact support\n"
         "/cancel — Cancel interaction\n\n"
-
         "A receipt submission is only a request. "
         "Funds are added after independent payment verification."
-
     )
 
 
@@ -347,29 +291,23 @@ async def support(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     if not update.effective_message:
         return
 
     support_url = f"https://t.me/{SUPPORT_USERNAME}"
 
     keyboard = InlineKeyboardMarkup([
-
         [
             InlineKeyboardButton(
                 "📞 Contact Guder Bingo Support",
                 url=support_url
             )
         ]
-
     ])
 
     await update.effective_message.reply_text(
-
         f"📞 Support: @{SUPPORT_USERNAME}",
-
         reply_markup=keyboard
-
     )
 
 
@@ -381,14 +319,10 @@ async def cancel(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     if update.effective_message:
-
         await update.effective_message.reply_text(
-
             "No active bot form needs cancelling.\n\n"
             "Use /start to open the main menu."
-
         )
 
 
@@ -400,7 +334,6 @@ async def menu_callback(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     query = update.callback_query
 
     if not query:
@@ -410,11 +343,8 @@ async def menu_callback(
 
     # INSTRUCTIONS
     if query.data == "instructions":
-
         await query.message.reply_text(
-
             "📖 GUDER BINGO INSTRUCTIONS\n\n"
-
             "1. Open the game using PLAY GAME.\n"
             "2. Submit a deposit receipt.\n"
             "3. Wait for payment verification.\n"
@@ -422,45 +352,34 @@ async def menu_callback(
             "5. Watch the called numbers.\n"
             "6. Your card is marked automatically.\n"
             "7. Claim Bingo when you complete a valid pattern.\n\n"
-
             "STANDARD 75-BALL BINGO NUMBERS\n\n"
-
             "B: 1–15\n"
             "I: 16–30\n"
             "N: 31–45\n"
             "G: 46–60\n"
             "O: 61–75\n\n"
-
             "Never share your Telegram login code "
             "or account password."
-
         )
 
     # SUPPORT
     elif query.data == "support":
-
         keyboard = InlineKeyboardMarkup([
-
             [
                 InlineKeyboardButton(
                     "Contact Support",
                     url=f"https://t.me/{SUPPORT_USERNAME}"
                 )
             ]
-
         ])
 
         await query.message.reply_text(
-
             f"Contact Guder Bingo support: @{SUPPORT_USERNAME}",
-
             reply_markup=keyboard
-
         )
 
     # INVITE FRIENDS
     elif query.data == "invite":
-
         user = query.from_user
 
         referral_link = (
@@ -468,32 +387,25 @@ async def menu_callback(
         )
 
         share_link = (
-
             "https://t.me/share/url?url="
             + quote(referral_link, safe="")
             + "&text="
             + quote("Join me on Guder Bingo!", safe="")
-
         )
 
         keyboard = InlineKeyboardMarkup([
-
             [
                 InlineKeyboardButton(
                     "🎁 Share Invitation",
                     url=share_link
                 )
             ]
-
         ])
 
         await query.message.reply_text(
-
             "🎁 Invite your friends to Guder Bingo!\n\n"
             f"{referral_link}",
-
             reply_markup=keyboard
-
         )
 
 
@@ -505,7 +417,6 @@ async def error_handler(
     update: object,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
     logger.exception(
         "Unhandled bot error",
         exc_info=context.error
@@ -517,29 +428,27 @@ async def error_handler(
 # ============================================================
 
 def main():
-
     if not BOT_TOKEN:
-
         raise RuntimeError(
-
             "BOT_TOKEN is missing.\n"
             "Set BOT_TOKEN as an environment variable.\n"
             "Do not paste your private token into bot.py."
-
         )
 
     if not valid_web_app_url():
-
         logger.warning(
-
             "WEB_APP_URL is missing or is not HTTPS. "
             "The bot can start, but Web App buttons will not work."
-
         )
+
+    # Added HTTPXRequest with robust timeouts to prevent initialization timeouts
+    request = HTTPXRequest(connect_timeout=30.0, read_timeout=30.0)
 
     application = (
         Application.builder()
         .token(BOT_TOKEN)
+        .request(request)
+        .get_updates_request(request)
         .build()
     )
 
@@ -584,15 +493,10 @@ def main():
     # BUTTON HANDLERS
 
     application.add_handler(
-
         CallbackQueryHandler(
-
             menu_callback,
-
             pattern=r"^(instructions|support|invite)$"
-
         )
-
     )
 
     # ERROR HANDLER
@@ -604,11 +508,8 @@ def main():
     # START BOT
 
     application.run_polling(
-
         allowed_updates=Update.ALL_TYPES,
-
         drop_pending_updates=False
-
     )
 
 
@@ -617,5 +518,4 @@ def main():
 # ============================================================
 
 if __name__ == "__main__":
-
     main()
