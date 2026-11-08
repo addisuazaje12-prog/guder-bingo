@@ -1,291 +1,621 @@
+"""
+Guder Bingo Telegram Bot
+------------------------
+This bot is the Telegram entry point for the Flask application.
+
+Important:
+- Flask is the source of truth for wallet balances, deposits and games.
+- This bot does NOT automatically credit deposits or pay winnings.
+- Players submit receipts through the Web App.
+- Deposits remain pending until an administrator verifies payment.
+- Never hard-code your Telegram bot token in this file.
+"""
+
 import logging
-import json
-import sqlite3
 import os
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.request import HTTPXRequest
-from telegram.ext import (
-    Application, CommandHandler, MessageHandler, CallbackQueryHandler,
-    ContextTypes, ConversationHandler, filters
+from urllib.parse import quote
+
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    WebAppInfo,
 )
 
-# --- CONFIGURATION ---
-BOT_TOKEN = "8813599415:AAE1t6JJg8zgZFs5Osh5ukaRN8N4d5je9yM"
-MANAGER_CHAT_ID = 867366564
-WEB_APP_URL = "https://addisuazaje12-prog.github.io/guder-bingo/"
-MINIMUM_BALANCE = 10.0
-CARD_PRICE = 10.0
-TELEBIRR_ACCOUNT = "0913706670"
+from telegram.ext import (
+    Application,
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+)
 
-# Audio directory path for Amharic voice clips
-AUDIO_DIR = "audio"
 
-AWAITING_AMOUNT, SELECTING_PAYMENT, AWAITING_RECEIPT = range(3)
+# ============================================================
+# CONFIGURATION
+# ============================================================
 
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
-def init_db():
-    conn = sqlite3.connect("bingo.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            username TEXT,
-            full_name TEXT,
-            phone_number TEXT DEFAULT 'N/A',
-            balance REAL DEFAULT 0.0
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS sessions (
-            session_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            winner_name TEXT,
-            phone_number TEXT,
-            cartela_no INTEGER,
-            total_pot REAL,
-            manager_share REAL,
-            winner_share REAL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
+# Must be the public HTTPS address of your Flask application.
+WEB_APP_URL = os.getenv("WEB_APP_URL", "").strip().rstrip("/")
 
-init_db()
+SUPPORT_USERNAME = os.getenv(
+    "SUPPORT_USERNAME",
+    "Guderbingosupport"
+).lstrip("@")
 
-def get_user(user_id):
-    conn = sqlite3.connect("bingo.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT user_id, username, full_name, phone_number, balance FROM users WHERE user_id = ?", (user_id,))
-    row = cursor.fetchone()
-    conn.close()
-    return row
+BOT_USERNAME = os.getenv(
+    "BOT_USERNAME",
+    "guderbingo_bot"
+).lstrip("@")
 
-def update_user_balance(user_id, amount, full_name="", username="", phone="N/A"):
-    conn = sqlite3.connect("bingo.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO users (user_id, username, full_name, phone_number, balance)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(user_id) DO UPDATE SET
-            balance = balance + excluded.balance,
-            full_name = excluded.full_name,
-            username = excluded.username
-    """, (user_id, username, full_name, phone, amount))
-    conn.commit()
-    conn.close()
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    db_user = get_user(user.id)
-    balance = db_user[4] if db_user else 0.0
-    update_user_balance(user.id, 0.0, user.full_name, user.username or "N/A")
+# ============================================================
+# LOGGING
+# ============================================================
 
-    keyboard = [
-        [InlineKeyboardButton("🎮 Play Game", web_app=WebAppInfo(url=WEB_APP_URL))],
-        [InlineKeyboardButton("💳 Deposit", callback_data="start_deposit"), InlineKeyboardButton("💸 Withdraw", callback_data="withdraw_menu")],
-        [InlineKeyboardButton("💳 Balance", callback_data="check_balance")],
-        [InlineKeyboardButton("📞 Support", callback_data="support_menu"), InlineKeyboardButton("📖 Instructions", callback_data="instruction_menu")],
-        [InlineKeyboardButton("🎁 Invite Friends", callback_data="invite_menu")],
-        [InlineKeyboardButton("⚙️ Manager Controls", callback_data="manager_dashboard")]
-    ]
-    await update.message.reply_text(
-        f"👋 **Welcome to Guder Bingo**, {user.first_name}!\n\n"
-        f"💵 **Wallet Balance:** `{balance:.2f} ETB`\n"
-        f"⚠️ Minimum balance of **10.00 ETB** required to play.",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="Markdown"
+logging.basicConfig(
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+    level=logging.INFO,
+)
+
+logger = logging.getLogger("guder_bingo_bot")
+
+
+# ============================================================
+# KEYBOARDS
+# ============================================================
+
+def web_app_button(label: str, url: str):
+
+    return InlineKeyboardButton(
+        label,
+        web_app=WebAppInfo(url=url)
     )
 
-async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    db_user = get_user(query.from_user.id)
-    balance = db_user[4] if db_user else 0.0
-    await query.message.reply_text(f"✅ <b>የሚመጣ (Balance):</b> {balance:.2f}\n🔒 <b>ተቀማጭ (Deposit):</b> 0.00\nሶል: 0.00", parse_mode="HTML")
 
-async def deposit_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    target = update.callback_query.message if update.callback_query else update.message
-    if update.callback_query:
-        await update.callback_query.answer()
-    await target.reply_text("💳 **Deposit Request**\nEnter the amount you wish to deposit (Minimum 10 ETB):")
-    return AWAITING_AMOUNT
+def main_menu():
 
-async def handle_deposit_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        amount = float(update.message.text.strip())
-        if amount < 10.0:
-            await update.message.reply_text("❌ Minimum deposit amount is **10 ETB**.", parse_mode="Markdown")
-            return AWAITING_AMOUNT
-        context.user_data["deposit_amount"] = amount
-        keyboard = [
-            [InlineKeyboardButton("📱 Telebirr", callback_data="pay_telebirr")],
-            [InlineKeyboardButton("🏦 CBE Birr", callback_data="pay_cbe")]
+    return InlineKeyboardMarkup([
+
+        [
+            web_app_button(
+                "🎮 PLAY GAME",
+                WEB_APP_URL
+            )
+        ],
+
+        [
+            web_app_button(
+                "💳 DEPOSIT / MY WALLET",
+                WEB_APP_URL
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "📖 Instructions",
+                callback_data="instructions"
+            ),
+
+            InlineKeyboardButton(
+                "📞 Support",
+                callback_data="support"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "🎁 Invite Friends",
+                callback_data="invite"
+            )
         ]
-        await update.message.reply_text(f"✅ Amount: **{amount:.2f} ETB**\nSelect payment method (Telebirr {TELEBIRR_ACCOUNT}):", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
-        return SELECTING_PAYMENT
-    except ValueError:
-        await update.message.reply_text("❌ Please enter a valid number:")
-        return AWAITING_AMOUNT
 
-async def handle_payment_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    amount = context.user_data.get("deposit_amount", 10.0)
-    msg = f"📱 **Telebirr Details ({TELEBIRR_ACCOUNT})**\nAmount: {amount:.2f} ETB\n\nTransfer money and **paste the full SMS receipt** below:"
-    await query.edit_message_text(msg, parse_mode="Markdown")
-    return AWAITING_RECEIPT
+    ])
 
-async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+# ============================================================
+# WEB APP VALIDATION
+# ============================================================
+
+def valid_web_app_url():
+
+    return WEB_APP_URL.startswith("https://")
+
+
+async def send_web_app_link(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    heading: str,
+    detail: str,
+):
+
+    message = update.effective_message
+
+    if not message:
+        return
+
+    if not valid_web_app_url():
+
+        await message.reply_text(
+
+            "The game is not configured yet.\n\n"
+            "The manager must set WEB_APP_URL to the "
+            "public HTTPS address of the Flask application."
+
+        )
+
+        return
+
+    await message.reply_text(
+
+        f"{heading}\n\n{detail}",
+
+        reply_markup=main_menu()
+
+    )
+
+
+# ============================================================
+# START COMMAND
+# ============================================================
+
+async def start(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
     user = update.effective_user
-    receipt = update.message.text
-    amount = context.user_data.get("deposit_amount", 10.0)
-    update_user_balance(user.id, amount, user.full_name, user.username or "N/A")
-    new_bal = get_user(user.id)[4]
 
-    await update.message.reply_text(f"🎉 **Deposit Successful!**\nCredited: `{amount:.2f} ETB`\nNew Balance: `{new_bal:.2f} ETB`", parse_mode="Markdown")
-    
-    if MANAGER_CHAT_ID:
-        try:
-            await context.bot.send_message(chat_id=MANAGER_CHAT_ID, text=f"📥 **DEPOSIT AUDIT**\nPlayer: {user.full_name}\nID: `{user.id}`\nAmount: `{amount}`\nReceipt:\n`{receipt}`", parse_mode="Markdown")
-        except Exception:
-            pass
-    return ConversationHandler.END
+    if not user or not update.effective_message:
+        return
 
-async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = "📞 <b>ድጋፍ (Support)</b>\n1. Guder bingo support (@Guderbingosupport)\nBot: @guderbingo_bot"
-    if update.callback_query:
-        await update.callback_query.answer()
-        await update.callback_query.message.reply_text(text, parse_mode="HTML")
-    else:
-        await update.message.reply_text(text, parse_mode="HTML")
+    # Optional referral parameter.
+    referral = context.args[0] if context.args else None
 
-async def instruction_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = "📖 <b>Guder Bingo - መመሪያ (Instructions)</b>\n\n🎲 ከ1-800 ካርቴላዎች ውስጥ ይምረጡ። ቢያንስ 10 ብር ሚዛን ያስፈልጋል።"
-    if update.callback_query:
-        await update.callback_query.answer()
-        await update.callback_query.message.reply_text(text, parse_mode="HTML")
-    else:
-        await update.message.reply_text(text, parse_mode="HTML")
+    if referral and referral.startswith("ref_"):
 
-async def invite_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = "🎁 Invite friends using your referral link:\nhttps://t.me/guderbingo_bot?start=ref_"
-    if update.callback_query:
-        await update.callback_query.answer()
-        await update.callback_query.message.reply_text(text)
-    else:
-        await update.message.reply_text(text)
+        context.user_data["referral_code"] = referral[4:]
 
-async def manager_dashboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not valid_web_app_url():
+
+        await update.effective_message.reply_text(
+
+            "👋 Welcome to Guder Bingo!\n\n"
+
+            "The bot is running, but the game URL "
+            "has not been configured yet.\n\n"
+
+            "Please contact the manager."
+
+        )
+
+        return
+
+    await update.effective_message.reply_text(
+
+        f"👋 Welcome to Guder Bingo, {user.first_name}!\n\n"
+
+        "Use the buttons below to:\n\n"
+
+        "🎮 Play Bingo\n"
+        "💳 Deposit money\n"
+        "👛 Check your wallet\n"
+        "📜 View game history\n"
+        "🎁 Invite friends\n\n"
+
+        "🔐 Your wallet and game records are managed "
+        "by the secure game server.\n\n"
+
+        "A submitted payment receipt is not credited "
+        "until the payment has been independently verified.",
+
+        reply_markup=main_menu()
+
+    )
+
+
+# ============================================================
+# PLAY COMMAND
+# ============================================================
+
+async def play(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    await send_web_app_link(
+
+        update,
+        context,
+
+        "🎮 Guder Bingo",
+
+        "Open the game to see the current room "
+        "and select a cartela when registration is open."
+
+    )
+
+
+# ============================================================
+# DEPOSIT COMMAND
+# ============================================================
+
+async def deposit(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    await send_web_app_link(
+
+        update,
+        context,
+
+        "💳 Deposit",
+
+        "Open the Guder Bingo Web App.\n\n"
+
+        "1. Select Deposit.\n"
+        "2. Choose Telebirr or CBE.\n"
+        "3. Make your payment.\n"
+        "4. Submit your transaction receipt.\n"
+        "5. Wait for payment verification."
+
+    )
+
+
+# ============================================================
+# WALLET COMMAND
+# ============================================================
+
+async def wallet(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    await send_web_app_link(
+
+        update,
+        context,
+
+        "👛 My Wallet",
+
+        "Open the Web App to view your current "
+        "wallet balance and transaction history."
+
+    )
+
+
+# ============================================================
+# HISTORY COMMAND
+# ============================================================
+
+async def history(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    await send_web_app_link(
+
+        update,
+        context,
+
+        "📜 Game History",
+
+        "Open the Web App and select History "
+        "to view your recorded games."
+
+    )
+
+
+# ============================================================
+# HELP COMMAND
+# ============================================================
+
+async def help_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    if not update.effective_message:
+        return
+
+    await update.effective_message.reply_text(
+
+        "🎮 GUDER BINGO — HELP\n\n"
+
+        "/start — Open the main menu\n"
+        "/play — Open the game\n"
+        "/deposit — Submit a deposit receipt\n"
+        "/wallet — View your wallet\n"
+        "/balance — Check your wallet\n"
+        "/history — View game history\n"
+        "/support — Contact support\n"
+        "/cancel — Cancel interaction\n\n"
+
+        "A receipt submission is only a request. "
+        "Funds are added after independent payment verification."
+
+    )
+
+
+# ============================================================
+# SUPPORT COMMAND
+# ============================================================
+
+async def support(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    if not update.effective_message:
+        return
+
+    support_url = f"https://t.me/{SUPPORT_USERNAME}"
+
+    keyboard = InlineKeyboardMarkup([
+
+        [
+            InlineKeyboardButton(
+                "📞 Contact Guder Bingo Support",
+                url=support_url
+            )
+        ]
+
+    ])
+
+    await update.effective_message.reply_text(
+
+        f"📞 Support: @{SUPPORT_USERNAME}",
+
+        reply_markup=keyboard
+
+    )
+
+
+# ============================================================
+# CANCEL COMMAND
+# ============================================================
+
+async def cancel(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    if update.effective_message:
+
+        await update.effective_message.reply_text(
+
+            "No active bot form needs cancelling.\n\n"
+            "Use /start to open the main menu."
+
+        )
+
+
+# ============================================================
+# MENU CALLBACKS
+# ============================================================
+
+async def menu_callback(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
     query = update.callback_query
+
+    if not query:
+        return
+
     await query.answer()
-    user_id = query.from_user.id
-    if user_id != MANAGER_CHAT_ID:
-        await query.message.reply_text("⛔ Unauthorized access.")
-        return
 
-    conn = sqlite3.connect("bingo.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT session_id, winner_name, phone_number, cartela_no, winner_share, manager_share, timestamp FROM sessions ORDER BY session_id DESC LIMIT 5")
-    rows = cursor.fetchall()
-    conn.close()
+    # INSTRUCTIONS
+    if query.data == "instructions":
 
-    text = "⚙️ <b>MANAGER CONTROL DASHBOARD</b>\n\n"
-    if not rows:
-        text += "No recent game sessions recorded yet."
-    else:
-        for r in rows:
-            text += f"🔹 <b>Session #{r[0]}</b>\n👤 Winner: {r[1]} (Ph: {r[2]})\n🎯 Cartela: #{r[3]}\n💰 Winner Share (50%): {r[4]} ETB\n🏢 Manager Share (50%): {r[5]} ETB\n⏰ Time: {r[6]}\n\n"
+        await query.message.reply_text(
 
-    await query.message.reply_text(text, parse_mode="HTML")
+            "📖 GUDER BINGO INSTRUCTIONS\n\n"
 
-async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    db_user = get_user(user.id)
-    balance = db_user[4] if db_user else 0.0
+            "1. Open the game using PLAY GAME.\n"
+            "2. Submit a deposit receipt.\n"
+            "3. Wait for payment verification.\n"
+            "4. Select an available cartela.\n"
+            "5. Watch the called numbers.\n"
+            "6. Your card is marked automatically.\n"
+            "7. Claim Bingo when you complete a valid pattern.\n\n"
 
-    try:
-        data = json.loads(update.message.web_app_data.data)
-    except Exception:
-        return
+            "STANDARD 75-BALL BINGO NUMBERS\n\n"
 
-    action = data.get("action")
-    if balance < MINIMUM_BALANCE:
-        await update.message.reply_text("⚠️ **Insufficient amount!** Deposit funds to play.")
-        return
+            "B: 1–15\n"
+            "I: 16–30\n"
+            "N: 31–45\n"
+            "G: 46–60\n"
+            "O: 61–75\n\n"
 
-    if action == "join_round":
-        cartela_no = data.get("cartela_no")
-        update_user_balance(user.id, -CARD_PRICE, user.full_name, user.username or "N/A")
-        await update.message.reply_text(f"✅ Registered for Cartela **#{cartela_no}**!", parse_mode="Markdown")
-        
-        # Optional: Send Amharic audio notification if file exists in audio folder
-        audio_path = os.path.join(AUDIO_DIR, "joined.ogg")
-        if os.path.exists(audio_path):
-            try:
-                await context.bot.send_voice(chat_id=user.id, voice=open(audio_path, "rb"))
-            except Exception:
-                pass
+            "Never share your Telegram login code "
+            "or account password."
 
-    elif action == "claim_bingo":
-        # 50/50 Prize pool calculation (e.g., 500 total pot -> 250 winner, 250 manager)
-        total_pot = 500.0
-        winner_share = total_pot * 0.5
-        manager_share = total_pot * 0.5
-        
-        conn = sqlite3.connect("bingo.db")
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO sessions (winner_name, phone_number, cartela_no, total_pot, manager_share, winner_share) VALUES (?, ?, ?, ?, ?, ?)",
-                       (user.full_name, db_user[3] if db_user else "N/A", 104, total_pot, manager_share, winner_share))
-        conn.commit()
-        conn.close()
+        )
 
-        update_user_balance(user.id, winner_share)
-        await update.message.reply_text(f"🎉 **BINGO CONFIRMED!**\nእንኳን ደስ አለዎት! {winner_share} ETB (50% Winner Pool) ወደ ሂሳብዎ ገብቷል። (Telebirr: {TELEBIRR_ACCOUNT})", parse_mode="Markdown")
-        
-        # Optional: Send Amharic winner announcement voice note if available
-        audio_path = os.path.join(AUDIO_DIR, "bingo_winner.ogg")
-        if os.path.exists(audio_path):
-            try:
-                await context.bot.send_voice(chat_id=user.id, voice=open(audio_path, "rb"))
-            except Exception:
-                pass
+    # SUPPORT
+    elif query.data == "support":
 
-        if MANAGER_CHAT_ID:
-            await context.bot.send_message(chat_id=MANAGER_CHAT_ID, text=f"🚨 <b>WINNER RECORDED & AUDITED</b>\nPlayer: {user.full_name}\nPhone: {db_user[3]}\nWinner Share: {winner_share} ETB\nManager Revenue: {manager_share} ETB", parse_mode="HTML")
+        keyboard = InlineKeyboardMarkup([
+
+            [
+                InlineKeyboardButton(
+                    "Contact Support",
+                    url=f"https://t.me/{SUPPORT_USERNAME}"
+                )
+            ]
+
+        ])
+
+        await query.message.reply_text(
+
+            f"Contact Guder Bingo support: @{SUPPORT_USERNAME}",
+
+            reply_markup=keyboard
+
+        )
+
+    # INVITE FRIENDS
+    elif query.data == "invite":
+
+        user = query.from_user
+
+        referral_link = (
+            f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
+        )
+
+        share_link = (
+
+            "https://t.me/share/url?url="
+            + quote(referral_link, safe="")
+            + "&text="
+            + quote("Join me on Guder Bingo!", safe="")
+
+        )
+
+        keyboard = InlineKeyboardMarkup([
+
+            [
+                InlineKeyboardButton(
+                    "🎁 Share Invitation",
+                    url=share_link
+                )
+            ]
+
+        ])
+
+        await query.message.reply_text(
+
+            "🎁 Invite your friends to Guder Bingo!\n\n"
+            f"{referral_link}",
+
+            reply_markup=keyboard
+
+        )
+
+
+# ============================================================
+# ERROR HANDLER
+# ============================================================
+
+async def error_handler(
+    update: object,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    logger.exception(
+        "Unhandled bot error",
+        exc_info=context.error
+    )
+
+
+# ============================================================
+# MAIN APPLICATION
+# ============================================================
 
 def main():
-    request = HTTPXRequest(connect_timeout=30.0, read_timeout=30.0)
-    app = Application.builder().token(BOT_TOKEN).request(request).build()
 
-    deposit_handler = ConversationHandler(
-        entry_points=[CommandHandler("deposit", deposit_start), CallbackQueryHandler(deposit_start, pattern="^start_deposit$")],
-        states={
-            AWAITING_AMOUNT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_deposit_amount)],
-            SELECTING_PAYMENT: [CallbackQueryHandler(handle_payment_choice, pattern="^pay_")],
-            AWAITING_RECEIPT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_receipt)]
-        },
-        fallbacks=[CommandHandler("cancel", lambda u, c: ConversationHandler.END)]
+    if not BOT_TOKEN:
+
+        raise RuntimeError(
+
+            "BOT_TOKEN is missing.\n"
+            "Set BOT_TOKEN as an environment variable.\n"
+            "Do not paste your private token into bot.py."
+
+        )
+
+    if not valid_web_app_url():
+
+        logger.warning(
+
+            "WEB_APP_URL is missing or is not HTTPS. "
+            "The bot can start, but Web App buttons will not work."
+
+        )
+
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .build()
     )
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("deposit", deposit_start))
-    app.add_handler(CommandHandler("support", support_cmd))
-    app.add_handler(CommandHandler("instruction", instruction_cmd))
-    app.add_handler(CommandHandler("get_invitation_link", invite_cmd))
-    
-    app.add_handler(CallbackQueryHandler(check_balance, pattern="^check_balance$"))
-    app.add_handler(CallbackQueryHandler(support_cmd, pattern="^support_menu$"))
-    app.add_handler(CallbackQueryHandler(instruction_cmd, pattern="^instruction_menu$"))
-    app.add_handler(CallbackQueryHandler(invite_cmd, pattern="^invite_menu$"))
-    app.add_handler(CallbackQueryHandler(manager_dashboard, pattern="^manager_dashboard$"))
-    app.add_handler(CallbackQueryHandler(deposit_start, pattern="^start_deposit$"))
-    
-    app.add_handler(deposit_handler)
-    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
+    # COMMAND HANDLERS
 
-    print("🤖 Guder Bingo Server Active...")
-    app.run_polling()
+    application.add_handler(
+        CommandHandler("start", start)
+    )
+
+    application.add_handler(
+        CommandHandler("play", play)
+    )
+
+    application.add_handler(
+        CommandHandler("deposit", deposit)
+    )
+
+    application.add_handler(
+        CommandHandler("wallet", wallet)
+    )
+
+    application.add_handler(
+        CommandHandler("balance", wallet)
+    )
+
+    application.add_handler(
+        CommandHandler("history", history)
+    )
+
+    application.add_handler(
+        CommandHandler("help", help_command)
+    )
+
+    application.add_handler(
+        CommandHandler("support", support)
+    )
+
+    application.add_handler(
+        CommandHandler("cancel", cancel)
+    )
+
+    # BUTTON HANDLERS
+
+    application.add_handler(
+
+        CallbackQueryHandler(
+
+            menu_callback,
+
+            pattern=r"^(instructions|support|invite)$"
+
+        )
+
+    )
+
+    # ERROR HANDLER
+
+    application.add_error_handler(error_handler)
+
+    logger.info("Guder Bingo Telegram bot is starting.")
+
+    # START BOT
+
+    application.run_polling(
+
+        allowed_updates=Update.ALL_TYPES,
+
+        drop_pending_updates=False
+
+    )
+
+
+# ============================================================
+# RUN
+# ============================================================
 
 if __name__ == "__main__":
+
     main()
