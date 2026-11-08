@@ -190,6 +190,16 @@ textarea {
   font-size: 13px;
 }
 
+.timer-badge {
+  background: #23395d;
+  color: #76d0ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
 /* 5-Second Celebration Overlay Modal */
 #bingoModal {
   position: fixed;
@@ -275,7 +285,7 @@ footer {
   <button onclick="showSection('depositSection')">➕ Deposit</button>
   <button onclick="showSection('walletSection')">👛 Wallet</button>
   <button onclick="showSection('historySection')">📜 History</button>
-  <button onclick="inviteFriends()">👥 Invite</button>
+  <button onclick="showSection('managerSection')">📊 Manager</button>
   <button onclick="showSection('helpSection')">❔ Help</button>
 </nav>
 
@@ -286,8 +296,12 @@ footer {
     Checking the current game room...
   </div>
 
+  <div id="timerDisplay" class="timer-badge hidden">
+    ⏱️ Preparation Phase: <span id="prepTimer">05:00</span>
+  </div>
+
   <div id="selectionArea" class="hidden">
-    <p class="muted">Choose your cartela number (1–800).</p>
+    <p class="muted">Choose your cartela number (1–800). Selection closes in <span id="selectTimer">30</span>s.</p>
 
     <label>Cartela Number</label>
     <input id="cartelaNo" type="number" min="1" max="800" value="1">
@@ -381,6 +395,14 @@ footer {
   </div>
 </section>
 
+<section class="panel hidden" id="managerSection">
+  <h2>📊 Manager Control Panel</h2>
+  <p class="muted">Active session records, winner details, verified phones, and payouts.</p>
+  <div id="managerSessions" class="muted">
+    Loading manager session records...
+  </div>
+</section>
+
 <section class="panel hidden" id="helpSection">
   <h2>❔ Help and Instructions</h2>
 
@@ -388,7 +410,7 @@ footer {
     <li>Open Guder Bingo through the Telegram bot.</li>
     <li>Make a deposit (minimum 10 ETB) and wait for verification.</li>
     <li>Choose an available cartela when registration opens.</li>
-    <li>Called numbers are marked automatically with Amharic voice calls.</li>
+    <li>Called numbers are marked automatically with voice cues.</li>
     <li>Press BINGO after completing a valid line to win 50% of the pot!</li>
   </ol>
 
@@ -441,8 +463,34 @@ const initData = tg && tg.initData ? tg.initData : "";
 let currentRoom = null;
 let currentCartela = null;
 let currentMatrix = null;
+let selectTimerInterval = null;
+let prepTimerInterval = null;
+let lastAudioCallNum = null;
 
 const $ = id => document.getElementById(id);
+
+// Audio Cue Generator using Web Audio API
+function playCallSound(number) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(440 + (number * 3), audioCtx.currentTime);
+    
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.8);
+  } catch (e) {
+    console.log("Audio not supported or blocked", e);
+  }
+}
 
 function toast(message) {
   const el = $("toast");
@@ -499,6 +547,7 @@ window.showSection = function(id) {
     "depositSection",
     "walletSection",
     "historySection",
+    "managerSection",
     "helpSection"
   ].forEach(section => {
     $(section).classList.toggle("hidden", section !== id);
@@ -506,6 +555,7 @@ window.showSection = function(id) {
 
   if (id === "walletSection") refreshWallet();
   if (id === "historySection") loadHistory();
+  if (id === "managerSection") loadManagerSessions();
   if (id === "gameSection") refreshGame();
   if (id === "depositSection") loadConfig();
 };
@@ -591,6 +641,44 @@ window.submitDeposit = async function(event) {
   }
 };
 
+function startSelectionCountdown(seconds) {
+  clearInterval(selectTimerInterval);
+  let timeLeft = seconds;
+  const timerEl = $("selectTimer");
+  if (!timerEl) return;
+
+  timerEl.textContent = timeLeft;
+  selectTimerInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft >= 0) {
+      timerEl.textContent = timeLeft;
+    } else {
+      clearInterval(selectTimerInterval);
+    }
+  }, 1000);
+}
+
+function startPrepCountdown(seconds) {
+  clearInterval(prepTimerInterval);
+  let timeLeft = seconds;
+  const prepEl = $("prepTimer");
+  const badgeEl = $("timerDisplay");
+  if (!prepEl || !badgeEl) return;
+
+  badgeEl.classList.remove("hidden");
+  prepTimerInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft >= 0) {
+      const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const secs = (timeLeft % 60).toString().padStart(2, '0');
+      prepEl.textContent = `${mins}:${secs}`;
+    } else {
+      clearInterval(prepTimerInterval);
+      badgeEl.classList.add("hidden");
+    }
+  }, 1000);
+}
+
 async function refreshGame() {
   try {
     const data = await api("/api/game/state");
@@ -607,17 +695,26 @@ async function refreshGame() {
 
       $("selectionArea").classList.add("hidden");
       $("cardArea").classList.add("hidden");
+      $("timerDisplay").classList.add("hidden");
       return;
     }
 
     $("roomInfo").textContent =
       `Room #${currentRoom.room_id} · Status: ${currentRoom.status}`;
 
+    if (currentRoom.status === "REGISTRATION" && !selectTimerInterval) {
+      startSelectionCountdown(30);
+    }
+    if (currentRoom.status === "PREPARING" && !prepTimerInterval) {
+      startPrepCountdown(300); // 5 Minutes preparing time
+    }
+
     if (currentCartela) {
       currentMatrix = JSON.parse(currentCartela.numbers_json);
 
       $("selectionArea").classList.add("hidden");
       $("cardArea").classList.remove("hidden");
+      $("timerDisplay").classList.add("hidden");
 
       $("myCardLabel").textContent =
         "Your cartela: #" + currentCartela.cartela_no;
@@ -758,6 +855,11 @@ function renderCard(calls) {
     ? Number(calls[calls.length - 1].number)
     : null;
 
+  if (latest && latest !== lastAudioCallNum) {
+    lastAudioCallNum = latest;
+    playCallSound(latest);
+  }
+
   $("latestCall").textContent = latest
     ? letterFor(latest) + " - " + latest
     : "Waiting for the first call";
@@ -809,14 +911,13 @@ window.claimBingo = async function() {
       })
     });
 
-    if (data.status === "winner") {
+    if (data.status === "winner" || data.status === "success") {
       setStatus("🎉 BINGO VERIFIED!");
 
       if (tg && tg.sendData) {
         tg.sendData(JSON.stringify({ action: "claim_bingo" }));
       }
 
-      // Trigger 5-second celebration overlay modal
       showBingoCelebrationModal();
 
       if (tg && tg.showAlert) {
@@ -854,6 +955,28 @@ async function loadHistory() {
 
   } catch (e) {
     $("gameHistory").textContent = e.message;
+  }
+}
+
+async function loadManagerSessions() {
+  try {
+    const data = await api("/api/manager/sessions");
+    const winners = data.winners || [];
+
+    $("managerSessions").innerHTML =
+      winners.length
+        ? winners.map(w => `
+          <div class="item">
+            📞 <b>Phone:</b> ${escapeHtml(w.phone_number)}<br>
+            💰 <b>Payout:</b> ${Number(w.amount).toFixed(2)} ETB<br>
+            🔗 <b>Ref:</b> ${escapeHtml(w.reference)}<br>
+            ⏱️ <b>Time:</b> <span class="muted">${escapeHtml(w.time)}</span>
+          </div>
+        `).join("")
+        : "No winners recorded for recent sessions yet.";
+
+  } catch (e) {
+    $("managerSessions").textContent = e.message;
   }
 }
 
