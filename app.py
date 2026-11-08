@@ -1,4 +1,4 @@
-Correct app.py<< import os
+import os
 import time
 import sqlite3
 from flask import Flask, request, jsonify, send_from_directory
@@ -28,7 +28,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS game_rooms (
             room_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            status TEXT DEFAULT 'OPEN', -- OPEN, COMPLETED
+            status TEXT DEFAULT 'OPEN', -- OPEN, REGISTRATION, PREPARING, COMPLETED
             total_pot REAL DEFAULT 0.0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -70,9 +70,77 @@ def get_user_balance(user_id):
     conn.close()
     return result[0] if result[0] is not None else 0.0
 
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    return jsonify({
+        "telebirr_phone": "0913706670",
+        "telebirr_short_code": TELEBIRR_SHORT_CODE,
+        "cbe_account": CBE_ACCOUNT
+    })
+
+@app.route('/api/wallet', methods=['GET'])
+def get_wallet():
+    # Mocking user balance and transactions for demonstration
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT SUM(amount) FROM ledger_transactions')
+    res = cursor.fetchone()
+    balance = res[0] if res[0] else 150.0
+
+    cursor.execute('SELECT txn_id, amount, type, created_at FROM ledger_transactions ORDER BY created_at DESC LIMIT 10')
+    rows = cursor.fetchall()
+    conn.close()
+
+    txns = [{"txn_type": r[2], "amount": r[1], "created_at": r[3]} for r in rows]
+    return jsonify({"balance": balance, "transactions": txns})
+
+@app.route('/api/game/state', methods=['GET'])
+def game_state():
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT room_id, status, total_pot FROM game_rooms ORDER BY room_id DESC LIMIT 1')
+    room_row = cursor.fetchone()
+    conn.close()
+
+    room = {"room_id": room_row[0], "status": room_row[1], "total_pot": room_row[2]} if room_row else None
+    return jsonify({
+        "balance": 150.0,
+        "room": room,
+        "cartela": None,
+        "called_numbers": [{"number": 5}, {"number": 18}, {"number": 32}]
+    })
+
+@app.route('/api/game/history', methods=['GET'])
+def game_history():
+    return jsonify({"history": []})
+
+@app.route('/api/manager/sessions', methods=['GET'])
+def manager_sessions():
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT U.phone_number, L.amount, L.reference_id, L.created_at
+        FROM ledger_transactions L
+        JOIN users U ON L.user_id = U.user_id
+        WHERE L.type = 'BINGO_WIN_PAYOUT'
+        ORDER BY L.created_at DESC
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    winners = []
+    for r in rows:
+        winners.append({
+            "phone_number": r[0],
+            "amount": r[1],
+            "reference": r[2],
+            "time": r[3]
+        })
+    return jsonify({"status": "success", "winners": winners})
+
 @app.route('/api/deposit', methods=['POST'])
 def deposit_funds():
-    data = request.json
+    data = request.json or {}
     phone = data.get('phone', '251913706670')
     amount = float(data.get('amount', 10.0))
     tx_ref = data.get('tx_ref', f"manual_tx_{phone}_{int(time.time())}")
@@ -82,7 +150,6 @@ def deposit_funds():
     try:
         cursor.execute("BEGIN EXCLUSIVE TRANSACTION;")
         
-        # Find or create user ID in database
         cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (phone,))
         row = cursor.fetchone()
         if row:
@@ -91,7 +158,6 @@ def deposit_funds():
             cursor.execute('INSERT INTO users (phone_number) VALUES (?)', (phone,))
             user_id = cursor.lastrowid
             
-        # Record manual deposit into ledger
         cursor.execute('''
             INSERT OR IGNORE INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
             VALUES (?, ?, ?, ?, ?)
@@ -103,7 +169,7 @@ def deposit_funds():
         return jsonify({
             "status": "success",
             "message": "Manual deposit submitted successfully. Awaiting SMS verification.",
-            "tx_ref": tx_ref,
+            "deposit_id": tx_ref,
             "amount": amount,
             "user_balance": current_balance
         })
@@ -115,30 +181,25 @@ def deposit_funds():
 
 @app.route('/api/claim-bingo', methods=['POST'])
 def claim_bingo():
-    data = request.json
-    cartela_no = data.get('cartela_no')
+    data = request.json or {}
+    cartela_no = data.get('cartela_no', 1)
     user_phone = data.get('user_phone', '251913706670') 
     room_id = data.get('room_id', 1)
 
-    # Open thread-safe connection with timeout for concurrency
     conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
     cursor = conn.cursor()
 
     try:
-        # BEGIN EXCLUSIVE locks the database to prevent concurrent write conflicts
         cursor.execute("BEGIN EXCLUSIVE TRANSACTION;")
 
-        # 1. Check if the room has already been won by another player
         cursor.execute('SELECT status FROM game_rooms WHERE room_id = ?', (room_id,))
         room = cursor.fetchone()
         if not room or room[0] == 'COMPLETED':
             conn.rollback()
             return jsonify({"status": "error", "message": "Round already won or room closed!"}), 400
 
-        # Mark room as completed immediately inside the locked transaction block
         cursor.execute('UPDATE game_rooms SET status = ? WHERE room_id = ?', ('COMPLETED', room_id))
 
-        # 2. Find or create user ID in database
         cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (user_phone,))
         row = cursor.fetchone()
         if row:
@@ -147,13 +208,9 @@ def claim_bingo():
             cursor.execute('INSERT INTO users (phone_number) VALUES (?)', (user_phone,))
             user_id = cursor.lastrowid
 
-        # 3. Example calculation: 50% pot allocation for the winner
-        total_players = 10
-        stake_per_cartela = 10.0
-        total_pot = total_players * stake_per_cartela
+        total_pot = 100.0
         prize_allocated = total_pot * 0.50
 
-        # 4. Record the payout entry into the immutable ledger securely
         txn_id = f"txn_win_{room_id}_{user_id}_{int(time.time() * 1000)}"
         cursor.execute('''
             INSERT INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
@@ -162,11 +219,8 @@ def claim_bingo():
 
         conn.commit()
 
-        # Fetch updated balance
         cursor.execute('SELECT SUM(amount) FROM ledger_transactions WHERE user_id = ?', (user_id,))
         current_balance = cursor.fetchone()[0]
-
-        print(f"User {user_phone} won Room #{room_id} Cartela #{cartela_no}. Prize: {prize_allocated} ETB. Balance: {current_balance} ETB")
 
         return jsonify({
             "status": "success",
@@ -184,4 +238,4 @@ def claim_bingo():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)     >>
+    app.run(host='0.0.0.0', port=port)
