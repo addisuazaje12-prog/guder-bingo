@@ -10,7 +10,7 @@ from telegram.ext import (
 )
 
 # --- CONFIGURATION ---
-BOT_TOKEN = "8813599415:AAE1t6JJg8zgZFs5Osh5ukaRN8N4d5je9yM"
+BOT_TOKEN = "8813599415:AAHppiim_ryfE0jl4m95HAdBS4N4j0kYzVY"
 MANAGER_CHAT_ID = 867366564
 WEB_APP_URL = "https://addisuazaje12-prog.github.io/guder-bingo/"
 MINIMUM_BALANCE = 10.0
@@ -152,6 +152,10 @@ async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
     return ConversationHandler.END
 
+async def cancel_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("❌ Action cancelled.")
+    return ConversationHandler.END
+
 async def support_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = "📞 <b>ድጋፍ (Support)</b>\n1. Guder bingo support (@Guderbingosupport)\nBot: @guderbingo_bot"
     if update.callback_query:
@@ -219,7 +223,6 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
         update_user_balance(user.id, -CARD_PRICE, user.full_name, user.username or "N/A")
         await update.message.reply_text(f"✅ Registered for Cartela **#{cartela_no}**!", parse_mode="Markdown")
         
-        # Optional: Send Amharic audio notification if file exists in audio folder
         audio_path = os.path.join(AUDIO_DIR, "joined.ogg")
         if os.path.exists(audio_path):
             try:
@@ -228,7 +231,6 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                 pass
 
     elif action == "claim_bingo":
-        # 50/50 Prize pool calculation (e.g., 500 total pot -> 250 winner, 250 manager)
         total_pot = 500.0
         winner_share = total_pot * 0.5
         manager_share = total_pot * 0.5
@@ -243,7 +245,6 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
         update_user_balance(user.id, winner_share)
         await update.message.reply_text(f"🎉 **BINGO CONFIRMED!**\nእንኳን ደስ አለዎት! {winner_share} ETB (50% Winner Pool) ወደ ሂሳብዎ ገብቷል። (Telebirr: {TELEBIRR_ACCOUNT})", parse_mode="Markdown")
         
-        # Optional: Send Amharic winner announcement voice note if available
         audio_path = os.path.join(AUDIO_DIR, "bingo_winner.ogg")
         if os.path.exists(audio_path):
             try:
@@ -256,7 +257,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 def main():
     request = HTTPXRequest(connect_timeout=30.0, read_timeout=30.0)
-    app = Application.builder().token(BOT_TOKEN).request(request).build()
+    app = Application.builder().token(BOT_TOKEN).request(request).get_updates_request(request).build()
 
     deposit_handler = ConversationHandler(
         entry_points=[CommandHandler("deposit", deposit_start), CallbackQueryHandler(deposit_start, pattern="^start_deposit$")],
@@ -265,7 +266,7 @@ def main():
             SELECTING_PAYMENT: [CallbackQueryHandler(handle_payment_choice, pattern="^pay_")],
             AWAITING_RECEIPT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_receipt)]
         },
-        fallbacks=[CommandHandler("cancel", lambda u, c: ConversationHandler.END)]
+        fallbacks=[CommandHandler("cancel", cancel_conversation)]
     )
 
     app.add_handler(CommandHandler("start", start))
