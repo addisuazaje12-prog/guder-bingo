@@ -154,12 +154,12 @@ textarea {
   color: white;
 }
 
-/* Fast Cartela Selection Grid Styles */
+/* Fast Cartela Selection Grid Styles (1 to 800) */
 .cartela-grid-fast {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
-  max-height: 220px;
+  max-height: 250px;
   overflow-y: auto;
   background: #111c2b;
   padding: 10px;
@@ -172,7 +172,7 @@ textarea {
   background: #223149;
   color: white;
   padding: 10px 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
   border-radius: 6px;
   border: none;
@@ -187,6 +187,11 @@ textarea {
 .cartela-btn.selected-gold {
   background: var(--gold) !important;
   color: #101827 !important;
+}
+
+.cartela-btn.selected-green {
+  background: var(--green) !important;
+  color: #ffffff !important;
 }
 
 .call-number {
@@ -337,11 +342,11 @@ footer {
   </div>
 
   <div id="selectionArea" class="hidden">
-    <p class="muted">ከዚህ በታች ካሉ ካርቴላዎች ውስጥ ፈጣን በመሆን ይምረጡ (1–800)። ምርጫው በ <span id="selectTimer">30</span> ሰከንድ ውስጥ ይጠናቀቃል፡፡</p>
+    <p class="muted">ከ 1 እስከ 800 ካሉ ካርቴላዎች ውስጥ ፈጣን በመሆን ይምረጡ። ምርጫው በ <span id="selectTimer">30</span> ሰከንድ ውስጥ ይጠናቀቃል፡፡</p>
 
     <label><b>ፈጣን የካርቴላ ምርጫ (በንክኪ ይምረጡ):</b></label>
     <div class="cartela-grid-fast" id="fastCartelaContainer">
-      <!-- ቁጥሮች በጃቫስክሪፕት በንክኪ እንዲመረጡ ይደረጋሉ -->
+      <!-- JavaScript dynamically builds 1 to 800 buttons -->
     </div>
   </div>
 
@@ -502,15 +507,14 @@ let lastAudioCallNum = null;
 
 const $ = id => document.getElementById(id);
 
-// Generate Fast Selection Grid Buttons (1 to 50 for quick grabbing)
+// Generate Fast Selection Grid Buttons (1 to 800)
 function renderFastCartelaGrid() {
   const container = $("fastCartelaContainer");
   if (!container || container.children.length > 0) return;
   
   let html = "";
-  // Displaying quick interactive cartela buttons from 1 to 50 for fast tapping
-  for (let i = 1; i <= 50; i++) {
-    html += `<button class="cartela-btn" onclick="selectFastCartela(${i})">#${i}</button>`;
+  for (let i = 1; i <= 800; i++) {
+    html += `<button id="c_btn_${i}" class="cartela-btn" onclick="selectFastCartela(${i})">#${i}</button>`;
   }
   container.innerHTML = html;
 }
@@ -639,7 +643,7 @@ async function loadConfig() {
 
     $("paymentDetails").innerHTML = `
       <b>የቴሌብር የክፍያ ቁጥር (Telebirr Number):</b>
-      ${escapeHtml(phone)}<br>
+      <code>${escapeHtml(phone)}</code><br>
       <span class="muted">
         ዝቅተኛው የငွေ መጠን 10.00 ብር ነው። ከትራንስፌር በኋላ የግብይት ቁጥሩን ያስገቡ።
       </span>
@@ -819,9 +823,14 @@ function randomUnique(min, max, count) {
   return values;
 }
 
-// Fast selection handler when clicking cartela grid buttons
+// Fast selection handler with Gold to Green color transition
 window.selectFastCartela = async function(cartelaNo) {
   if (!currentRoom) return;
+
+  const btn = $(`c_btn_${cartelaNo}`);
+  if (btn) {
+    btn.classList.add("selected-gold"); // Turns Gold when clicked/touched
+  }
 
   try {
     const matrix = makeCard();
@@ -834,6 +843,11 @@ window.selectFastCartela = async function(cartelaNo) {
         numbers: matrix
       })
     });
+
+    if (btn) {
+      btn.classList.remove("selected-gold");
+      btn.classList.add("selected-green"); // Turns Green upon confirmation
+    }
 
     currentMatrix = matrix;
 
@@ -859,6 +873,7 @@ window.selectFastCartela = async function(cartelaNo) {
     refreshGame();
 
   } catch (e) {
+    if (btn) btn.classList.remove("selected-gold");
     toast(e.message);
   }
 };
