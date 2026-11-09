@@ -12,6 +12,7 @@
   --text: var(--tg-theme-text-color, #f5f7fb);
   --accent: var(--tg-theme-button-color, #1687d9);
   --green: #20b879;
+  --gold: #ffd36d;
   --panel: #1a2638;
 }
 
@@ -128,7 +129,7 @@ textarea {
 
 .bingo-head div {
   text-align: center;
-  color: #ffd36d;
+  color: var(--gold);
   font-weight: bold;
   padding: 5px;
 }
@@ -153,8 +154,38 @@ textarea {
   color: white;
 }
 
-.cell.selected-gold {
-  background: #ffd36d !important;
+/* Fast Cartela Selection Grid Styles */
+.cartela-grid-fast {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #111c2b;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #46566d;
+  margin: 10px 0;
+}
+
+.cartela-btn {
+  background: #223149;
+  color: white;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cartela-btn:hover {
+  background: #1687d9;
+}
+
+.cartela-btn.selected-gold {
+  background: var(--gold) !important;
   color: #101827 !important;
 }
 
@@ -221,7 +252,7 @@ textarea {
 
 .modal-card {
   background: #1a2638;
-  border: 2px solid #ffd36d;
+  border: 2px solid var(--gold);
   padding: 24px;
   border-radius: 16px;
   text-align: center;
@@ -231,7 +262,7 @@ textarea {
 }
 
 .modal-card h2 {
-  color: #ffd36d;
+  color: var(--gold);
   font-size: 28px;
   margin-top: 0;
 }
@@ -306,14 +337,12 @@ footer {
   </div>
 
   <div id="selectionArea" class="hidden">
-    <p class="muted">የካርቴላ ቁጥር ይምረጡ (1–800)። ምርጫው በ <span id="selectTimer">30</span> ሰከንድ ውስጥ ይጠናቀቃል፡፡</p>
+    <p class="muted">ከዚህ በታች ካሉ ካርቴላዎች ውስጥ ፈጣን በመሆን ይምረጡ (1–800)። ምርጫው በ <span id="selectTimer">30</span> ሰከንድ ውስጥ ይጠናቀቃል፡፡</p>
 
-    <label>የካርቴላ ቁጥር (Cartela Number)</label>
-    <input id="cartelaNo" type="number" min="1" max="800" value="1">
-
-    <button id="selectBtn" onclick="selectCartela()" style="width:100%">
-      ካርቴላ ይምረጡ (10 ETB) - SELECT CARTELA
-    </button>
+    <label><b>ፈጣን የካርቴላ ምርጫ (በንክኪ ይምረጡ):</b></label>
+    <div class="cartela-grid-fast" id="fastCartelaContainer">
+      <!-- ቁጥሮች በጃቫስክሪፕት በንክኪ እንዲመረጡ ይደረጋሉ -->
+    </div>
   </div>
 
   <div id="cardArea" class="hidden">
@@ -413,7 +442,7 @@ footer {
   <ol class="muted">
     <li>በቴሌግራም ቦት በኩል ጉደር ቢንጎን ይክፈቱ።</li>
     <li>ቢያንስ 10 ብር ዴፖዚት በማድረግ ሂሳብዎን ይሙሉ።</li>
-    <li>ምዝገባ ሲከፈት ከ1 እስከ 800 ካሉ ካርቴላዎች አንዱን ይምረጡ (የ30 ሰከንድ ጊዜ አለው)።</li>
+    <li>ምዝገባ ሲከፈት ከሚታዩት ካርቴላዎች ውስጥ ፈጣን በመሆን አንዱን በንክኪ ይምረጡ (የ30 ሰከንድ ጊዜ አለው)።</li>
     <li>የጨዋታ ቁጥሮች በአማርኛ የድምፅ ጥሪ ይጠራሉ።</li>
     <li>መስመር ሲያጠናቅቁ BINGO በመጫን 50% የድል ሽልማት ያግኙ!</li>
   </ol>
@@ -472,6 +501,19 @@ let prepTimerInterval = null;
 let lastAudioCallNum = null;
 
 const $ = id => document.getElementById(id);
+
+// Generate Fast Selection Grid Buttons (1 to 50 for quick grabbing)
+function renderFastCartelaGrid() {
+  const container = $("fastCartelaContainer");
+  if (!container || container.children.length > 0) return;
+  
+  let html = "";
+  // Displaying quick interactive cartela buttons from 1 to 50 for fast tapping
+  for (let i = 1; i <= 50; i++) {
+    html += `<button class="cartela-btn" onclick="selectFastCartela(${i})">#${i}</button>`;
+  }
+  container.innerHTML = html;
+}
 
 // Audio Cue Generator using Web Audio API
 function playCallSound(number) {
@@ -734,6 +776,10 @@ async function refreshGame() {
 
       $("selectionArea").classList.toggle("hidden", !canSelect);
 
+      if (canSelect) {
+        renderFastCartelaGrid();
+      }
+
       if (!canSelect && Number(data.balance) < 10) {
         $("roomInfo").textContent +=
           " · ካርቴላ ለመምረጥ ቢያንስ 10.00 ብር ሚዛን ያስፈልጋል።";
@@ -773,20 +819,11 @@ function randomUnique(min, max, count) {
   return values;
 }
 
-window.selectCartela = async function() {
+// Fast selection handler when clicking cartela grid buttons
+window.selectFastCartela = async function(cartelaNo) {
   if (!currentRoom) return;
 
-  const button = $("selectBtn");
-  button.disabled = true;
-
   try {
-    const cartelaNo = Number($("cartelaNo").value);
-
-    if (!Number.isInteger(cartelaNo) ||
-        cartelaNo < 1 || cartelaNo > 800) {
-      throw new Error("እባክዎ ከ 1 እስከ 800 ያሉ የካርቴላ ቁጥሮች ያስገቡ።");
-    }
-
     const matrix = makeCard();
 
     const data = await api("/api/cartela/select", {
@@ -813,7 +850,7 @@ window.selectCartela = async function() {
 
     renderCard([]);
 
-    toast(data.message || "ካርቴላ ተመርጧል።");
+    toast(data.message || `ካርቴላ #${cartelaNo} ተመርጧል!`);
 
     if (tg && tg.sendData) {
       tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
@@ -823,9 +860,6 @@ window.selectCartela = async function() {
 
   } catch (e) {
     toast(e.message);
-
-  } finally {
-    button.disabled = false;
   }
 };
 
