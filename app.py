@@ -80,7 +80,6 @@ def get_config():
 
 @app.route('/api/wallet', methods=['GET'])
 def get_wallet():
-    # Mocking user balance and transactions for demonstration
     conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
     cursor = conn.cursor()
     cursor.execute('SELECT SUM(amount) FROM ledger_transactions')
@@ -194,11 +193,23 @@ def claim_bingo():
 
         cursor.execute('SELECT status FROM game_rooms WHERE room_id = ?', (room_id,))
         room = cursor.fetchone()
-        if not room or room[0] == 'COMPLETED':
+        if not room:
             conn.rollback()
-            return jsonify({"status": "error", "message": "Round already won or room closed!"}), 400
+            return jsonify({"status": "error", "message": "ክፍሉ አልተገኘም!"}), 400
 
-        cursor.execute('UPDATE game_rooms SET status = ? WHERE room_id = ?', ('COMPLETED', room_id))
+        total_pot = 100.0
+        
+        # Check how many winners already claimed for this room
+        cursor.execute('SELECT COUNT(DISTINCT user_id) FROM ledger_transactions WHERE type = ? AND reference_id LIKE ?', 
+                       ('BINGO_WIN_PAYOUT', f'room_{room_id}_%'))
+        existing_winners_count = cursor.fetchone()[0]
+
+        if existing_winners_count >= 2:
+            conn.rollback()
+            return jsonify({"status": "error", "message": "የዚህ ክፍል አሸናፊዎች ተሞልተዋል!"}), 400
+
+        # Split 50% pot equally among winners (e.g., 25% each if 2 winners tie)
+        winning_share = (total_pot * 0.50) / (existing_winners_count + 1)
 
         cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (user_phone,))
         row = cursor.fetchone()
@@ -208,14 +219,15 @@ def claim_bingo():
             cursor.execute('INSERT INTO users (phone_number) VALUES (?)', (user_phone,))
             user_id = cursor.lastrowid
 
-        total_pot = 100.0
-        prize_allocated = total_pot * 0.50
-
         txn_id = f"txn_win_{room_id}_{user_id}_{int(time.time() * 1000)}"
         cursor.execute('''
             INSERT INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
             VALUES (?, ?, ?, ?, ?)
-        ''', (txn_id, user_id, prize_allocated, 'BINGO_WIN_PAYOUT', f"room_{room_id}_cartela_{cartela_no}"))
+        ''', (txn_id, user_id, winning_share, 'BINGO_WIN_PAYOUT', f"room_{room_id}_cartela_{cartela_no}"))
+
+        # Close room if max tie limit (2 winners) is reached
+        if existing_winners_count + 1 >= 2:
+            cursor.execute('UPDATE game_rooms SET status = ? WHERE room_id = ?', ('COMPLETED', room_id))
 
         conn.commit()
 
@@ -224,9 +236,9 @@ def claim_bingo():
 
         return jsonify({
             "status": "success",
-            "message": "Bingo verified successfully!",
+            "message": "Bingo verified successfully! Shared prize allocated.",
             "cartela_no": cartela_no,
-            "prize_allocated": prize_allocated,
+            "prize_allocated": winning_share,
             "user_balance": current_balance
         })
 
