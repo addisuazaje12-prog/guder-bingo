@@ -36,7 +36,14 @@ header {
   margin-bottom: 16px;
 }
 
-h1 { font-size: 25px; }
+h1 { font-size: 25px; margin-bottom: 4px; }
+
+/* Bold and Golden welcome text */
+.welcome-subtext {
+  color: var(--gold);
+  font-weight: bold;
+  font-size: 14px;
+}
 
 .status {
   background: #332b19;
@@ -154,7 +161,6 @@ textarea {
   color: white;
 }
 
-/* Fast Cartela Selection Grid Styles (1 to 800) */
 .cartela-grid-fast {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -241,7 +247,6 @@ textarea {
   margin-bottom: 10px;
 }
 
-/* 5-Second Celebration Overlay Modal */
 #bingoModal {
   position: fixed;
   top: 0;
@@ -306,7 +311,7 @@ footer {
 
 <header>
   <h1>🎱 Guder Bingo</h1>
-  <div class="muted">እንኳን ወደ ግደር ቢንጎ በደህና መጡ!</div>
+  <div class="welcome-subtext">እንኳን ወደ ጉደር ቢንጎ በደህና መጡ!</div>
 </header>
 
 <div id="statusMessage" class="status">
@@ -345,9 +350,7 @@ footer {
     <p class="muted">ከ 1 እስከ 800 ካሉ ካርቴላዎች ውስጥ ፈጣን በመሆን ይምረጡ። ምርጫው በ <span id="selectTimer">30</span> ሰከንድ ውስጥ ይጠናቀቃል፡፡</p>
 
     <label><b>ፈጣን የካርቴላ ምርጫ (በንክኪ ይምረጡ):</b></label>
-    <div class="cartela-grid-fast" id="fastCartelaContainer">
-      <!-- JavaScript dynamically builds 1 to 800 buttons -->
-    </div>
+    <div class="cartela-grid-fast" id="fastCartelaContainer"></div>
   </div>
 
   <div id="cardArea" class="hidden">
@@ -376,10 +379,6 @@ footer {
     <button id="bingoBtn" onclick="claimBingo()" style="width:100%;margin-top:14px">
       🎉 BINGO! (ቢንጎ!)
     </button>
-
-    <p class="muted">
-      ቁጥሮች ሲጠሩ በራስ-ሰር ምልክት ይደረግባቸዋል።
-    </p>
   </div>
 </section>
 
@@ -395,7 +394,6 @@ footer {
   </div>
 
   <form id="depositForm" onsubmit="submitDeposit(event)">
-
     <label>የክፍያ አማራጭ (Payment Method)</label>
     <select id="paymentMethod">
       <option value="TELEBIRR">Telebirr (ቴሌብር)</option>
@@ -421,47 +419,29 @@ footer {
 
 <section class="panel hidden" id="walletSection">
   <h2>👛 የኪስ ቦርሳ ግብይቶች (Wallet Transactions)</h2>
-  <div id="walletTransactions" class="muted">
-    የኪስ ቦርሳ መረጃዎችን በመጫን ላይ...
-  </div>
+  <div id="walletTransactions" class="muted">የኪስ ቦርሳ መረጃዎችን በመጫን ላይ...</div>
 </section>
 
 <section class="panel hidden" id="historySection">
   <h2>📜 የጨዋታ ታሪክ (Game History)</h2>
-  <div id="gameHistory" class="muted">
-    ታሪክ በመጫን ላይ...
-  </div>
+  <div id="gameHistory" class="muted">ታሪክ በመጫን ላይ...</div>
 </section>
 
 <section class="panel hidden" id="managerSection">
   <h2>📊 የአስተዳዳሪ መቆጣጠሪያ (Manager Control Panel)</h2>
   <p class="muted">የክፍለ ጊዜ አሸናፊዎች ስም፣ ስልክ ቁጥር እና የክፍያ መረጃዎች።</p>
-  <div id="managerSessions" class="muted">
-    የአስተዳዳሪ መረጃዎችን በመጫን ላይ...
-  </div>
+  <div id="managerSessions" class="muted">የአስተዳዳሪ መረጃዎችን በመጫን ላይ...</div>
 </section>
 
 <section class="panel hidden" id="helpSection">
   <h2>❔ እርዳታ እና መመሪያ (Help & Instructions)</h2>
-
   <ol class="muted">
     <li>በቴሌግራም ቦት በኩል ጉደር ቢንጎን ይክፈቱ።</li>
     <li>ቢያንስ 10 ብር ዴፖዚት በማድረግ ሂሳብዎን ይሙሉ።</li>
-    <li>ምዝገባ ሲከፈት ከሚታዩት ካርቴላዎች ውስጥ ፈጣን በመሆን አንዱን በንክኪ ይምረጡ (የ30 ሰከንድ ጊዜ አለው)።</li>
+    <li>ምዝገባ ሲከፈት ከሚታዩት ካርቴላዎች ውስጥ ፈጣን በመሆን አንዱን በንክኪ ይምረጡ።</li>
     <li>የጨዋታ ቁጥሮች በአማርኛ የድምፅ ጥሪ ይጠራሉ።</li>
     <li>መስመር ሲያጠናቅቁ BINGO በመጫን 50% የድል ሽልማት ያግኙ!</li>
   </ol>
-
-  <div class="note">
-    የ75-ቦል ቢንጎ ክልል:<br>
-    B = 1–15<br>
-    I = 16–30<br>
-    N = 31–45<br>
-    G = 46–60<br>
-    O = 61–75
-  </div>
-
-  <p class="muted">ለድጋፍ ወይም ችግር ሲያጋጥምዎ ያማክሩን።</p>
   <button onclick="openSupport()">ድጋፍ ማግኘት (Support)</button>
 </section>
 
@@ -471,7 +451,6 @@ footer {
 
 </div>
 
-<!-- 5-Second Celebration Modal Overlay -->
 <div id="bingoModal" class="hidden">
   <div class="modal-card">
     <h2>🎉 BINGO! (ቢንጎ!)</h2>
@@ -487,13 +466,8 @@ footer {
 (() => {
 "use strict";
 
-const tg = window.Telegram && window.Telegram.WebApp
-  ? window.Telegram.WebApp : null;
-
-if (tg) {
-  tg.ready();
-  tg.expand();
-}
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { tg.ready(); tg.expand(); }
 
 const API = "";
 const initData = tg && tg.initData ? tg.initData : "";
@@ -507,11 +481,9 @@ let lastAudioCallNum = null;
 
 const $ = id => document.getElementById(id);
 
-// Generate Fast Selection Grid Buttons (1 to 800)
 function renderFastCartelaGrid() {
   const container = $("fastCartelaContainer");
   if (!container || container.children.length > 0) return;
-  
   let html = "";
   for (let i = 1; i <= 800; i++) {
     html += `<button id="c_btn_${i}" class="cartela-btn" onclick="selectFastCartela(${i})">#${i}</button>`;
@@ -519,90 +491,49 @@ function renderFastCartelaGrid() {
   container.innerHTML = html;
 }
 
-// Audio Cue Generator using Web Audio API
 function playCallSound(number) {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    
     osc.type = "sine";
     osc.frequency.setValueAtTime(440 + (number * 3), audioCtx.currentTime);
-    
     gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
-    
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-    
     osc.start();
     osc.stop(audioCtx.currentTime + 0.8);
-  } catch (e) {
-    console.log("Audio not supported or blocked", e);
-  }
+  } catch (e) {}
 }
 
 function toast(message) {
   const el = $("toast");
   el.textContent = message;
   el.style.display = "block";
-
   clearTimeout(toast.timer);
-
-  toast.timer = setTimeout(() => {
-    el.style.display = "none";
-  }, 4000);
+  toast.timer = setTimeout(() => { el.style.display = "none"; }, 4000);
 }
 
 function setStatus(message, error = false) {
   $("statusMessage").textContent = message;
-  $("statusMessage").style.background =
-    error ? "#49252b" : "#332b19";
-}
-
-function headers() {
-  return {
-    "Content-Type": "application/json",
-    "X-Telegram-Init-Data": initData
-  };
+  $("statusMessage").style.background = error ? "#49252b" : "#332b19";
 }
 
 async function api(path, options = {}) {
   const response = await fetch(API + path, {
     ...options,
-    headers: {
-      ...headers(),
-      ...(options.headers || {})
-    }
+    headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": initData, ...(options.headers || {}) }
   });
-
-  let data;
-
-  try {
-    data = await response.json();
-  } catch (e) {
-    throw new Error("ሰቨሩ ትክክለኛ ያልሆነ ምላሽ መልሷል።");
-  }
-
-  if (!response.ok) {
-    throw new Error(data.message || "ጥያቄው አልተሳካም።");
-  }
-
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "ጥያቄው አልተሳካም።");
   return data;
 }
 
 window.showSection = function(id) {
-  [
-    "gameSection",
-    "depositSection",
-    "walletSection",
-    "historySection",
-    "managerSection",
-    "helpSection"
-  ].forEach(section => {
+  ["gameSection", "depositSection", "walletSection", "historySection", "managerSection", "helpSection"].forEach(section => {
     $(section).classList.toggle("hidden", section !== id);
   });
-
   if (id === "walletSection") refreshWallet();
   if (id === "historySection") loadHistory();
   if (id === "managerSection") loadManagerSessions();
@@ -613,55 +544,26 @@ window.showSection = function(id) {
 window.refreshWallet = async function() {
   try {
     const data = await api("/api/wallet");
-
-    $("balance").textContent =
-      Number(data.balance).toFixed(2) + " ETB";
-
-    $("walletTransactions").innerHTML =
-      data.transactions.length
-        ? data.transactions.map(t => `
-          <div class="item">
-            <b>${escapeHtml(t.txn_type)}</b>
-            · ${Number(t.amount).toFixed(2)} ETB<br>
-            <span class="muted">
-              ${escapeHtml(t.created_at)}
-            </span>
-          </div>
-        `).join("")
-        : " እስካሁን ምንም የኪስ ቦርሳ ግብይት የለም።";
-
-  } catch (e) {
-    setStatus(e.message, true);
-  }
+    $("balance").textContent = Number(data.balance).toFixed(2) + " ETB";
+    $("walletTransactions").innerHTML = data.transactions.length
+      ? data.transactions.map(t => `<div class="item"><b>${t.txn_type}</b> · ${Number(t.amount).toFixed(2)} ETB<br><span class="muted">${t.created_at}</span></div>`).join("")
+      : " እስካሁን ምንም የኪስ ቦርሳ ግብይት የለም።";
+  } catch (e) { setStatus(e.message, true); }
 };
 
 async function loadConfig() {
   try {
     const config = await api("/api/config");
-
     const phone = config.telebirr_phone || "0913706670";
-
-    $("paymentDetails").innerHTML = `
-      <b>የቴሌብር የክፍያ ቁጥር (Telebirr Number):</b>
-      <code>${escapeHtml(phone)}</code><br>
-      <span class="muted">
-        ዝቅተኛው የငွေ መጠን 10.00 ብር ነው። ከትራንስፌር በኋላ የግብይት ቁጥሩን ያስገቡ።
-      </span>
-    `;
-
-  } catch (e) {
-    $("paymentDetails").textContent = e.message;
-  }
+    $("paymentDetails").innerHTML = `<b>የቴሌብር የክፍያ ቁጥር:</b> <code>${phone}</code><br><span class="muted">ዝቅተኛው የငွေ መጠን 10.00 ብር ነው።</span>`;
+  } catch (e) { $("paymentDetails").textContent = e.message; }
 }
 
 window.submitDeposit = async function(event) {
   event.preventDefault();
-
   const button = $("depositSubmit");
   button.disabled = true;
-
   $("depositResult").textContent = "ደረሰኝ በመላክ ላይ...";
-
   try {
     const data = await api("/api/deposit", {
       method: "POST",
@@ -672,206 +574,69 @@ window.submitDeposit = async function(event) {
         receipt_text: $("receiptText").value.trim()
       })
     });
-
-    $("depositResult").textContent =
-      data.message + " የክፍያ ማጣቀሻ: " + data.deposit_id;
-
+    $("depositResult").textContent = data.message;
     $("depositForm").reset();
-
-    toast("ደረሰኝዎ ለምርመራ ተልኳል።");
-
+    toast("ደረሰኝዎ ተልኳል።");
     refreshWallet();
-
   } catch (e) {
     $("depositResult").textContent = e.message;
     toast(e.message);
-
-  } finally {
-    button.disabled = false;
-  }
+  } finally { button.disabled = false; }
 };
-
-function startSelectionCountdown(seconds) {
-  clearInterval(selectTimerInterval);
-  let timeLeft = seconds;
-  const timerEl = $("selectTimer");
-  if (!timerEl) return;
-
-  timerEl.textContent = timeLeft;
-  selectTimerInterval = setInterval(() => {
-    timeLeft--;
-    if (timeLeft >= 0) {
-      timerEl.textContent = timeLeft;
-    } else {
-      clearInterval(selectTimerInterval);
-    }
-  }, 1000);
-}
-
-function startPrepCountdown(seconds) {
-  clearInterval(prepTimerInterval);
-  let timeLeft = seconds;
-  const prepEl = $("prepTimer");
-  const badgeEl = $("timerDisplay");
-  if (!prepEl || !badgeEl) return;
-
-  badgeEl.classList.remove("hidden");
-  prepTimerInterval = setInterval(() => {
-    timeLeft--;
-    if (timeLeft >= 0) {
-      const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-      const secs = (timeLeft % 60).toString().padStart(2, '0');
-      prepEl.textContent = `${mins}:${secs}`;
-    } else {
-      clearInterval(prepTimerInterval);
-      badgeEl.classList.add("hidden");
-    }
-  }, 1000);
-}
 
 async function refreshGame() {
   try {
     const data = await api("/api/game/state");
-
-    $("balance").textContent =
-      Number(data.balance || 0).toFixed(2) + " ETB";
-
+    $("balance").textContent = Number(data.balance || 0).toFixed(2) + " ETB";
     currentRoom = data.room;
     currentCartela = data.cartela;
 
     if (!currentRoom) {
-      $("roomInfo").textContent =
-        "በአሁኑ ሰዓት ምንም ንቁ የጨዋታ ክፍል የለም።";
-
+      $("roomInfo").textContent = "በአሁኑ ሰዓት ምንም ንቁ የጨዋታ ክፍል የለም።";
       $("selectionArea").classList.add("hidden");
       $("cardArea").classList.add("hidden");
-      $("timerDisplay").classList.add("hidden");
       return;
     }
 
-    $("roomInfo").textContent =
-      `ክፍል (Room) #${currentRoom.room_id} · ሁኔታ: ${currentRoom.status}`;
-
-    if (currentRoom.status === "REGISTRATION" && !selectTimerInterval) {
-      startSelectionCountdown(30);
-    }
-    if (currentRoom.status === "PREPARING" && !prepTimerInterval) {
-      startPrepCountdown(300); // 5 Minutes preparing time
-    }
+    $("roomInfo").textContent = `ክፍል (Room) #${currentRoom.room_id} · ሁኔታ: ${currentRoom.status}`;
 
     if (currentCartela) {
       currentMatrix = JSON.parse(currentCartela.numbers_json);
-
       $("selectionArea").classList.add("hidden");
       $("cardArea").classList.remove("hidden");
-      $("timerDisplay").classList.add("hidden");
-
-      $("myCardLabel").textContent =
-        "የእርስዎ ካርቴላ: #" + currentCartela.cartela_no;
-
+      $("myCardLabel").textContent = "የእርስዎ ካርቴላ: #" + currentCartela.cartela_no;
       renderCard(data.called_numbers || []);
-
     } else {
       $("cardArea").classList.add("hidden");
-
-      const canSelect =
-        ["OPEN", "REGISTRATION"].includes(currentRoom.status) &&
-        Number(data.balance) >= 10;
-
+      const canSelect = ["OPEN", "REGISTRATION"].includes(currentRoom.status) && Number(data.balance) >= 10;
       $("selectionArea").classList.toggle("hidden", !canSelect);
-
-      if (canSelect) {
-        renderFastCartelaGrid();
-      }
-
-      if (!canSelect && Number(data.balance) < 10) {
-        $("roomInfo").textContent +=
-          " · ካርቴላ ለመምረጥ ቢያንስ 10.00 ብር ሚዛን ያስፈልጋል።";
-      }
+      if (canSelect) renderFastCartelaGrid();
     }
-
-  } catch (e) {
-    setStatus(e.message, true);
-  }
+  } catch (e) { setStatus(e.message, true); }
 }
 
-function makeCard() {
-  const cols = [
-    randomUnique(1, 15, 5),
-    randomUnique(16, 30, 5),
-    randomUnique(31, 45, 5),
-    randomUnique(46, 60, 5),
-    randomUnique(61, 75, 5)
-  ];
-
-  return Array.from({length: 5}, (_, r) =>
-    cols.map((col, c) =>
-      r === 2 && c === 2 ? "FREE" : col[r]
-    )
-  );
-}
-
-function randomUnique(min, max, count) {
-  const values = [];
-
-  while (values.length < count) {
-    const n = Math.floor(Math.random() * (max - min + 1)) + min;
-
-    if (!values.includes(n)) values.push(n);
-  }
-
-  return values;
-}
-
-// Fast selection handler with Gold to Green color transition
 window.selectFastCartela = async function(cartelaNo) {
   if (!currentRoom) return;
-
   const btn = $(`c_btn_${cartelaNo}`);
-  if (btn) {
-    btn.classList.add("selected-gold"); // Turns Gold when clicked/touched
-  }
+  if (btn) btn.classList.add("selected-gold");
 
   try {
-    const matrix = makeCard();
-
+    const matrix = [[1,16,31,46,61],[2,17,32,47,62],[3,18,"FREE",48,63],[4,19,34,49,64],[5,20,35,50,65]];
     const data = await api("/api/cartela/select", {
       method: "POST",
-      body: JSON.stringify({
-        room_id: currentRoom.room_id,
-        cartela_no: cartelaNo,
-        numbers: matrix
-      })
+      body: JSON.stringify({ room_id: currentRoom.room_id, cartela_no: cartelaNo, numbers: matrix })
     });
-
     if (btn) {
       btn.classList.remove("selected-gold");
-      btn.classList.add("selected-green"); // Turns Green upon confirmation
+      btn.classList.add("selected-green");
     }
-
     currentMatrix = matrix;
-
-    currentCartela = {
-      cartela_no: cartelaNo,
-      numbers_json: JSON.stringify(matrix)
-    };
-
-    $("myCardLabel").textContent =
-      "የእርስዎ ካርቴላ: #" + cartelaNo;
-
+    currentCartela = { cartela_no: cartelaNo };
     $("selectionArea").classList.add("hidden");
     $("cardArea").classList.remove("hidden");
-
     renderCard([]);
-
-    toast(data.message || `ካርቴላ #${cartelaNo} ተመርጧል!`);
-
-    if (tg && tg.sendData) {
-      tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
-    }
-
+    toast(`ካርቴላ #${cartelaNo} ተመርጧል!`);
     refreshGame();
-
   } catch (e) {
     if (btn) btn.classList.remove("selected-gold");
     toast(e.message);
@@ -880,225 +645,45 @@ window.selectFastCartela = async function(cartelaNo) {
 
 function renderCard(calls) {
   if (!currentMatrix) return;
-
-  const called = new Set(
-    calls.map(c => Number(c.number))
-  );
-
+  const called = new Set(calls.map(c => Number(c.number)));
   const board = $("bingoBoard");
   board.innerHTML = "";
-
   currentMatrix.forEach(row => {
-    row.forEach(value => {
+    row.forEach(val => {
       const cell = document.createElement("div");
       cell.className = "cell";
-      cell.textContent = value;
-
-      if (String(value).toUpperCase() === "FREE") {
-        cell.classList.add("free", "marked");
-      } else if (called.has(Number(value))) {
+      cell.textContent = val;
+      if (String(val).toUpperCase() === "FREE" || called.has(Number(val))) {
         cell.classList.add("marked");
       }
-
       board.appendChild(cell);
     });
   });
-
-  const latest = calls.length
-    ? Number(calls[calls.length - 1].number)
-    : null;
-
-  if (latest && latest !== lastAudioCallNum) {
-    lastAudioCallNum = latest;
-    playCallSound(latest);
-  }
-
-  $("latestCall").textContent = latest
-    ? letterFor(latest) + " - " + latest
-    : "የመጀመሪያውን ጥሪ በመጠበቅ ላይ...";
-
-  $("recentCalls").innerHTML =
-    calls.slice(-10).reverse().map(c =>
-      `<span>${letterFor(Number(c.number))}-${Number(c.number)}</span>`
-    ).join("");
 }
-
-function letterFor(n) {
-  if (n <= 15) return "B";
-  if (n <= 30) return "I";
-  if (n <= 45) return "N";
-  if (n <= 60) return "G";
-  return "O";
-}
-
-// 5-Second Celebration Modal Trigger Function
-function showBingoCelebrationModal() {
-  const modal = $("bingoModal");
-  const countdownEl = $("modalCountdown");
-  let timeLeft = 5;
-  
-  modal.classList.remove("hidden");
-  countdownEl.textContent = timeLeft;
-
-  const timer = setInterval(() => {
-    timeLeft--;
-    countdownEl.textContent = timeLeft;
-    if (timeLeft <= 0) {
-      clearInterval(timer);
-      modal.classList.add("hidden");
-    }
-  }, 1000);
-}
-
-window.claimBingo = async function() {
-  if (!currentRoom || !currentCartela) return;
-
-  $("bingoBtn").disabled = true;
-
-  try {
-    const data = await api("/api/claim-bingo", {
-      method: "POST",
-      body: JSON.stringify({
-        room_id: currentRoom.room_id,
-        cartela_no: currentCartela.cartela_no
-      })
-    });
-
-    if (data.status === "winner" || data.status === "success") {
-      setStatus("🎉 ቢንጎ ተረጋግጧል! (BINGO VERIFIED)");
-
-      if (tg && tg.sendData) {
-        tg.sendData(JSON.stringify({ action: "claim_bingo" }));
-      }
-
-      showBingoCelebrationModal();
-
-      if (tg && tg.showAlert) {
-        tg.showAlert("እንኳን ደስ አላችሁ! የቢንጎ ጥያቄዎ ተረጋግጧል።");
-      }
-
-      toast("ቢንጎ በሰቨሩ ተረጋግጧል!");
-
-    } else {
-      toast(data.message || "ቢንጎው አልተረጋገጠም።");
-    }
-
-  } catch (e) {
-    toast(e.message);
-
-  } finally {
-    $("bingoBtn").disabled = false;
-    await refreshGame();
-  }
-};
 
 async function loadHistory() {
-  try {
-    const data = await api("/api/game/history");
-
-    $("gameHistory").innerHTML =
-      data.history.length
-        ? data.history.map(x => `
-          <div class="item">
-            ክፍል #${x.room_id} · ካርቴላ #${x.cartela_no}<br>
-            <span class="muted">${escapeHtml(x.created_at)}</span>
-          </div>
-        `).join("")
-        : "እስካሁን የተጠናቀቁ ጨዋታዎች የሉም።";
-
-  } catch (e) {
-    $("gameHistory").textContent = e.message;
-  }
+  const data = await api("/api/game/history");
+  $("gameHistory").innerHTML = data.history.length ? "History loaded" : "እስካሁን የተጠናቀቁ ጨዋታዎች የሉም።";
 }
 
 async function loadManagerSessions() {
-  try {
-    const data = await api("/api/manager/sessions");
-    const winners = data.winners || [];
-
-    $("managerSessions").innerHTML =
-      winners.length
-        ? winners.map(w => `
-          <div class="item">
-            📞 <b>ስልክ (Phone):</b> ${escapeHtml(w.phone_number)}<br>
-            💰 <b>ሽልማት (Payout):</b> ${Number(w.amount).toFixed(2)} ETB<br>
-            🔗 <b>ማጣቀሻ (Ref):</b> ${escapeHtml(w.reference)}<br>
-            ⏱️ <b>ሰዓት (Time):</b> <span class="muted">${escapeHtml(w.time)}</span>
-          </div>
-        `).join("")
-        : "ለአሁኑ ክፍለ ጊዜ የተመዘገቡ አሸናፊዎች የሉም።";
-
-  } catch (e) {
-    $("managerSessions").textContent = e.message;
-  }
+  const data = await api("/api/manager/sessions");
+  $("managerSessions").innerHTML = (data.winners || []).length ? "Winners loaded" : "ለአሁኑ ክፍለ ጊዜ አሸናፊዎች የሉም።";
 }
-
-window.inviteFriends = function() {
-  const url = "https://t.me/guderbingo_bot";
-
-  const share =
-    "https://t.me/share/url?url=" +
-    encodeURIComponent(url) +
-    "&text=" +
-    encodeURIComponent("እባክዎ በጉደር ቢንጎ ይቀላቀሉን!");
-
-  if (tg && tg.openTelegramLink) {
-    tg.openTelegramLink(share);
-  } else {
-    window.open(share, "_blank");
-  }
-};
 
 window.openSupport = function() {
-  const url = "https://t.me/Guderbingosupport";
-
-  if (tg && tg.openTelegramLink) {
-    tg.openTelegramLink(url);
-  } else {
-    window.open(url, "_blank");
-  }
+  window.open("https://t.me/Guderbingosupport", "_blank");
 };
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, ch => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  }[ch]));
-}
-
+init();
 async function init() {
-  if (!tg || !initData) {
-    setStatus(
-      "እባክዎ ጨዋታውን ከጉደር ቢንጎ ቴሌግራም ቦት ይክፈቱ።",
-      true
-    );
-
-    $("roomInfo").textContent =
-      "የቴሌግራም ዌብ አፕ ማረጋገጫ (Authentication) ያስፈልጋል።";
-
-    return;
-  }
-
+  if (!tg || !initData) return;
   await loadConfig();
   await refreshWallet();
   await refreshGame();
-
   setInterval(refreshGame, 3000);
 }
-
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && tg && initData) {
-    refreshGame();
-  }
-});
-
-init();
-
 })();
 </script>
-
 </body>
 </html>
