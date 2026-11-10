@@ -233,12 +233,13 @@ def main():
             SELECTING_PAYMENT: [CallbackQueryHandler(handle_payment_choice, pattern="^pay_")],
             AWAITING_RECEIPT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_receipt)]
         },
-        fallbacks=[CommandHandler("cancel", cancel_conversation)],
-        per_message=False
+        fallbacks=[CommandHandler("cancel", cancel_conversation)]
     )
 
+    # Register ConversationHandler first so it takes priority over other handlers
+    app.add_handler(deposit_handler)
+
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("deposit", deposit_start))
     app.add_handler(CommandHandler("support", support_cmd))
     app.add_handler(CommandHandler("instruction", instruction_cmd))
     app.add_handler(CommandHandler("get_invitation_link", invite_cmd))
@@ -247,8 +248,6 @@ def main():
     app.add_handler(CallbackQueryHandler(support_cmd, pattern="^support_menu$"))
     app.add_handler(CallbackQueryHandler(instruction_cmd, pattern="^instruction_menu$"))
     app.add_handler(CallbackQueryHandler(invite_cmd, pattern="^invite_menu$"))
-    
-    app.add_handler(deposit_handler)
 
     print("🤖 Guder Bingo Server Active...")
     app.run_polling()
