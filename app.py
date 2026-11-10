@@ -2,8 +2,10 @@ import os
 import time
 import sqlite3
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Enables cross-origin resource sharing for GitHub Pages frontend
 
 # Manual Deposit & Verification Configuration
 TELEBIRR_SHORT_CODE = "800001"
@@ -109,6 +111,17 @@ def game_state():
         "called_numbers": [{"number": 5}, {"number": 18}, {"number": 32}]
     })
 
+@app.route('/api/cartela/select', methods=['POST'])
+def select_cartela():
+    data = request.json or {}
+    room_id = data.get('room_id', 1)
+    cartela_no = data.get('cartela_no', 1)
+    return jsonify({
+        "status": "success",
+        "message": f"Cartela #{cartela_no} selected successfully for room {room_id}.",
+        "cartela_no": cartela_no
+    })
+
 @app.route('/api/game/history', methods=['GET'])
 def game_history():
     return jsonify({"history": []})
@@ -199,7 +212,6 @@ def claim_bingo():
 
         total_pot = 100.0
         
-        # Check how many winners already claimed for this room
         cursor.execute('SELECT COUNT(DISTINCT user_id) FROM ledger_transactions WHERE type = ? AND reference_id LIKE ?', 
                        ('BINGO_WIN_PAYOUT', f'room_{room_id}_%'))
         existing_winners_count = cursor.fetchone()[0]
@@ -208,7 +220,6 @@ def claim_bingo():
             conn.rollback()
             return jsonify({"status": "error", "message": "የዚህ ክፍል አሸናፊዎች ተሞልተዋል!"}), 400
 
-        # Split 50% pot equally among winners (e.g., 25% each if 2 winners tie)
         winning_share = (total_pot * 0.50) / (existing_winners_count + 1)
 
         cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (user_phone,))
@@ -225,7 +236,6 @@ def claim_bingo():
             VALUES (?, ?, ?, ?, ?)
         ''', (txn_id, user_id, winning_share, 'BINGO_WIN_PAYOUT', f"room_{room_id}_cartela_{cartela_no}"))
 
-        # Close room if max tie limit (2 winners) is reached
         if existing_winners_count + 1 >= 2:
             cursor.execute('UPDATE game_rooms SET status = ? WHERE room_id = ?', ('COMPLETED', room_id))
 
