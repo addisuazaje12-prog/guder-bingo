@@ -84,7 +84,7 @@ def get_wallet():
     cursor = conn.cursor()
     cursor.execute('SELECT SUM(amount) FROM ledger_transactions')
     res = cursor.fetchone()
-    balance = res[0] if res[0] else 150.0
+    balance = res[0] if res[0] is not None else 150.0
 
     cursor.execute('SELECT txn_id, amount, type, created_at FROM ledger_transactions ORDER BY created_at DESC LIMIT 10')
     rows = cursor.fetchall()
