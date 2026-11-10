@@ -118,9 +118,9 @@ async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def deposit_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.callback_query:
         await update.callback_query.answer()
-        await update.callback_query.message.reply_text("💰 ማንንት የሚፈልጉትን መጠን ከ10 ብር ጀምሮ ያስገቡ::")
+        await update.callback_query.message.reply_text("💰 የሚፈልጉትን መጠን ከ10 ብር ጀምሮ ያስገቡ::")
     else:
-        await update.message.reply_text("💰 ማንንት የሚፈልጉትን መጠን ከ10 ብር ጀምሮ ያስገቡ::")
+        await update.message.reply_text("💰 የሚፈልጉትን መጠን ከ10 ብር ጀምሮ ያስገቡ::")
     return AWAITING_AMOUNT
 
 async def handle_deposit_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -160,7 +160,7 @@ async def handle_payment_choice(update: Update, context: ContextTypes.DEFAULT_TY
         f"📱 **{method}**\n\n"
         f"`{acc_num}`\n\n"
         f"የቴሌብር መመሪያ:-\n\n"
-        f"1. ከላይ ባለው የ {method} አውንት {amount:.2f} ብር ያስገቡ\n"
+        f"1. ከላይ ባለው የ {method} አካውንት {amount:.2f} ብር ያስገቡ\n"
         f"2. የከፈሉበትን የግብይት መረጃ የያዘ አጭር መልእክት (SMS) ከ {method} ይደርስዎታል።\n"
         f"3. ያገኙትን SMS ሙሉ ኮፒ በማድረግ ከዚህ በታች ባለው አጭር መልእክት ቦታ ውስጥ ፖስት በማድረግ ይላኩት።\n\n"
         f"📞 ለ ድጋፍ ወይም ለገጠሙ ችግር\n"
@@ -233,7 +233,8 @@ def main():
             SELECTING_PAYMENT: [CallbackQueryHandler(handle_payment_choice, pattern="^pay_")],
             AWAITING_RECEIPT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_receipt)]
         },
-        fallbacks=[CommandHandler("cancel", cancel_conversation)]
+        fallbacks=[CommandHandler("cancel", cancel_conversation)],
+        per_message=False
     )
 
     app.add_handler(CommandHandler("start", start))
