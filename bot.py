@@ -81,7 +81,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     balance = db_user[4] if db_user else 0.0
     update_user_balance(user.id, 0.0, user.full_name, user.username or "N/A")
 
-    # Menu with descriptive hints for each button box
     keyboard = [
         [InlineKeyboardButton("🎮 Play Game (ካርቴላ ይምረጡ)", web_app=WebAppInfo(url=WEB_APP_URL))],
         [InlineKeyboardButton("💳 Deposit (ገንዘብ አስገባ)", callback_data="start_deposit"), InlineKeyboardButton("💸 Withdraw (ገንዘብ አውጣ)", callback_data="withdraw_menu")],
@@ -135,7 +134,6 @@ async def handle_deposit_amount(update: Update, context: ContextTypes.DEFAULT_TY
             
         context.user_data["deposit_amount"] = amount
         
-        # Explicit payment options keyboard appearing after amount is provided
         keyboard = [
             [InlineKeyboardButton("📱 Telebirr (ቴሌብር)", callback_data="pay_telebirr")],
             [InlineKeyboardButton("🏦 CBE Birr (ንግድ ባንክ)", callback_data="pay_cbe")]
