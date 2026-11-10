@@ -116,15 +116,17 @@ async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.reply_text(f"✅ <b>የእርስዎ ሂሳብ (Balance):</b> {balance:.2f} ETB", parse_mode="HTML")
 
 async def deposit_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    target = update.callback_query.message if update.callback_query else update.message
     if update.callback_query:
         await update.callback_query.answer()
-    await target.reply_text("💰 ማንንት የሚፈልጉትን መጠን ከ10 ብር ጀምሮ ያስገቡ::")
+        await update.callback_query.message.reply_text("💰 ማንንት የሚፈልጉትን መጠን ከ10 ብር ጀምሮ ያስገቡ::")
+    else:
+        await update.message.reply_text("💰 ማንንት የሚፈልጉትን መጠን ከ10 ብር ጀምሮ ያስገቡ::")
     return AWAITING_AMOUNT
 
 async def handle_deposit_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        amount = float(update.message.text.strip())
+        text = update.message.text.strip()
+        amount = float(text)
         if amount < 10.0:
             await update.message.reply_text("❌ Minimum deposit amount is **10 ETB**.", parse_mode="Markdown")
             return AWAITING_AMOUNT
@@ -164,7 +166,7 @@ async def handle_payment_choice(update: Update, context: ContextTypes.DEFAULT_TY
         f"📞 ለ ድጋፍ ወይም ለገጠሙ ችግር\n"
         f"1. Guder bingo support (@Guderbingosupport)"
     )
-    await query.edit_message_text(msg, parse_mode="Markdown")
+    await query.message.reply_text(msg, parse_mode="Markdown")
     return AWAITING_RECEIPT
 
 async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -222,7 +224,10 @@ def main():
     app = Application.builder().token(BOT_TOKEN).request(request).get_updates_request(request).build()
 
     deposit_handler = ConversationHandler(
-        entry_points=[CommandHandler("deposit", deposit_start), CallbackQueryHandler(deposit_start, pattern="^start_deposit$")],
+        entry_points=[
+            CommandHandler("deposit", deposit_start),
+            CallbackQueryHandler(deposit_start, pattern="^start_deposit$")
+        ],
         states={
             AWAITING_AMOUNT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_deposit_amount)],
             SELECTING_PAYMENT: [CallbackQueryHandler(handle_payment_choice, pattern="^pay_")],
@@ -241,7 +246,6 @@ def main():
     app.add_handler(CallbackQueryHandler(support_cmd, pattern="^support_menu$"))
     app.add_handler(CallbackQueryHandler(instruction_cmd, pattern="^instruction_menu$"))
     app.add_handler(CallbackQueryHandler(invite_cmd, pattern="^invite_menu$"))
-    app.add_handler(CallbackQueryHandler(deposit_start, pattern="^start_deposit$"))
     
     app.add_handler(deposit_handler)
 
