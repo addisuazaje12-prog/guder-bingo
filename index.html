@@ -469,7 +469,8 @@ footer {
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (tg) { tg.ready(); tg.expand(); }
 
-const API = "";
+// Fixed absolute Render API URL
+const API = "https://guder-bingo-server.onrender.com";
 const initData = tg && tg.initData ? tg.initData : "";
 
 let currentRoom = null;
@@ -525,6 +526,13 @@ async function api(path, options = {}) {
     ...options,
     headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": initData, ...(options.headers || {}) }
   });
+  
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    const text = await response.text();
+    throw new Error(`ሰርቨሩ ትክክለኛ ያልሆነ ምላሽ ሰጥቷል (HTML Error): ${text.substring(0, 100)}`);
+  }
+
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || "ጥያቄው አልተሳካም።");
   return data;
