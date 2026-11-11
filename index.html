@@ -158,11 +158,13 @@ let timeLeft = 30;
 let prepTimeLeft = 5;
 let lastSpokenNum = null;
 
-// Unlock browser audio context policy on first user interaction
-document.addEventListener('click', () => {
-    let unlockAudio = new Audio();
-    unlockAudio.play().catch(() => {});
-}, { once: true });
+// Explicit Audio Context Unlocking on User Interactions
+function unlockAudioContext() {
+    let silentAudio = new Audio();
+    silentAudio.play().catch(() => {});
+}
+document.addEventListener('click', unlockAudioContext, { once: true });
+document.addEventListener('touchstart', unlockAudioContext, { once: true });
 
 const $ = id => document.getElementById(id);
 
@@ -180,9 +182,15 @@ function playAmharicAudio(num) {
         num <= 45 ? 'n' :
         num <= 60 ? 'g' : 'o';
     
+    // Explicit absolute path handling or fallback relative format
     let audioFile = `bingo_amharic_audio/${letter}${num}.mp3`;
     let audio = new Audio(audioFile);
-    audio.play().catch(e => console.log("Audio file play waiting or missing:", e));
+    audio.load();
+    audio.play().then(() => {
+        console.log("Successfully played:", audioFile);
+    }).catch(e => {
+        console.warn("Audio play blocked or missing file:", audioFile, e);
+    });
 }
 
 function renderCallingBoard(calledList) {
@@ -208,6 +216,7 @@ function renderFastCartelaGrid() {
 }
 
 window.startCartelaSelectionPhase = function() {
+    unlockAudioContext();
     $("menuScreen").classList.add("hidden");
     $("gameActiveArea").classList.add("hidden");
     $("prepArea").classList.add("hidden");
@@ -315,6 +324,7 @@ function generateValidMatrix(seed) {
 }
 
 window.selectFastCartela = async function(cartelaNo) {
+    unlockAudioContext();
     if (!currentRoom) return;
     const matrix = JSON.parse(generateValidMatrix(cartelaNo));
     try {
@@ -348,6 +358,7 @@ function renderCard(calls) {
             cell.textContent = val;
             
             cell.onclick = function() {
+                unlockAudioContext();
                 this.classList.toggle("marked");
             };
 
@@ -360,6 +371,7 @@ function renderCard(calls) {
 }
 
 window.claimBingo = async function() {
+    unlockAudioContext();
     if (!currentCartela || !currentRoom) {
         toast("እባክዎ መጀመሪያ ካርቴላ ይምረጡ!");
         return;
