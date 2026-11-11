@@ -341,11 +341,11 @@
 <body>
     <!-- Top Header Stats Bar -->
     <div class="top-stats" id="topStats" style="display:none;">
-        <div>Game ID<span id="gameIdVal">101</span></div>
-        <div>Derash<span id="derashVal">500 Br</span></div>
-        <div>Players<span id="playerVal">1</span></div>
-        <div>Stake<span id="stakeVal">100 Br</span></div>
-        <div>Called<span id="calledVal">0</span></div>
+        <div>Game ID<span id="gameIdVal">-</span></div>
+        <div>Derash<span id="derashVal">-</span></div>
+        <div>Players<span id="playerVal">-</span></div>
+        <div>Stake<span id="stakeVal">-</span></div>
+        <div>Called<span id="calledVal">-</span></div>
     </div>
     <div class="main-container" id="mainContainer">
         <!-- Dynamic Content -->
@@ -363,7 +363,7 @@
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        let userBalance = 115.0;
+        let userBalance = 15.0;
         let regTimer = 30;
         let prepTimer = 5;
         let callInterval = null;
@@ -371,8 +371,6 @@
         let selectedCartelaNo = null;
         let calledNumbersList = [];
         let registrationMusic = null;
-        let playerCardMatrix = [];
-
         function playAudio(elementIdOrFile) {
             let sound = document.getElementById(elementIdOrFile);
             if(sound) {
@@ -555,23 +553,16 @@
             while(colN.length < 4) { let n = getRandomNumber(31, 45, colN); colN.push(n); } 
             while(colG.length < 5) { let n = getRandomNumber(46, 60, colG); colG.push(n); }
             while(colO.length < 5) { let n = getRandomNumber(61, 75, colO); colO.push(n); }
-            
-            playerCardMatrix = [];
-            for(let row = 0; row < 5; row++) {
-                let rowNums = [colB[row], colI[row], (row === 2 ? 'FREE' : colN[row >= 2 ? row - 1 : row]), colG[row], colO[row]];
-                playerCardMatrix.push(rowNums);
-            }
-
             let playerCardHtml = "";
             for(let row = 0; row < 5; row++) {
-                for(let col = 0; col < 5; col++) {
-                    let num = playerCardMatrix[row][col];
+                let rowNums = [colB[row], colI[row], (row === 2 ? 'FREE' : colN[row >= 2 ? row - 1 : row]), colG[row], colO[row]];
+                rowNums.forEach((num) => {
                     if(num === 'FREE') {
-                        playerCardHtml += `<div class="player-cell free marked" data-row="${row}" data-col="${col}">FREE</div>`;
+                        playerCardHtml += `<div class="player-cell free marked">FREE</div>`;
                     } else {
-                        playerCardHtml += `<div class="player-cell" data-row="${row}" data-col="${col}" onclick="togglePlayerCell(this, ${row}, ${col})">${num}</div>`;
+                        playerCardHtml += `<div class="player-cell" onclick="this.classList.toggle('marked')">${num}</div>`;
                     }
-                }
+                });
             }
             container.innerHTML = `
                 <div class="calling-layout">
@@ -649,44 +640,29 @@
                 playAudio(`${prefix}${randNum}.mp3`);
             }, 4000);
         }
-        function togglePlayerCell(element, row, col) {
-            let cellNum = playerCardMatrix[row][col];
-            if (calledNumbersList.includes(Number(cellNum))) {
-                element.classList.toggle('marked');
-            } else {
-                alert("⚠️ This number has not been called yet!");
-            }
-        }
         function claimBingo() {
             if(callInterval) clearInterval(callInterval);
             stopRegistrationMusic();
-            
-            // Step 3 & 4: Secure backend verification process before triggering celebration sound/prize
+            playAudio("snd-classical-victory");
+            // Send fetch request to your Python Flask backend
             fetch('http://192.168.1.151:5000/api/claim-bingo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     cartela_no: selectedCartelaNo,
-                    user_phone: "251913706670",
-                    called_numbers: calledNumbersList
+                    user_phone: "251913706670" 
                 })
             })
             .then(res => res.json())
             .then(data => {
-                if (data.valid_winner) {
-                    // Step 6 & 7: Play victory announcement and credit account upon verified win
-                    playAudio("snd-classical-victory");
-                    alert(`🎉 Verified Winner! Prize: ${data.prize_allocated} ETB credited to your account.`);
-                    if (tg.sendData) {
-                        tg.sendData(JSON.stringify({ action: "claim_bingo", prize: data.prize_allocated }));
-                    }
-                } else {
-                    alert("⚠️ Claim rejected by backend: Winning pattern incomplete or invalid verification.");
+                alert(`🎉 Bingo claim submitted! Prize: ${data.prize_allocated} ETB`);
+                if (tg.sendData) {
+                    tg.sendData(JSON.stringify({ action: "claim_bingo", prize: data.prize_allocated }));
                 }
             })
             .catch(err => {
                 console.error("Error connecting to server:", err);
-                alert("⚠️ Could not connect to backend server for verification.");
+                alert("⚠️ Could not connect to backend server.");
             });
         }
         function switchTab(tab) {
@@ -698,8 +674,10 @@
             else if(tab === 'history') alert("Session history view.");
             else renderSelectionBoard();
         }
+        // Initialize Application
         initApp();
     </script>
+    <!-- Audio Elements for UI/Short FX -->
     <audio id="snd-selected" src="bingo_amharic_audio/card_selected.mp3"></audio>
     <audio id="snd-prep" src="bingo_amharic_audio/preparing.mp3"></audio>
     <audio id="snd-start" src="bingo_amharic_audio/game_started.mp3"></audio>
