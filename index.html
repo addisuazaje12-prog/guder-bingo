@@ -130,7 +130,6 @@ let currentMatrix = null;
 let selectTimerInterval = null;
 let timeLeft = 30;
 let lastSpokenNum = null;
-let audioInitialized = false;
 
 const $ = id => document.getElementById(id);
 
@@ -141,29 +140,18 @@ function toast(msg) {
     setTimeout(() => { el.style.display = "none"; }, 3000);
 }
 
-// Amharic Voice Number Calling via Web Speech API (am-ET synthesis)
-function speakAmharicNumber(num) {
-    if (!('speechSynthesis' in window)) return;
-    if (lastSpokenNum === num) return;
-    lastSpokenNum = num;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(`ቁጥር ${num}`);
-    utterance.lang = 'am-ET';
-    utterance.rate = 0.85;
-    utterance.pitch = 1.0;
-    window.speechSynthesis.speak(utterance);
+// Correct Amharic Voice File Calling Handler
+function playAmharicAudio(num) {
+    let letter = 
+        num <= 15 ? 'b' :
+        num <= 30 ? 'i' :
+        num <= 45 ? 'n' :
+        num <= 60 ? 'g' : 'o';
+    
+    let audioFile = `bingo_amharic_audio/${letter}${num}.mp3`;
+    let audio = new Audio(audioFile);
+    audio.play().catch(e => console.log("Audio file play waiting or missing:", e));
 }
-
-// Unlock Web Speech API on user interaction
-document.addEventListener('click', () => {
-    if (!audioInitialized && 'speechSynthesis' in window) {
-        const silent = new SpeechSynthesisUtterance('');
-        silent.volume = 0;
-        window.speechSynthesis.speak(silent);
-        audioInitialized = true;
-    }
-}, { once: true });
 
 function renderCallingBoard(calledList) {
     const board = $("callingBoard");
@@ -227,14 +215,19 @@ window.refreshGame = async function() {
 
         if (calls.length > 0) {
             const latestNum = calls[calls.length - 1].number;
-            let prefix = "B";
-            if (latestNum >= 16 && latestNum <= 30) prefix = "I";
-            else if (latestNum >= 31 && latestNum <= 45) prefix = "N";
-            else if (latestNum >= 46 && latestNum <= 60) prefix = "G";
-            else if (latestNum >= 61 && latestNum <= 75) prefix = "O";
+            let letter = 
+                latestNum <= 15 ? 'B' :
+                latestNum <= 30 ? 'I' :
+                latestNum <= 45 ? 'N' :
+                latestNum <= 60 ? 'G' : 'O';
 
-            $("latestCall").textContent = `${prefix}-${latestNum}`;
-            speakAmharicNumber(latestNum);
+            let callText = `${letter}-${latestNum}`;
+            $("latestCall").textContent = callText;
+
+            if (lastSpokenNum !== latestNum) {
+                lastSpokenNum = latestNum;
+                playAmharicAudio(latestNum);
+            }
         }
 
         if (currentCartela) {
@@ -254,13 +247,13 @@ window.refreshGame = async function() {
     }
 };
 
-// Properly bounds columns: B(1-15), I(16-30), N(31-45), G(46-60), O(61-75)
+// Strict 75-ball standard range generator: B(1-15), I(16-30), N(31-45), G(46-60), O(61-75)
 function generateValidMatrix(seed) {
     const shuffle = arr => arr.sort(() => 0.5 - Math.random());
     const colB = shuffle([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]).slice(0, 5);
     const colI = shuffle([16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]).slice(0, 5);
-    const colN = shuffle([31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]).slice(0, 5);
-    colN[2] = "FREE";
+    const colN = shuffle([31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]).slice(0, 4);
+    colN.splice(2, 0, "FREE"); // Insert FREE square precisely in the middle center
     const colG = shuffle([46,47,48,49,50,51,52,53,54,55,56,57,58,59,60]).slice(0, 5);
     const colO = shuffle([61,62,63,64,65,66,67,68,69,70,71,72,73,74,75]).slice(0, 5);
 
@@ -292,9 +285,10 @@ function renderCard(calls) {
     const board = $("bingoBoard");
     board.innerHTML = "";
     
+    // Correct row-column mapping layout for 5x5 playing card
     for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {
-            let val = currentMatrix[c][r];
+            let val = currentMatrix[r][c];
             const cell = document.createElement("div");
             cell.className = "cell";
             cell.textContent = val;
@@ -303,7 +297,7 @@ function renderCard(calls) {
                 this.classList.toggle("marked");
             };
 
-            if (String(val).toUpperCase() === "FREE" || (calledSet.has(Number(val)) && !cell.classList.contains("unmarked"))) {
+            if (String(val).toUpperCase() === "FREE" || calledSet.has(Number(val))) {
                 cell.classList.add("marked");
             }
             board.appendChild(cell);
@@ -321,6 +315,11 @@ window.claimBingo = async function() {
             method: "POST",
             body: JSON.stringify({ room_id: currentRoom.room_id, cartela_no: currentCartela.cartela_no })
         });
+        
+        // Play victory sound upon backend-verified win response
+        let victoryAudio = new Audio('bingo_amharic_audio/classical_victory.mp3');
+        victoryAudio.play().catch(e => console.log("Victory audio play error:", e));
+
         toast(`እንኳን ደስ አላችሁ! ${res.prize_allocated} ብር አሸንፈዋል! 🎉`);
         refreshGame();
     } catch (e) {
