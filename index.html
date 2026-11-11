@@ -10,7 +10,7 @@
         .hidden { display: none !important; }
         .container { max-width: 600px; margin: auto; }
         
-        /* Top Stats Headers with spacious padding and distinct text areas below */
+        /* Top Stats Headers */
         .header-stats { background: white; color: #333; display: flex; justify-content: space-around; padding: 12px 8px; border-radius: 8px; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
         .header-values { background: #6b5394; color: #e2e8f0; display: flex; justify-content: space-around; padding: 10px 8px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-bottom: 12px; }
         
@@ -35,12 +35,18 @@
         .card { background: #9078b9; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
         .grid-800 { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; max-height: 220px; overflow-y: auto; background: #6b5394; padding: 8px; border-radius: 6px; }
         .cartela-btn { background: #4a356c; color: white; border: none; padding: 6px 2px; font-size: 11px; border-radius: 4px; cursor: pointer; }
-        .selected-gold { background: #eab308 !important; color: black; }
-        .selected-green { background: #22c55e !important; }
+        
+        /* Main Menu Screen */
+        .menu-screen { background: #6b5394; padding: 20px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .menu-screen h2 { color: #eab308; margin-top: 0; }
+        .menu-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
 
-        /* Current Call Badge */
+        /* Current Call Banner */
         .call-banner { background: #6b5394; border-radius: 8px; padding: 6px; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
         .latest-badge { background: #eab308; color: black; font-size: 18px; padding: 2px 12px; border-radius: 15px; display: inline-block; margin-left: 5px; }
+
+        /* Preparation Banner */
+        .prep-banner { background: #eab308; color: black; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; margin-bottom: 10px; }
 
         /* Bottom Controls */
         .bottom-nav { display: flex; justify-content: space-around; gap: 8px; margin-top: 10px; }
@@ -49,6 +55,7 @@
         .btn-refresh { background: #0284c7; }
         .btn-bingo { background: #eab308; color: black; }
         .btn-wallet { background: #16a34a; }
+        .btn-menu { background: #8b5cf6; }
 
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 20px; display: none; z-index: 1000; font-size: 14px; }
     </style>
@@ -64,7 +71,6 @@
         <div>Stake</div>
         <div>Wallet</div>
     </div>
-    <!-- Dedicated space below headers for dynamic data -->
     <div class="header-values">
         <div id="gameId">-</div>
         <div id="derashVal">-</div>
@@ -73,13 +79,32 @@
         <div id="walletVal">0.00 ETB</div>
     </div>
 
-    <!-- Selection Area (30s Countdown & 800 Cartelas) -->
-    <div id="selectionArea" class="card">
+    <!-- 1. Main Menu Screen (Deposit, Wallet, History, Start Game) -->
+    <div id="menuScreen" class="menu-screen">
+        <h2>🎮 ጉደር ቢንጎ (Guder Bingo)</h2>
+        <p>እንኳን ወደ መጀመሪያው ገጽ በደህና መጡ!</p>
+        <div class="menu-buttons">
+            <button class="btn-action btn-wallet" onclick="openDeposit()">💳 Deposit (ငንዘብ ማስገባት)</button>
+            <button class="btn-action btn-refresh" onclick="openWallet()">💰 Wallet & Balance (ቀሪ ሂሳብ)</button>
+            <button class="btn-action" style="background:#0284c7;" onclick="openHistory()">📜 Game History (ታሪክ)</button>
+            <button class="btn-action btn-bingo" onclick="startCartelaSelectionPhase()">▶ Start Game / Cartela Select (ጨዋታ ጀምር)</button>
+        </div>
+    </div>
+
+    <!-- 2. Cartela Selection Area (30s Countdown & 800 Cartelas) -->
+    <div id="selectionArea" class="card hidden">
         <p style="font-weight:bold; font-size:15px;">ካርቴላ ይምረጡ (የቆይታ ጊዜ: <span id="selectTimer" style="color:#eab308; font-size:18px;">30</span> ሰከንድ)</p>
         <div id="fastCartelaContainer" class="grid-800"></div>
     </div>
 
-    <!-- Active Game Layout (Side-by-Side: Calling Numbers 1-75 & Player Card) -->
+    <!-- 3. Preparation Countdown Area (5s Countdown) -->
+    <div id="prepArea" class="hidden">
+        <div class="prep-banner">
+            🎲 ጨዋታው ሊጀምር ነው! እባክዎ ይጠብቁ (<span id="prepTimer">5</span> ሰከንድ)
+        </div>
+    </div>
+
+    <!-- 4. Active Game Layout (Side-by-Side: Calling Numbers 1-75 & Player Card) -->
     <div id="gameActiveArea" class="hidden">
         <div class="call-banner">
             የተጠራ ቁጥር: <span id="latestCall" class="latest-badge">-</span>
@@ -105,9 +130,9 @@
 
     <!-- Bottom Actions -->
     <div class="bottom-nav">
+        <button class="btn-action btn-menu" onclick="returnToMenu()">Menu</button>
         <button class="btn-action btn-leave" onclick="leaveGame()">Leave</button>
         <button class="btn-action btn-refresh" onclick="refreshGame()">Refresh</button>
-        <button class="btn-action btn-wallet" onclick="openWallet()">Wallet</button>
         <button class="btn-action btn-bingo" onclick="claimBingo()">Bingo!</button>
     </div>
 </div>
@@ -128,7 +153,9 @@ let currentRoom = null;
 let currentCartela = null;
 let currentMatrix = null;
 let selectTimerInterval = null;
+let prepTimerInterval = null;
 let timeLeft = 30;
+let prepTimeLeft = 5;
 let lastSpokenNum = null;
 
 const $ = id => document.getElementById(id);
@@ -140,7 +167,6 @@ function toast(msg) {
     setTimeout(() => { el.style.display = "none"; }, 3000);
 }
 
-// Correct Amharic Voice File Calling Handler
 function playAmharicAudio(num) {
     let letter = 
         num <= 15 ? 'b' :
@@ -175,6 +201,17 @@ function renderFastCartelaGrid() {
     container.innerHTML = html;
 }
 
+// Menu to Cartela Selection (30s) -> Preparation (5s) -> Active Game Flow
+window.startCartelaSelectionPhase = function() {
+    $("menuScreen").classList.add("hidden");
+    $("gameActiveArea").classList.add("hidden");
+    $("prepArea").classList.add("hidden");
+    $("selectionArea").classList.remove("hidden");
+    
+    renderFastCartelaGrid();
+    startSelectTimer();
+};
+
 function startSelectTimer() {
     clearInterval(selectTimerInterval);
     timeLeft = 30;
@@ -185,6 +222,33 @@ function startSelectTimer() {
             if ($("selectTimer")) $("selectTimer").textContent = timeLeft;
         } else {
             clearInterval(selectTimerInterval);
+            // After 30s selection window expires, auto-proceed to preparation phase if cartela selected or force prep phase
+            startPreparationPhase();
+        }
+    }, 1000);
+}
+
+function startPreparationPhase() {
+    clearInterval(selectTimerInterval);
+    $("selectionArea").classList.add("hidden");
+    $("prepArea").classList.remove("hidden");
+
+    prepTimeLeft = 5;
+    if ($("prepTimer")) $("prepTimer").textContent = prepTimeLeft;
+    
+    // Play preparation audio if available
+    let prepAudio = new Audio('bingo_amharic_audio/preparing.mp3');
+    prepAudio.play().catch(e => console.log("Prep audio play error:", e));
+
+    clearInterval(prepTimerInterval);
+    prepTimerInterval = setInterval(() => {
+        prepTimeLeft--;
+        if (prepTimeLeft >= 0) {
+            if ($("prepTimer")) $("prepTimer").textContent = prepTimeLeft;
+        } else {
+            clearInterval(prepTimerInterval);
+            $("prepArea").classList.add("hidden");
+            $("gameActiveArea").classList.remove("hidden");
         }
     }, 1000);
 }
@@ -229,31 +293,17 @@ window.refreshGame = async function() {
                 playAmharicAudio(latestNum);
             }
         }
-
-        if (currentCartela) {
-            $("selectionArea").classList.add("hidden");
-            $("gameActiveArea").classList.remove("hidden");
-            $("myCardLabel").textContent = "ካርቴላ #" + currentCartela.cartela_no;
-            currentMatrix = JSON.parse(currentCartela.numbers_json || generateValidMatrix(currentCartela.cartela_no));
-            renderCard(calls);
-        } else {
-            $("gameActiveArea").classList.add("hidden");
-            $("selectionArea").classList.remove("hidden");
-            renderFastCartelaGrid();
-            startSelectTimer();
-        }
     } catch (e) {
         console.error(e);
     }
 };
 
-// Strict 75-ball standard range generator: B(1-15), I(16-30), N(31-45), G(46-60), O(61-75)
 function generateValidMatrix(seed) {
     const shuffle = arr => arr.sort(() => 0.5 - Math.random());
     const colB = shuffle([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]).slice(0, 5);
     const colI = shuffle([16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]).slice(0, 5);
     const colN = shuffle([31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]).slice(0, 4);
-    colN.splice(2, 0, "FREE"); // Insert FREE square precisely in the middle center
+    colN.splice(2, 0, "FREE");
     const colG = shuffle([46,47,48,49,50,51,52,53,54,55,56,57,58,59,60]).slice(0, 5);
     const colO = shuffle([61,62,63,64,65,66,67,68,69,70,71,72,73,74,75]).slice(0, 5);
 
@@ -272,8 +322,14 @@ window.selectFastCartela = async function(cartelaNo) {
             method: "POST",
             body: JSON.stringify({ room_id: currentRoom.room_id, cartela_no: cartelaNo, numbers: matrix })
         });
+        currentCartela = { cartela_no: cartelaNo, numbers_json: JSON.stringify(matrix) };
         toast(`ካርቴላ #${cartelaNo} ተመርጧል!`);
-        refreshGame();
+        
+        // Proceed to 5s preparation phase after cartela selection
+        startPreparationPhase();
+        $("myCardLabel").textContent = "ካርቴላ #" + cartelaNo;
+        currentMatrix = matrix;
+        renderCard([]);
     } catch (e) {
         toast("መምረጥ አልተቻለም።");
     }
@@ -285,7 +341,6 @@ function renderCard(calls) {
     const board = $("bingoBoard");
     board.innerHTML = "";
     
-    // Correct row-column mapping layout for 5x5 playing card
     for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {
             let val = currentMatrix[r][c];
@@ -316,7 +371,6 @@ window.claimBingo = async function() {
             body: JSON.stringify({ room_id: currentRoom.room_id, cartela_no: currentCartela.cartela_no })
         });
         
-        // Play victory sound upon backend-verified win response
         let victoryAudio = new Audio('bingo_amharic_audio/classical_victory.mp3');
         victoryAudio.play().catch(e => console.log("Victory audio play error:", e));
 
@@ -327,12 +381,23 @@ window.claimBingo = async function() {
     }
 };
 
-window.leaveGame = function() {
+window.returnToMenu = function() {
+    clearInterval(selectTimerInterval);
+    clearInterval(prepTimerInterval);
     currentCartela = null;
     $("gameActiveArea").classList.add("hidden");
-    $("selectionArea").classList.remove("hidden");
+    $("selectionArea").classList.add("hidden");
+    $("prepArea").classList.add("hidden");
+    $("menuScreen").classList.remove("hidden");
+};
+
+window.leaveGame = function() {
+    returnToMenu();
     toast("ከጨዋታው ወጥተዋል።");
-    refreshGame();
+};
+
+window.openDeposit = function() {
+    toast("እባክዎ በቴሌግራም ቦት በኩል /deposit በመጻፍ ገንዘብ ያስገቡ።");
 };
 
 window.openWallet = async function() {
@@ -342,6 +407,10 @@ window.openWallet = async function() {
     } catch (e) {
         toast("ኪስ ቦርሳ መጫን አልተቻለም።");
     }
+};
+
+window.openHistory = function() {
+    toast("የጨዋታ ታሪክ በቅርብ ቀን ይመጣል!");
 };
 
 setInterval(refreshGame, 3000);
