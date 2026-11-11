@@ -158,6 +158,12 @@ let timeLeft = 30;
 let prepTimeLeft = 5;
 let lastSpokenNum = null;
 
+// Unlock browser audio context policy on first user interaction
+document.addEventListener('click', () => {
+    let unlockAudio = new Audio();
+    unlockAudio.play().catch(() => {});
+}, { once: true });
+
 const $ = id => document.getElementById(id);
 
 function toast(msg) {
@@ -167,7 +173,6 @@ function toast(msg) {
     setTimeout(() => { el.style.display = "none"; }, 3000);
 }
 
-// Corrected Amharic Voice File Calling Handler mapping directly to local bingo_amharic_audio files
 function playAmharicAudio(num) {
     let letter = 
         num <= 15 ? 'b' :
@@ -202,7 +207,6 @@ function renderFastCartelaGrid() {
     container.innerHTML = html;
 }
 
-// Menu to Cartela Selection (30s) -> Preparation (5s) -> Active Game Flow
 window.startCartelaSelectionPhase = function() {
     $("menuScreen").classList.add("hidden");
     $("gameActiveArea").classList.add("hidden");
@@ -223,7 +227,6 @@ function startSelectTimer() {
             if ($("selectTimer")) $("selectTimer").textContent = timeLeft;
         } else {
             clearInterval(selectTimerInterval);
-            // If timer expires and no cartela chosen, restart or push to prep phase
             startPreparationPhase();
         }
     }, 1000);
@@ -237,10 +240,6 @@ function startPreparationPhase() {
     prepTimeLeft = 5;
     if ($("prepTimer")) $("prepTimer").textContent = prepTimeLeft;
     
-    // Play preparation audio asset
-    let prepAudio = new Audio('bingo_amharic_audio/preparing.mp3');
-    prepAudio.play().catch(e => console.log("Prep audio play error:", e));
-
     clearInterval(prepTimerInterval);
     prepTimerInterval = setInterval(() => {
         prepTimeLeft--;
@@ -371,7 +370,6 @@ window.claimBingo = async function() {
             body: JSON.stringify({ room_id: currentRoom.room_id, cartela_no: currentCartela.cartela_no })
         });
         
-        // Play generated Amharic victory sound asset (`bingo.mp3`)
         let victoryAudio = new Audio('bingo_amharic_audio/bingo.mp3');
         victoryAudio.play().catch(e => console.log("Victory audio play error:", e));
 
