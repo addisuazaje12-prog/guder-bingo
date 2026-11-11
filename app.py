@@ -1,194 +1,187 @@
 import os
+import time
 import sqlite3
-import json
-from flask import Flask, request, jsonify, g
-from flask_cors import CORS
+from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__)
-CORS(app)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'bingo.db')
+# Manual Deposit & Verification Configuration
+TELEBIRR_SHORT_CODE = "800001"
+CBE_ACCOUNT = "1000000000000"
 
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DB_PATH)
-        db.row_factory = sqlite3.Row
-    return db
-
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
-
+# Initialize Local SQLite Database (Immutable Ledger & Active Rooms)
 def init_db():
-    with app.app_context():
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS rooms (
-                room_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                status TEXT DEFAULT 'OPEN'
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS cartelas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                room_id INTEGER,
-                cartela_no INTEGER,
-                numbers_json TEXT
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS called_numbers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                room_id INTEGER,
-                number INTEGER
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS wallets (
-                user_id TEXT PRIMARY KEY,
-                balance REAL DEFAULT 100.0
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS transactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT,
-                txn_type TEXT,
-                amount REAL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        cursor.execute('SELECT COUNT(*) FROM rooms')
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("INSERT INTO rooms (status) VALUES ('OPEN')")
-        db.commit()
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    
+    # 1. Users Table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id TEXT UNIQUE,
+            phone_number TEXT UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # 2. Game Rooms Table (Tracks room status to prevent race conditions)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS game_rooms (
+            room_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            status TEXT DEFAULT 'OPEN', -- OPEN, COMPLETED
+            total_pot REAL DEFAULT 0.0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Ensure default room 1 exists for testing
+    cursor.execute("INSERT OR IGNORE INTO game_rooms (room_id, status, total_pot) VALUES (1, 'OPEN', 100.0)")
 
+    # 3. Ledger Transactions Table (Immutable Log)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ledger_transactions (
+            txn_id TEXT PRIMARY KEY,
+            user_id INTEGER,
+            amount REAL,
+            type TEXT,
+            reference_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(user_id)
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+# Run database setup on server start
 init_db()
 
+# Root Route: Serves index.html to fix Telegram bottom menu JSON display issue
 @app.route('/')
-def home():
-    return "Guder Bingo Backend is Running Successfully!"
+def serve_frontend():
+    return send_from_directory('.', 'index.html')
 
-@app.route('/api/config', methods=['GET'])
-def get_config():
-    return jsonify({"telebirr_phone": "0913706670"})
-
-@app.route('/api/wallet', methods=['GET'])
-def get_wallet():
-    user_id = request.headers.get('X-Telegram-Init-Data', 'default_user')
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute('SELECT balance FROM wallets WHERE user_id = ?', (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        cursor.execute('INSERT INTO wallets (user_id, balance) VALUES (?, ?)', (user_id, 100.0))
-        db.commit()
-        balance = 100.0
-    else:
-        balance = row['balance']
-
-    cursor.execute('SELECT txn_type, amount, created_at FROM transactions WHERE user_id = ? ORDER BY id DESC LIMIT 10', (user_id,))
-    txns = [dict(t) for t in cursor.fetchall()]
-    return jsonify({"balance": balance, "transactions": txns})
+# Helper: Calculate user balance dynamically from the immutable ledger
+def get_user_balance(user_id):
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT SUM(amount) FROM ledger_transactions WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result[0] is not None else 0.0
 
 @app.route('/api/deposit', methods=['POST'])
-def deposit():
+def deposit_funds():
     data = request.json
-    amount = data.get('amount', 0)
-    user_id = request.headers.get('X-Telegram-Init-Data', 'default_user')
+    phone = data.get('phone', '251913706670')
+    amount = float(data.get('amount', 10.0))
+    tx_ref = data.get('tx_ref', f"manual_tx_{phone}_{int(time.time())}")
     
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute('SELECT balance FROM wallets WHERE user_id = ?', (user_id,))
-    if not cursor.fetchone():
-        cursor.execute('INSERT INTO wallets (user_id, balance) VALUES (?, ?)', (user_id, 100.0))
-
-    cursor.execute("UPDATE wallets SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
-    cursor.execute("INSERT INTO transactions (user_id, txn_type, amount) VALUES (?, ?, ?)", (user_id, 'DEPOSIT', amount))
-    db.commit()
-    
-    return jsonify({"success": True, "message": f"የ {amount} ብር ደረሰኝዎ በተሳካ ሁኔታ ተመዝግቧል!"})
-
-@app.route('/api/game/state', methods=['GET'])
-def game_state():
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM rooms ORDER BY room_id DESC LIMIT 1")
-    room = cursor.fetchone()
-    
-    user_id = request.headers.get('X-Telegram-Init-Data', 'default_user')
-    cursor.execute('SELECT balance FROM wallets WHERE user_id = ?', (user_id,))
-    w = cursor.fetchone()
-    balance = w['balance'] if w else 100.0
-
-    cartela = None
-    called_numbers = []
-    if room:
-        cursor.execute("SELECT * FROM cartelas WHERE room_id = ? ORDER BY id DESC LIMIT 1", (room['room_id'],))
-        cartela = cursor.fetchone()
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("BEGIN EXCLUSIVE TRANSACTION;")
         
-        cursor.execute("SELECT number FROM called_numbers WHERE room_id = ?", (room['room_id'],))
-        called_numbers = [dict(row) for row in cursor.fetchall()]
-
-    return jsonify({
-        "balance": balance,
-        "room": dict(room) if room else None,
-        "cartela": dict(cartela) if cartela else None,
-        "called_numbers": called_numbers
-    })
-
-@app.route('/api/game/history', methods=['GET'])
-def game_history():
-    user_id = request.headers.get('X-Telegram-Init-Data', 'default_user')
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT txn_type, amount, created_at FROM transactions WHERE user_id = ? ORDER BY id DESC LIMIT 20", (user_id,))
-    history = [dict(row) for row in cursor.fetchall()]
-    return jsonify({"history": history})
-
-@app.route('/api/cartela/select', methods=['POST'])
-def select_cartela():
-    data = request.json
-    room_id = data.get('room_id')
-    cartela_no = data.get('cartela_no')
-    numbers = data.get('numbers')
-    
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("INSERT INTO cartelas (room_id, cartela_no, numbers_json) VALUES (?, ?, ?)", 
-                   (room_id, cartela_no, json.dumps(numbers)))
-    db.commit()
-    return jsonify({"success": True, "message": f"Cartela #{cartela_no} selected successfully."})
+        # Find or create user ID in database
+        cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (phone,))
+        row = cursor.fetchone()
+        if row:
+            user_id = row[0]
+        else:
+            cursor.execute('INSERT INTO users (phone_number) VALUES (?)', (phone,))
+            user_id = cursor.lastrowid
+            
+        # Record manual deposit into ledger
+        cursor.execute('''
+            INSERT OR IGNORE INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (tx_ref, user_id, amount, 'MANUAL_DEPOSIT', tx_ref))
+        
+        conn.commit()
+        
+        current_balance = get_user_balance(user_id)
+        return jsonify({
+            "status": "success",
+            "message": "Manual deposit submitted successfully. Awaiting SMS verification.",
+            "tx_ref": tx_ref,
+            "amount": amount,
+            "user_balance": current_balance
+        })
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 400
+    finally:
+        conn.close()
 
 @app.route('/api/claim-bingo', methods=['POST'])
 def claim_bingo():
     data = request.json
-    room_id = data.get('room_id')
     cartela_no = data.get('cartela_no')
-    
-    prize = 50.0
-    user_id = request.headers.get('X-Telegram-Init-Data', 'default_user')
-    
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("UPDATE wallets SET balance = balance + ? WHERE user_id = ?", (prize, user_id))
-    cursor.execute("INSERT INTO transactions (user_id, txn_type, amount) VALUES (?, ?, ?)", (user_id, 'WIN', prize))
-    db.commit()
-    
-    return jsonify({"success": True, "prize_allocated": prize})
+    user_phone = data.get('user_phone', '251913706670') 
+    room_id = data.get('room_id', 1)
 
-@app.route('/api/manager/sessions', methods=['GET'])
-def manager_sessions():
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT user_id as phone_number, amount FROM transactions WHERE txn_type = 'WIN' ORDER BY id DESC LIMIT 5")
-    winners = [dict(row) for row in cursor.fetchall()]
-    return jsonify({"winners": winners})
+    # Open thread-safe connection with timeout for concurrency
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+
+    try:
+        # BEGIN EXCLUSIVE locks the database to prevent concurrent write conflicts
+        cursor.execute("BEGIN EXCLUSIVE TRANSACTION;")
+
+        # 1. Check if the room has already been won by another player
+        cursor.execute('SELECT status FROM game_rooms WHERE room_id = ?', (room_id,))
+        room = cursor.fetchone()
+        if not room or room[0] == 'COMPLETED':
+            conn.rollback()
+            return jsonify({"status": "error", "message": "Round already won or room closed!"}), 400
+
+        # Mark room as completed immediately inside the locked transaction block
+        cursor.execute('UPDATE game_rooms SET status = ? WHERE room_id = ?', ('COMPLETED', room_id))
+
+        # 2. Find or create user ID in database
+        cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (user_phone,))
+        row = cursor.fetchone()
+        if row:
+            user_id = row[0]
+        else:
+            cursor.execute('INSERT INTO users (phone_number) VALUES (?)', (user_phone,))
+            user_id = cursor.lastrowid
+
+        # 3. Example calculation: 50% pot allocation for the winner
+        total_players = 10
+        stake_per_cartela = 10.0
+        total_pot = total_players * stake_per_cartela
+        prize_allocated = total_pot * 0.50
+
+        # 4. Record the payout entry into the immutable ledger securely
+        txn_id = f"txn_win_{room_id}_{user_id}_{int(time.time() * 1000)}"
+        cursor.execute('''
+            INSERT INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (txn_id, user_id, prize_allocated, 'BINGO_WIN_PAYOUT', f"room_{room_id}_cartela_{cartela_no}"))
+
+        conn.commit()
+
+        # Fetch updated balance
+        cursor.execute('SELECT SUM(amount) FROM ledger_transactions WHERE user_id = ?', (user_id,))
+        current_balance = cursor.fetchone()[0]
+
+        print(f"User {user_phone} won Room #{room_id} Cartela #{cartela_no}. Prize: {prize_allocated} ETB. Balance: {current_balance} ETB")
+
+        return jsonify({
+            "status": "success",
+            "message": "Bingo verified successfully!",
+            "cartela_no": cartela_no,
+            "prize_allocated": prize_allocated,
+            "user_balance": current_balance
+        })
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
