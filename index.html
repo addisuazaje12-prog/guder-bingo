@@ -10,8 +10,9 @@
         .hidden { display: none !important; }
         .container { max-width: 600px; margin: auto; }
         
-        /* Top Stats Bar Headers */
-        .header-stats { background: white; color: #333; display: flex; justify-content: space-around; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-bottom: 10px; }
+        /* Top Stats Headers with spacious padding and distinct text areas below */
+        .header-stats { background: white; color: #333; display: flex; justify-content: space-around; padding: 12px 8px; border-radius: 8px; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
+        .header-values { background: #6b5394; color: #e2e8f0; display: flex; justify-content: space-around; padding: 10px 8px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-bottom: 12px; }
         
         /* Main Layout Grid for Side-by-Side View */
         .game-layout { display: flex; gap: 10px; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-bottom: 10px; }
@@ -55,13 +56,21 @@
 <body>
 
 <div class="container">
-    <!-- Top Stats Headers Only (No dynamic text/numbers inside) -->
+    <!-- Top Stats Headers -->
     <div class="header-stats">
         <div>Game ID</div>
         <div>Derash</div>
         <div>Players</div>
         <div>Stake</div>
         <div>Wallet</div>
+    </div>
+    <!-- Dedicated space below headers for dynamic data -->
+    <div class="header-values">
+        <div id="gameId">-</div>
+        <div id="derashVal">-</div>
+        <div id="playersVal">-</div>
+        <div id="stakeVal">100 ETB</div>
+        <div id="walletVal">0.00 ETB</div>
     </div>
 
     <!-- Selection Area (30s Countdown & 800 Cartelas) -->
@@ -132,7 +141,7 @@ function toast(msg) {
     setTimeout(() => { el.style.display = "none"; }, 3000);
 }
 
-// Amharic Voice Number Calling via Web Speech API (configured with am-ET audio synthesis)
+// Amharic Voice Number Calling via Web Speech API (am-ET synthesis)
 function speakAmharicNumber(num) {
     if (!('speechSynthesis' in window)) return;
     if (lastSpokenNum === num) return;
@@ -206,6 +215,13 @@ window.refreshGame = async function() {
         currentRoom = data.room;
         currentCartela = data.cartela;
 
+        if (currentRoom) {
+            $("gameId").textContent = currentRoom.room_id;
+            $("derashVal").textContent = (currentRoom.derash || 500) + " ETB";
+            $("playersVal").textContent = currentRoom.players || 1;
+        }
+        $("walletVal").textContent = Number(data.balance || 100).toFixed(2) + " ETB";
+
         const calls = data.called_numbers || [];
         renderCallingBoard(calls);
 
@@ -276,7 +292,6 @@ function renderCard(calls) {
     const board = $("bingoBoard");
     board.innerHTML = "";
     
-    // Render row-by-row matching standard layout columns B, I, N, G, O correctly
     for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {
             let val = currentMatrix[c][r];
@@ -284,7 +299,6 @@ function renderCard(calls) {
             cell.className = "cell";
             cell.textContent = val;
             
-            // Allow manual toggle click when touched by player
             cell.onclick = function() {
                 this.classList.toggle("marked");
             };
