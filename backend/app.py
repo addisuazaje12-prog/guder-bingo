@@ -70,6 +70,10 @@ def init_db():
 
 init_db()
 
+@app.route('/')
+def home():
+    return "Guder Bingo Backend is Running Successfully!"
+
 @app.route('/api/config', methods=['GET'])
 def get_config():
     return jsonify({"telebirr_phone": "0913706670"})
@@ -107,8 +111,6 @@ def game_state():
     cartela = None
     called_numbers = []
     if room:
-        cursor.execute("SELECT * FROM cartelas WHERE room_id = ? AND cartela_no IN (SELECT cartela_no FROM cartelas WHERE room_id = ?)", (room['room_id'], room['room_id']))
-        # Fetch user's cartela for this room if any saved in session/db mapping (simplifying for single player demo)
         cursor.execute("SELECT * FROM cartelas WHERE room_id = ? ORDER BY id DESC LIMIT 1", (room['room_id'],))
         cartela = cursor.fetchone()
         
@@ -163,4 +165,5 @@ def manager_sessions():
     return jsonify({"winners": winners})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
