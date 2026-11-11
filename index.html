@@ -157,12 +157,18 @@ let prepTimerInterval = null;
 let timeLeft = 30;
 let prepTimeLeft = 5;
 let lastSpokenNum = null;
+let audioUnlocked = false;
 
-// Explicit Audio Context Unlocking on User Interactions
 function unlockAudioContext() {
-    let silentAudio = new Audio();
-    silentAudio.play().catch(() => {});
+    if (audioUnlocked) return;
+    try {
+        let silentAudio = new Audio();
+        silentAudio.play().then(() => {
+            audioUnlocked = true;
+        }).catch(() => {});
+    } catch (e) {}
 }
+
 document.addEventListener('click', unlockAudioContext, { once: true });
 document.addEventListener('touchstart', unlockAudioContext, { once: true });
 
@@ -177,19 +183,25 @@ function toast(msg) {
 
 function playAmharicAudio(num) {
     let letter = 
-        num <= 15 ? 'b' :
-        num <= 30 ? 'i' :
-        num <= 45 ? 'n' :
-        num <= 60 ? 'g' : 'o';
+        num <= 15 ? 'B' :
+        num <= 30 ? 'I' :
+        num <= 45 ? 'N' :
+        num <= 60 ? 'G' : 'O';
     
-    // Explicit absolute path handling or fallback relative format
-    let audioFile = `bingo_amharic_audio/${letter}${num}.mp3`;
+    let callText = `${letter} ${num}`;
+    let audioFile = `bingo_amharic_audio/${letter.toLowerCase()}${num}.mp3`;
     let audio = new Audio(audioFile);
-    audio.load();
+    
     audio.play().then(() => {
-        console.log("Successfully played:", audioFile);
+        console.log("Successfully played MP3:", audioFile);
     }).catch(e => {
-        console.warn("Audio play blocked or missing file:", audioFile, e);
+        console.warn("MP3 play blocked or missing, using speech synthesis fallback:", callText);
+        if ('speechSynthesis' in window) {
+            let utterance = new SpeechSynthesisUtterance(callText);
+            utterance.lang = 'am-ET';
+            utterance.rate = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
     });
 }
 
@@ -287,7 +299,7 @@ window.refreshGame = async function() {
         renderCallingBoard(calls);
 
         if (calls.length > 0) {
-            const latestNum = calls[calls.length - 1].number;
+            const latestNum = Number(calls[calls.length - 1].number);
             let letter = 
                 latestNum <= 15 ? 'B' :
                 latestNum <= 30 ? 'I' :
