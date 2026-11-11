@@ -70,6 +70,36 @@ def get_user_balance(user_id):
     conn.close()
     return result[0] if result[0] is not None else 0.0
 
+@app.route('/api/balance', methods=['GET'])
+def get_balance():
+    phone = request.args.get('phone', '251913706670')
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (phone,))
+    row = cursor.fetchone()
+    balance = 0.0
+    if row:
+        user_id = row[0]
+        balance = get_user_balance(user_id)
+    conn.close()
+    return jsonify({"status": "success", "balance": balance})
+
+@app.route('/api/room', methods=['GET'])
+def get_room():
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT room_id, status, total_pot FROM game_rooms ORDER BY room_id DESC LIMIT 1')
+    room = cursor.fetchone()
+    conn.close()
+    if room:
+        return jsonify({
+            "status": "success",
+            "room_id": room[0],
+            "room_status": room[1],
+            "total_pot": room[2]
+        })
+    return jsonify({"status": "error", "message": "No active room found"}), 404
+
 @app.route('/api/deposit', methods=['POST'])
 def deposit_funds():
     data = request.json
