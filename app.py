@@ -62,7 +62,6 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        # Ensure a default active room exists
         cursor.execute('SELECT COUNT(*) FROM rooms')
         if cursor.fetchone()[0] == 0:
             cursor.execute("INSERT INTO rooms (status) VALUES ('OPEN')")
@@ -96,6 +95,24 @@ def get_wallet():
     txns = [dict(t) for t in cursor.fetchall()]
     return jsonify({"balance": balance, "transactions": txns})
 
+@app.route('/api/deposit', methods=['POST'])
+def deposit():
+    data = request.json
+    amount = data.get('amount', 0)
+    user_id = request.headers.get('X-Telegram-Init-Data', 'default_user')
+    
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT balance FROM wallets WHERE user_id = ?', (user_id,))
+    if not cursor.fetchone():
+        cursor.execute('INSERT INTO wallets (user_id, balance) VALUES (?, ?)', (user_id, 100.0))
+
+    cursor.execute("UPDATE wallets SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
+    cursor.execute("INSERT INTO transactions (user_id, txn_type, amount) VALUES (?, ?, ?)", (user_id, 'DEPOSIT', amount))
+    db.commit()
+    
+    return jsonify({"success": True, "message": f"የ {amount} ብር ደረሰኝዎ በተሳካ ሁኔታ ተመዝግቧል!"})
+
 @app.route('/api/game/state', methods=['GET'])
 def game_state():
     db = get_db()
@@ -124,6 +141,15 @@ def game_state():
         "called_numbers": called_numbers
     })
 
+@app.route('/api/game/history', methods=['GET'])
+def game_history():
+    user_id = request.headers.get('X-Telegram-Init-Data', 'default_user')
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT txn_type, amount, created_at FROM transactions WHERE user_id = ? ORDER BY id DESC LIMIT 20", (user_id,))
+    history = [dict(row) for row in cursor.fetchall()]
+    return jsonify({"history": history})
+
 @app.route('/api/cartela/select', methods=['POST'])
 def select_cartela():
     data = request.json
@@ -144,7 +170,6 @@ def claim_bingo():
     room_id = data.get('room_id')
     cartela_no = data.get('cartela_no')
     
-    # Allocate win prize for demo
     prize = 50.0
     user_id = request.headers.get('X-Telegram-Init-Data', 'default_user')
     
