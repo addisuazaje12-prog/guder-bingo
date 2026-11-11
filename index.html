@@ -1,3 +1,125 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guder Bingo - ጉደር ቢንጎ</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
+        .hidden { display: none !important; }
+        .container { max-width: 500px; margin: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; }
+        .card { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
+        button:active { background: #2563eb; }
+        .grid-800 { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; max-height: 250px; overflow-y: auto; background: #0f172a; padding: 8px; border-radius: 6px; }
+        .cartela-btn { background: #334155; color: white; border: none; padding: 6px 2px; font-size: 11px; border-radius: 4px; cursor: pointer; }
+        .selected-gold { background: #eab308 !important; color: black; }
+        .selected-green { background: #22c55e !important; }
+        .bingo-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
+        .cell { background: #334155; text-align: center; padding: 12px 0; font-weight: bold; border-radius: 4px; font-size: 14px; }
+        .cell.marked { background: #22c55e; color: white; }
+        .nav-bar { display: flex; gap: 5px; margin-bottom: 15px; }
+        .nav-bar button { background: #475569; font-size: 12px; padding: 8px; }
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #334155; color: white; padding: 10px 20px; border-radius: 20px; display: none; z-index: 1000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        #statusMessage { font-size: 12px; padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; background: #332b19; }
+        .muted { color: #94a3b8; font-size: 12px; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 12px; text-align: center; width: 80%; max-width: 320px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div><b>ጉደር ቢንጎ</b></div>
+        <div id="balance">0.00 ETB</div>
+    </header>
+
+    <div id="statusMessage">ሲስተሙ በመገናኘት ላይ ነው...</div>
+
+    <div class="nav-bar">
+        <button onclick="showSection('gameSection')">ጨዋታ</button>
+        <button onclick="showSection('walletSection')">ቦርሳ</button>
+        <button onclick="showSection('depositSection')">ገንዘብ አስገባ</button>
+        <button onclick="showSection('historySection')">ታሪክ</button>
+    </div>
+
+    <!-- Game Section -->
+    <div id="gameSection" class="card">
+        <h3>የቢንጎ ጨዋታ</h3>
+        <p id="roomInfo" class="muted">ክፍል እየጫነ ነው...</p>
+
+        <!-- Selection Area -->
+        <div id="selectionArea" class="hidden">
+            <p>ካርቴላ ይምረጡ (የቆይታ ጊዜ: <span id="selectTimer">30</span>ሰ)</p>
+            <div id="fastCartelaContainer" class="grid-800"></div>
+        </div>
+
+        <!-- Active Card Area -->
+        <div id="cardArea" class="hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span id="myCardLabel" style="font-weight:bold; color:#38bdf8;">የእርስዎ ካርቴላ: #1</span>
+                <div>የተጠራ: <span id="latestCall" style="font-size: 20px; color: #eab308; font-weight:bold;">-</span></div>
+            </div>
+            <div id="bingoBoard" class="bingo-board"></div>
+            <div style="margin-top:10px;" class="muted">የቅርብ ጊዜ ጥሪዎች: <span id="recentCalls"></span></div>
+            <button onclick="claimBingo()" style="background:#16a34a; margin-top:15px; font-size:16px;">ቢንጎ (BINGO) ይበሉ! 🎉</button>
+        </div>
+    </div>
+
+    <!-- Wallet Section -->
+    <div id="walletSection" class="card hidden">
+        <h3>የኪስ ቦርሳ (Wallet)</h3>
+        <p>ቀሪ ሂሳብዎ: <span id="walletBalance">-</span></p>
+        <div id="walletTransactions" style="font-size:13px; margin-top:10px;"></div>
+    </div>
+
+    <!-- Deposit Section -->
+    <div id="depositSection" class="card hidden">
+        <h3>ገንዘብ ማስገባት (Deposit)</h3>
+        <p id="paymentDetails" class="muted">የቴሌብር መረጃ በመጫን ላይ...</p>
+        <form id="depositForm" onsubmit="submitDeposit(event)">
+            <label class="muted">የክፍያ አማራጭ:</label>
+            <select id="paymentMethod" style="width:100%; padding:8px; margin:5px 0 10px; background:#0f172a; color:white; border-radius:4px; border:1px solid #475569;">
+                <option value="telebirr">ቴሌብር (Telebirr)</option>
+            </select>
+            <label class="muted">መጠን (ETB):</label>
+            <input type="number" id="depositAmount" value="50" min="10" required style="width:100%; padding:8px; margin:5px 0 10px; background:#0f172a; color:white; border-radius:4px; border:1px solid #475569; box-sizing:border-box;">
+            <label class="muted">የላኪ ስልክ ቁጥር:</label>
+            <input type="text" id="payerReference" placeholder="0913xxxxxx" required style="width:100%; padding:8px; margin:5px 0 10px; background:#0f172a; color:white; border-radius:4px; border:1px solid #475569; box-sizing:border-box;">
+            <label class="muted">የግብይት ማረጋገጫ (SMS/Receipt text):</label>
+            <textarea id="receiptText" placeholder="የቴሌብር ኤስኤምኤስ ጽሁፍ እዚህ ይለጥፉ..." rows="3" required style="width:100%; padding:8px; margin:5px 0 10px; background:#0f172a; color:white; border-radius:4px; border:1px solid #475569; box-sizing:border-box;"></textarea>
+            <button type="submit" id="depositSubmit">ደረሰኝ ላክ</button>
+        </form>
+        <p id="depositResult" style="margin-top:10px; font-size:13px; color:#38bdf8;"></p>
+    </div>
+
+    <!-- History Section -->
+    <div id="historySection" class="card hidden">
+        <h3>የጨዋታ ታሪክ</h3>
+        <div id="gameHistory">ምንም ታሪክ የለም።</div>
+    </div>
+
+    <!-- Manager Section -->
+    <div id="managerSection" class="card hidden">
+        <h3>አሸናፊዎች</h3>
+        <div id="managerSessions">መረጃ የለም።</div>
+    </div>
+</div>
+
+<!-- Bingo Modal Popup -->
+<div id="bingoModal" class="modal hidden">
+    <div class="modal-content">
+        <h2 style="color:#22c55e; margin-top:0;">አሸናፊ! 🏆</h2>
+        <p id="modalWinnerMsg">ሽልማትዎ ተመዝግቧል!</p>
+        <p class="muted">ጨዋታው በ <span id="modalCountdown" style="font-weight:bold; color:#eab308;">5</span> ሰከንድ ውስጥ ይቀጥላል...</p>
+    </div>
+</div>
+
+<div id="toast"></div>
+
 <script>
 (() => {
 "use strict";
@@ -6,13 +128,12 @@ const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : 
 if (tg) { tg.ready(); tg.expand(); }
 
 const API = "https://guder-bingo-server.onrender.com";
-const initData = tg && tg.initData ? tg.initData : "";
+const initData = tg && tg.initData ? tg.initData : "test_user_init_data";
 
 let currentRoom = null;
 let currentCartela = null;
 let currentMatrix = null;
 let selectTimerInterval = null;
-let prepTimerInterval = null;
 let lastSpokenNum = null;
 
 const $ = id => document.getElementById(id);
@@ -27,14 +148,13 @@ function renderFastCartelaGrid() {
   container.innerHTML = html;
 }
 
-// Amharic Voice Number Calling using Web Speech API
 function speakAmharicNumber(number) {
   if (!('speechSynthesis' in window)) return;
   if (lastSpokenNum === number) return;
   lastSpokenNum = number;
 
   const utterance = new SpeechSynthesisUtterance(`ቁጥር ${number}`);
-  utterance.lang = 'am-ET'; // Amharic
+  utterance.lang = 'am-ET';
   utterance.rate = 0.9;
   window.speechSynthesis.speak(utterance);
 }
@@ -70,7 +190,7 @@ async function api(path, options = {}) {
 }
 
 window.showSection = function(id) {
-  ["gameSection", "depositSection", "walletSection", "historySection", "managerSection", "helpSection"].forEach(section => {
+  ["gameSection", "depositSection", "walletSection", "historySection", "managerSection"].forEach(section => {
     $(section).classList.toggle("hidden", section !== id);
   });
   if (id === "walletSection") refreshWallet();
@@ -84,8 +204,9 @@ window.refreshWallet = async function() {
   try {
     const data = await api("/api/wallet");
     $("balance").textContent = Number(data.balance).toFixed(2) + " ETB";
+    $("walletBalance").textContent = Number(data.balance).toFixed(2) + " ETB";
     $("walletTransactions").innerHTML = data.transactions.length
-      ? data.transactions.map(t => `<div class="item"><b>${t.txn_type}</b> · ${Number(t.amount).toFixed(2)} ETB<br><span class="muted">${t.created_at}</span></div>`).join("")
+      ? data.transactions.map(t => `<div style="padding:6px 0; border-bottom:1px solid #334155;"><b>${t.txn_type}</b> · ${Number(t.amount).toFixed(2)} ETB<br><span class="muted">${t.created_at}</span></div>`).join("")
       : " እስካሁን ምንም የኪስ ቦርሳ ግብይት የለም።";
   } catch (e) { setStatus(e.message, true); }
 };
@@ -123,15 +244,14 @@ window.submitDeposit = async function(event) {
   } finally { button.disabled = false; }
 };
 
-// Selection 30-second Countdown Timer
 function startSelectTimer() {
   clearInterval(selectTimerInterval);
   let timeLeft = 30;
-  $("selectTimer").textContent = timeLeft;
+  if ($("selectTimer")) $("selectTimer").textContent = timeLeft;
   selectTimerInterval = setInterval(() => {
     timeLeft--;
     if (timeLeft >= 0) {
-      $("selectTimer").textContent = timeLeft;
+      if ($("selectTimer")) $("selectTimer").textContent = timeLeft;
     } else {
       clearInterval(selectTimerInterval);
     }
@@ -167,7 +287,7 @@ async function refreshGame() {
         const latest = calls[calls.length - 1].number;
         $("latestCall").textContent = latest;
         speakAmharicNumber(latest);
-        $("recentCalls").innerHTML = calls.slice(-5).map(c => `<span>${c.number}</span>`).join("");
+        $("recentCalls").innerHTML = calls.slice(-5).map(c => `<span style="background:#334155; padding:2px 6px; border-radius:4px; margin-right:4px;">${c.number}</span>`).join("");
       }
     } else {
       $("cardArea").classList.add("hidden");
@@ -227,7 +347,6 @@ function renderCard(calls) {
   });
 }
 
-// Claim Bingo & 5-second Modal Countdown
 window.claimBingo = async function() {
   if (!currentCartela || !currentRoom) {
     toast("እባክዎ መጀመሪያ ካርቴላ ይምረጡ!");
@@ -262,28 +381,39 @@ window.claimBingo = async function() {
 };
 
 async function loadHistory() {
-  const data = await api("/api/game/history");
-  $("gameHistory").innerHTML = "የጨዋታ ታሪክ ተጭኗል።";
+  try {
+    const data = await api("/api/game/history");
+    $("gameHistory").innerHTML = (data.history || []).length ? JSON.stringify(data.history) : "ምንም ታሪክ የለም።";
+  } catch (e) {
+    $("gameHistory").innerHTML = "ታሪክን መጫን አልተቻለም።";
+  }
 }
 
 async function loadManagerSessions() {
-  const data = await api("/api/manager/sessions");
-  $("managerSessions").innerHTML = (data.winners || []).length 
-    ? data.winners.map(w => `<div class="item">ስልክ: ${w.phone_number} · ሽልማት: ${w.amount} ETB</div>`).join("") 
-    : "ለአሁኑ ክፍለ ጊዜ አሸናፊዎች የሉም።";
+  try {
+    const data = await api("/api/manager/sessions");
+    $("managerSessions").innerHTML = (data.winners || []).length 
+      ? data.winners.map(w => `<div style="padding:6px 0; border-bottom:1px solid #334155;">ስልክ: ${w.phone_number} · ሽልማት: ${w.amount} ETB</div>`).join("") 
+      : "ለአሁኑ ክፍለ ጊዜ አሸናፊዎች የሉም።";
+  } catch (e) {
+    $("managerSessions").innerHTML = "መረጃ ማግኘት አልተቻለም።";
+  }
 }
 
-window.openSupport = function() {
-  window.open("https://t.me/Guderbingosupport", "_blank");
-};
+async function init() {
+  try {
+    await loadConfig();
+    await refreshWallet();
+    await refreshGame();
+    setInterval(refreshGame, 3000);
+    setStatus("ሲስተሙ በትክክል ተገናኝቷል።");
+  } catch (e) {
+    setStatus("ከ ሰርቨር ጋር መገናኘት አልተቻለም", true);
+  }
+}
 
 init();
-async function init() {
-  if (!tg || !initData) return;
-  await loadConfig();
-  await refreshWallet();
-  await refreshGame();
-  setInterval(refreshGame, 3000);
-}
 })();
 </script>
+</body>
+</html>
