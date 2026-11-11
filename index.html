@@ -8,39 +8,49 @@
     <style>
         body { font-family: sans-serif; background: #9078b9; color: #fff; margin: 0; padding: 10px; text-align: center; }
         .hidden { display: none !important; }
-        .container { max-width: 480px; margin: auto; }
-        .header-stats { background: white; color: #333; display: flex; justify-content: space-around; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-bottom: 12px; }
-        .card { background: #9078b9; padding: 10px; border-radius: 8px; margin-bottom: 12px; }
+        .container { max-width: 600px; margin: auto; }
         
-        /* Bingo Card Styling */
-        .bingo-card-wrapper { background: white; border-radius: 12px; padding: 8px; width: 280px; margin: 0 auto 12px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.2); color: #333; }
+        /* Top Stats Bar */
+        .header-stats { background: white; color: #333; display: flex; justify-content: space-around; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-bottom: 10px; }
+        
+        /* Main Layout Grid for Side-by-Side View */
+        .game-layout { display: flex; gap: 10px; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-bottom: 10px; }
+        
+        /* Calling Numbers Board (1-75) */
+        .calling-section { background: #6b5394; border-radius: 10px; padding: 8px; flex: 1; min-width: 240px; }
+        .calling-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-top: 5px; }
+        .num-cell { background: #4a356c; color: #ddd; font-size: 10px; padding: 5px 0; border-radius: 3px; font-weight: bold; }
+        .num-cell.called { background: #eab308; color: black; }
+
+        /* Player's Bingo Card */
+        .card-section { background: white; color: #333; border-radius: 10px; padding: 8px; flex: 1; min-width: 240px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .bingo-header { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 3px; }
-        .bingo-header div { background: #dc2626; color: white; font-weight: bold; padding: 8px 0; border-radius: 4px; font-size: 16px; }
+        .bingo-header div { background: #dc2626; color: white; font-weight: bold; padding: 6px 0; border-radius: 3px; font-size: 14px; }
         .bingo-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
-        .cell { background: #f3f4f6; color: #1f2937; text-align: center; padding: 10px 0; font-weight: bold; border-radius: 4px; font-size: 15px; }
+        .cell { background: #f3f4f6; color: #1f2937; text-align: center; padding: 8px 0; font-weight: bold; border-radius: 3px; font-size: 13px; }
         .cell.marked { background: #dc2626; color: white; }
 
-        /* Grid of 800 for selection */
-        .grid-800 { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; max-height: 200px; overflow-y: auto; background: #6b5394; padding: 8px; border-radius: 6px; }
+        /* Selection 800 Grid */
+        .card { background: #9078b9; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        .grid-800 { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; max-height: 220px; overflow-y: auto; background: #6b5394; padding: 8px; border-radius: 6px; }
         .cartela-btn { background: #4a356c; color: white; border: none; padding: 6px 2px; font-size: 11px; border-radius: 4px; cursor: pointer; }
         .selected-gold { background: #eab308 !important; color: black; }
         .selected-green { background: #22c55e !important; }
 
-        /* Current Call Section in the middle */
-        .call-box { background: #6b5394; border-radius: 12px; padding: 10px; margin-bottom: 12px; }
-        .latest-badge { background: #eab308; color: black; font-size: 22px; font-weight: bold; padding: 8px 18px; border-radius: 30px; display: inline-block; margin: 4px 0; }
-        .recent-chips { display: flex; justify-content: center; gap: 5px; margin-top: 4px; }
-        .chip { background: #4a356c; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+        /* Current Call Badge */
+        .call-banner { background: #6b5394; border-radius: 8px; padding: 6px; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
+        .latest-badge { background: #eab308; color: black; font-size: 18px; padding: 2px 12px; border-radius: 15px; display: inline-block; margin-left: 5px; }
 
         /* Bottom Controls */
-        .bottom-nav { display: flex; justify-content: space-around; gap: 10px; margin-top: 15px; }
-        .btn-action { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; color: white; }
+        .bottom-nav { display: flex; justify-content: space-around; gap: 8px; margin-top: 10px; }
+        .btn-action { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; color: white; }
         .btn-leave { background: #dc2626; }
         .btn-refresh { background: #0284c7; }
         .btn-bingo { background: #eab308; color: black; }
+        .btn-wallet { background: #16a34a; }
 
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 20px; display: none; z-index: 1000; font-size: 14px; }
-        .muted { font-size: 13px; color: #e2e8f0; margin: 6px 0; }
+        .muted { font-size: 12px; color: #e2e8f0; margin: 4px 0; }
     </style>
 </head>
 <body>
@@ -52,38 +62,44 @@
         <div>Derash<br><span id="derashVal">-</span></div>
         <div>Players<br><span id="playersVal">-</span></div>
         <div>Stake<br>100 ETB</div>
-        <div>Called<br><span id="calledCount">0</span></div>
+        <div>Wallet<br><span id="walletVal">0.00</span></div>
     </div>
 
-    <!-- Middle Command Texts & Calling Section -->
-    <div class="call-box">
-        <div style="font-size: 13px; font-weight: bold;">Current Call</div>
-        <div id="latestCall" class="latest-badge">-</div>
-        <div class="recent-chips" id="recentCalls"></div>
-        <p class="muted">እስካሁኑ ጨዋታ እስከሚጠናቀቅ ይጠብቁ</p>
-    </div>
-
-    <!-- Selection Area -->
-    <div id="selectionArea" class="card hidden">
-        <p style="font-weight:bold; font-size:14px;">ካርቴላ ይምረጡ (የቆይታ ጊዜ: <span id="selectTimer">30</span>ሰ)</p>
+    <!-- Selection Area (30s Countdown & 800 Cartelas) -->
+    <div id="selectionArea" class="card">
+        <p style="font-weight:bold; font-size:15px;">ካርቴላ ይምረጡ (የቆይታ ጊዜ: <span id="selectTimer" style="color:#eab308; font-size:18px;">30</span> ሰከንድ)</p>
         <div id="fastCartelaContainer" class="grid-800"></div>
     </div>
 
-    <!-- Player's Cartela Display -->
-    <div id="cardArea" class="card">
-        <div id="myCardLabel" style="font-weight: bold; margin-bottom: 6px; font-size: 14px;">ካርቴላ #325</div>
-        <div class="bingo-card-wrapper">
-            <div class="bingo-header">
-                <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+    <!-- Active Game Layout (Side-by-Side: Calling Numbers 1-75 & Player Card) -->
+    <div id="gameActiveArea" class="hidden">
+        <div class="call-banner">
+            የተጠራ ቁጥር: <span id="latestCall" class="latest-badge">-</span>
+        </div>
+
+        <div class="game-layout">
+            <!-- Calling Numbers Board 1-75 -->
+            <div class="calling-section">
+                <div style="font-weight:bold; font-size:13px; margin-bottom:4px;">የተጠሩ ቁጥሮች (1 - 75)</div>
+                <div id="callingBoard" class="calling-grid"></div>
             </div>
-            <div id="bingoBoard" class="bingo-board"></div>
+
+            <!-- Player's Cartela -->
+            <div class="card-section">
+                <div id="myCardLabel" style="font-weight: bold; margin-bottom: 6px; font-size: 13px; color:#1f2937;">ካርቴላ # -</div>
+                <div class="bingo-header">
+                    <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+                </div>
+                <div id="bingoBoard" class="bingo-board"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Bottom Actions: Leave, Refresh, Bingo! -->
+    <!-- Bottom Actions -->
     <div class="bottom-nav">
         <button class="btn-action btn-leave" onclick="leaveGame()">Leave</button>
         <button class="btn-action btn-refresh" onclick="refreshGame()">Refresh</button>
+        <button class="btn-action btn-wallet" onclick="openWallet()">Wallet</button>
         <button class="btn-action btn-bingo" onclick="claimBingo()">Bingo!</button>
     </div>
 </div>
@@ -103,7 +119,10 @@ const initData = tg && tg.initData ? tg.initData : "test_user";
 let currentRoom = null;
 let currentCartela = null;
 let currentMatrix = null;
+let selectTimerInterval = null;
+let timeLeft = 30;
 let lastSpokenNum = null;
+let audioInitialized = false;
 
 const $ = id => document.getElementById(id);
 
@@ -114,15 +133,42 @@ function toast(msg) {
     setTimeout(() => { el.style.display = "none"; }, 3000);
 }
 
-// Amharic Voice Number Calling using Web Speech API
+// Fixed Amharic Voice Web Speech API Synthesis with user interaction trigger
 function speakAmharicNumber(num) {
     if (!('speechSynthesis' in window)) return;
     if (lastSpokenNum === num) return;
     lastSpokenNum = num;
+
+    window.speechSynthesis.cancel(); // Stop previous utterance
     const utterance = new SpeechSynthesisUtterance(`ቁጥር ${num}`);
     utterance.lang = 'am-ET';
-    utterance.rate = 0.9;
+    utterance.rate = 0.85;
+    utterance.pitch = 1.0;
+    
+    // Attempt playback
     window.speechSynthesis.speak(utterance);
+}
+
+// Force unlock speech synthesis on first tap anywhere
+document.addEventListener('click', () => {
+    if (!audioInitialized && 'speechSynthesis' in window) {
+        const silent = new SpeechSynthesisUtterance('');
+        silent.volume = 0;
+        window.speechSynthesis.speak(silent);
+        audioInitialized = true;
+    }
+}, { once: true });
+
+function renderCallingBoard(calledList) {
+    const board = $("callingBoard");
+    board.innerHTML = "";
+    const calledSet = new Set(calledList.map(c => Number(c.number)));
+    for (let i = 1; i <= 75; i++) {
+        const div = document.createElement("div");
+        div.className = "num-cell" + (calledSet.has(i) ? " called" : "");
+        div.textContent = i;
+        board.appendChild(div);
+    }
 }
 
 function renderFastCartelaGrid() {
@@ -133,6 +179,20 @@ function renderFastCartelaGrid() {
         html += `<button id="c_btn_${i}" class="cartela-btn" onclick="selectFastCartela(${i})">#${i}</button>`;
     }
     container.innerHTML = html;
+}
+
+function startSelectTimer() {
+    clearInterval(selectTimerInterval);
+    timeLeft = 30;
+    if ($("selectTimer")) $("selectTimer").textContent = timeLeft;
+    selectTimerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft >= 0) {
+            if ($("selectTimer")) $("selectTimer").textContent = timeLeft;
+        } else {
+            clearInterval(selectTimerInterval);
+        }
+    }, 1000);
 }
 
 async function api(path, options = {}) {
@@ -148,6 +208,7 @@ window.refreshGame = async function() {
         const data = await api("/api/game/state");
         currentRoom = data.room;
         currentCartela = data.cartela;
+        $("walletVal").textContent = Number(data.balance || 100).toFixed(2);
 
         if (currentRoom) {
             $("gameId").textContent = currentRoom.room_id;
@@ -156,7 +217,7 @@ window.refreshGame = async function() {
         }
 
         const calls = data.called_numbers || [];
-        $("calledCount").textContent = calls.length;
+        renderCallingBoard(calls);
 
         if (calls.length > 0) {
             const latestNum = calls[calls.length - 1].number;
@@ -166,38 +227,27 @@ window.refreshGame = async function() {
             else if (latestNum > 45 && latestNum <= 60) prefix = "G";
             else if (latestNum > 60) prefix = "O";
 
-            const callStr = `${prefix}-${latestNum}`;
-            $("latestCall").textContent = callStr;
+            $("latestCall").textContent = `${prefix}-${latestNum}`;
             speakAmharicNumber(latestNum);
-
-            $("recentCalls").innerHTML = calls.slice(-3).map(c => {
-                let p = "B";
-                let n = c.number;
-                if (n > 15 && n <= 30) p = "I";
-                else if (n > 30 && n <= 45) p = "N";
-                else if (n > 45 && n <= 60) p = "G";
-                else if (n > 60) p = "O";
-                return `<div class="chip">${p}-${n}</div>`;
-            }).join("");
         }
 
         if (currentCartela) {
             $("selectionArea").classList.add("hidden");
-            $("cardArea").classList.remove("hidden");
+            $("gameActiveArea").classList.remove("hidden");
             $("myCardLabel").textContent = "ካርቴላ #" + currentCartela.cartela_no;
             currentMatrix = JSON.parse(currentCartela.numbers_json || generateValidMatrix(currentCartela.cartela_no));
             renderCard(calls);
         } else {
-            $("cardArea").classList.add("hidden");
+            $("gameActiveArea").classList.add("hidden");
             $("selectionArea").classList.remove("hidden");
             renderFastCartelaGrid();
+            startSelectTimer();
         }
     } catch (e) {
         console.error(e);
     }
 };
 
-// Generate valid 1-75 BINGO columns matrix (B:1-15, I:16-30, N:31-45, G:46-60, O:61-75)
 function generateValidMatrix(seed) {
     const shuffle = arr => arr.sort(() => 0.5 - Math.random());
     const colB = shuffle([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]).slice(0, 5);
@@ -268,10 +318,14 @@ window.claimBingo = async function() {
 
 window.leaveGame = function() {
     currentCartela = null;
-    $("cardArea").classList.add("hidden");
+    $("gameActiveArea").classList.add("hidden");
     $("selectionArea").classList.remove("hidden");
     toast("ከጨዋታው ወጥተዋል።");
     refreshGame();
+};
+
+window.openWallet = function() {
+    toast("ቀሪ ሂሳብዎ: " + $("walletVal").textContent + " ETB");
 };
 
 setInterval(refreshGame, 3000);
