@@ -2,8 +2,10 @@ import os
 import time
 import sqlite3
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Manual Deposit & Verification Configuration
 TELEBIRR_SHORT_CODE = "800001"
@@ -62,12 +64,10 @@ def get_user_balance(user_id):
     conn.close()
     return result[0] if result[0] is not None else 0.0
 
-# Helper to get or create default test user for Telegram Web App
 def get_or_create_telegram_user(init_data):
     conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
     cursor = conn.cursor()
     
-    # Extract or fallback to default test user
     telegram_id = "test_user_tg"
     if init_data and "id=" in init_data:
         try:
