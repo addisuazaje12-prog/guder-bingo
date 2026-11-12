@@ -208,6 +208,11 @@ textarea {
   font-weight: bold;
 }
 
+.range-btn.active-range {
+  background: var(--green);
+  color: #062d20;
+}
+
 .note {
   background: #2c281d;
   color: #f4dda4;
@@ -337,10 +342,10 @@ footer {
       
       <!-- Range Selectors for 1-800 -->
       <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-        <button type="button" onclick="loadCartelaPage(1)" style="flex:1; font-size:11px; padding:6px;">1-200</button>
-        <button type="button" onclick="loadCartelaPage(201)" style="flex:1; font-size:11px; padding:6px;">201-400</button>
-        <button type="button" onclick="loadCartelaPage(401)" style="flex:1; font-size:11px; padding:6px;">401-600</button>
-        <button type="button" onclick="loadCartelaPage(601)" style="flex:1; font-size:11px; padding:6px;">601-800</button>
+        <button type="button" id="rangeBtn1" class="range-btn" onclick="loadCartelaPage(1)" style="flex:1; font-size:11px; padding:6px;">1-200</button>
+        <button type="button" id="rangeBtn21" class="range-btn" onclick="loadCartelaPage(201)" style="flex:1; font-size:11px; padding:6px;">201-400</button>
+        <button type="button" id="rangeBtn41" class="range-btn" onclick="loadCartelaPage(401)" style="flex:1; font-size:11px; padding:6px;">401-600</button>
+        <button type="button" id="rangeBtn61" class="range-btn" onclick="loadCartelaPage(601)" style="flex:1; font-size:11px; padding:6px;">601-800</button>
       </div>
 
       <div class="cartela-grid" id="cartelaTouchGrid"></div>
@@ -352,7 +357,7 @@ footer {
       </button>
     </div>
 
-    <!-- Active Player Card Grid (Bottom Position) -->
+    <!-- Active Player Card Grid (Bottom Position - Transitioned when joined) -->
     <div id="cardArea" class="hidden" style="margin-top: 10px;">
       <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d;"></p>
 
@@ -550,6 +555,16 @@ window.loadCartelaPage = function(startNum) {
     html += `<button type="button" class="cartela-btn" onclick="selectTouchCartela(${i})">#${i}</button>`;
   }
   grid.innerHTML = html;
+
+  // Highlight active range button
+  ["rangeBtn1", "rangeBtn21", "rangeBtn41", "rangeBtn61"].forEach(id => {
+    const el = $(id);
+    if (el) el.classList.remove("active-range");
+  });
+  if (startNum === 1 && $("rangeBtn1")) $("rangeBtn1").classList.add("active-range");
+  if (startNum === 201 && $("rangeBtn21")) $("rangeBtn21").classList.add("active-range");
+  if (startNum === 401 && $("rangeBtn41")) $("rangeBtn41").classList.add("active-range");
+  if (startNum === 601 && $("rangeBtn61")) $("rangeBtn61").classList.add("active-range");
 };
 
 window.selectTouchCartela = function(num) {
@@ -616,6 +631,7 @@ async function refreshGame() {
         currentMatrix = JSON.parse(currentCartela.numbers_json);
       } catch(err) { currentMatrix = null; }
       
+      // Smooth transition to playing view
       if (selectionArea) selectionArea.classList.add("hidden");
       if (cardArea) cardArea.classList.remove("hidden");
       if ($("myCardLabel")) $("myCardLabel").textContent = "Your Playing Cartela Position: #" + currentCartela.cartela_no;
