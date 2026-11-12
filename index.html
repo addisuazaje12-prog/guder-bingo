@@ -255,7 +255,7 @@ footer {
 
 <header>
   <h1>🎱 Guder Bingo</h1>
-  <div class="muted">እንኳን ወደ ግደር ቢንጎ በደህና መጡ!</div>
+  <div class="muted">እንኳን ወደ ጉደር ቢንጎ በደህና መጡ !</div>
 </header>
 
 <div id="statusMessage" class="status">
@@ -435,7 +435,6 @@ if (tg) {
   tg.expand();
 }
 
-// Updated absolute API base URL for Render deployment
 const API = "https://guder-bingo-server.onrender.com";
 const initData = tg && tg.initData ? tg.initData : "";
 
@@ -777,7 +776,6 @@ function letterFor(n) {
   return "O";
 }
 
-// 5-Second Celebration Modal Trigger Function
 function showBingoCelebrationModal() {
   const modal = $("bingoModal");
   const countdownEl = $("modalCountdown");
@@ -817,7 +815,6 @@ window.claimBingo = async function() {
         tg.sendData(JSON.stringify({ action: "claim_bingo" }));
       }
 
-      // Trigger 5-second celebration overlay modal
       showBingoCelebrationModal();
 
       if (tg && tg.showAlert) {
