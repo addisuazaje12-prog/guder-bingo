@@ -324,7 +324,7 @@ footer {
     ⏳ <span id="timerLabel">Selection Phase</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
 
-  <!-- TOP: NUMBER CALLING FEED -->
+  <!-- TOP: NUMBER CALLING FEED (Visible to Everyone) -->
   <div id="callingSection" style="margin-top: 10px;">
     <p class="muted"><b>📢 Calling Number Feed (Top)</b></p>
     <div class="call-number" id="latestCall">
@@ -336,16 +336,16 @@ footer {
   <!-- BOTTOM: PLAYING CARTELA POSITION -->
   <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
     
-    <!-- Cartela Selection Area (1-800 touch grid with range selectors) -->
+    <!-- Cartela Selection Area (1-800 touch grid with 4 range buttons) -->
     <div id="selectionArea">
       <p class="muted">Touch a cartela number (1–800) or enter manually:</p>
       
-      <!-- Range Selectors for 1-800 -->
+      <!-- Range Selectors covering 1 to 800 -->
       <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-        <button type="button" id="rangeBtn1" class="range-btn" onclick="loadCartelaPage(1)" style="flex:1; font-size:11px; padding:6px;">1-200</button>
-        <button type="button" id="rangeBtn21" class="range-btn" onclick="loadCartelaPage(201)" style="flex:1; font-size:11px; padding:6px;">201-400</button>
-        <button type="button" id="rangeBtn41" class="range-btn" onclick="loadCartelaPage(401)" style="flex:1; font-size:11px; padding:6px;">401-600</button>
-        <button type="button" id="rangeBtn61" class="range-btn" onclick="loadCartelaPage(601)" style="flex:1; font-size:11px; padding:6px;">601-800</button>
+        <button type="button" id="rangeBtn1" class="range-btn active-range" onclick="loadCartelaPage(1)" style="flex:1; font-size:11px; padding:6px;">1-200</button>
+        <button type="button" id="rangeBtn201" class="range-btn" onclick="loadCartelaPage(201)" style="flex:1; font-size:11px; padding:6px;">201-400</button>
+        <button type="button" id="rangeBtn401" class="range-btn" onclick="loadCartelaPage(401)" style="flex:1; font-size:11px; padding:6px;">401-600</button>
+        <button type="button" id="rangeBtn601" class="range-btn" onclick="loadCartelaPage(601)" style="flex:1; font-size:11px; padding:6px;">601-800</button>
       </div>
 
       <div class="cartela-grid" id="cartelaTouchGrid"></div>
@@ -357,7 +357,7 @@ footer {
       </button>
     </div>
 
-    <!-- Active Player Card Grid (Bottom Position - Transitioned when joined) -->
+    <!-- Active Player Card Grid (Bottom Position - Appears when joined) -->
     <div id="cardArea" class="hidden" style="margin-top: 10px;">
       <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d;"></p>
 
@@ -557,14 +557,14 @@ window.loadCartelaPage = function(startNum) {
   grid.innerHTML = html;
 
   // Highlight active range button
-  ["rangeBtn1", "rangeBtn21", "rangeBtn41", "rangeBtn61"].forEach(id => {
+  ["rangeBtn1", "rangeBtn201", "rangeBtn401", "rangeBtn601"].forEach(id => {
     const el = $(id);
     if (el) el.classList.remove("active-range");
   });
   if (startNum === 1 && $("rangeBtn1")) $("rangeBtn1").classList.add("active-range");
-  if (startNum === 201 && $("rangeBtn21")) $("rangeBtn21").classList.add("active-range");
-  if (startNum === 401 && $("rangeBtn41")) $("rangeBtn41").classList.add("active-range");
-  if (startNum === 601 && $("rangeBtn61")) $("rangeBtn61").classList.add("active-range");
+  if (startNum === 201 && $("rangeBtn201")) $("rangeBtn201").classList.add("active-range");
+  if (startNum === 401 && $("rangeBtn401")) $("rangeBtn401").classList.add("active-range");
+  if (startNum === 601 && $("rangeBtn601")) $("rangeBtn601").classList.add("active-range");
 };
 
 window.selectTouchCartela = function(num) {
