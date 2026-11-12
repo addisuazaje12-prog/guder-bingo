@@ -316,7 +316,7 @@ footer {
   <h2>🎮 Game Room</h2>
 
   <div id="roomInfo" class="muted">
-    Room #1 · Status: <b>OPEN</b> · Pot: <b>100 ETB</b>
+    Room #1 · Status: <b id="roomStatusText">OPEN</b> · Pot: <b id="roomPotText">0 ETB</b>
   </div>
 
   <!-- LIVE COUNTDOWN BANNER -->
@@ -324,7 +324,7 @@ footer {
     ⏳ <span id="timerLabel">Selection Phase</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
 
-  <!-- TOP: NUMBER CALLING FEED (Visible to Everyone) -->
+  <!-- TOP: NUMBER CALLING FEED -->
   <div id="callingSection" style="margin-top: 10px;">
     <p class="muted"><b>📢 Calling Number Feed (Top)</b></p>
     <div class="call-number" id="latestCall">
@@ -357,7 +357,7 @@ footer {
       </button>
     </div>
 
-    <!-- Active Player Card Grid (Bottom Position - Appears when joined) -->
+    <!-- Active Player Card Grid (Bottom Position - Appears smoothly upon selection) -->
     <div id="cardArea" class="hidden" style="margin-top: 10px;">
       <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d;"></p>
 
@@ -449,15 +449,24 @@ if (tg) {
 const API = "https://guder-bingo-server.onrender.com";
 const initData = tg && tg.initData ? tg.initData : "";
 
-let currentRoom = { room_id: 1, status: 'OPEN', total_pot: 100.0 };
+let currentRoom = { room_id: 1, status: 'OPEN', total_pot: 0.0 };
 let currentCartela = null;
 let currentMatrix = null;
 let lastSpokenNumber = null;
-let countdownTime = 30;
-let prepTime = 5;
-let gameTimerInterval = null;
+let audioUnlocked = false;
 
 const $ = id => document.getElementById(id);
+
+// Unlock browser audio synthesis on first user interaction
+document.addEventListener('click', () => {
+  if (!audioUnlocked && 'speechSynthesis' in window) {
+    audioUnlocked = true;
+    try {
+      const dummy = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(dummy);
+    } catch(e) {}
+  }
+}, { once: true });
 
 function toast(msg) {
   try {
@@ -537,7 +546,7 @@ window.submitDeposit = async function(e) {
     });
     if ($("depositResult")) $("depositResult").textContent = data.message;
     if ($("depositForm")) $("depositForm").reset();
-    toast("Deposit successful!");
+    toast("Deposit receipt submitted!");
     refreshWallet();
     refreshGame();
   } catch(err) {
@@ -571,39 +580,16 @@ window.selectTouchCartela = function(num) {
   if ($("cartelaNo")) $("cartelaNo").value = num;
   const buttons = document.querySelectorAll('.cartela-btn');
   buttons.forEach(b => {
-    b.classList.toggle('selected', b.textContent === `#${num}`);
+    b.classList.toggle('selected', Number(b.textContent.replace('#', '')) === num);
   });
   selectCartela();
 };
-
-function startClientTimer() {
-  if (gameTimerInterval) return;
-  gameTimerInterval = setInterval(() => {
-    const display = $("countdownDisplay");
-    const label = $("timerLabel");
-    if (!display || !label) return;
-
-    if (countdownTime > 0) {
-      countdownTime--;
-      label.textContent = "Selection Phase";
-      display.textContent = countdownTime;
-    } else if (prepTime > 0) {
-      prepTime--;
-      label.textContent = "Preparation Time";
-      display.textContent = prepTime;
-    } else {
-      label.textContent = "Game Running";
-      display.textContent = "LIVE";
-    }
-  }, 1000);
-}
 
 async function refreshGame() {
   try {
     if (!$("cartelaTouchGrid").hasChildNodes()) {
       loadCartelaPage(1);
     }
-    startClientTimer();
 
     const data = await api("/api/game/state");
     if ($("balance")) $("balance").textContent = Number(data.balance || 0).toFixed(2) + " ETB";
@@ -611,17 +597,26 @@ async function refreshGame() {
     if (data.room) currentRoom = data.room;
     currentCartela = data.cartela;
 
-    const roomInfo = $("roomInfo");
+    const roomStatusText = $("roomStatusText");
+    const roomPotText = $("roomPotText");
     const selectionArea = $("selectionArea");
     const cardArea = $("cardArea");
-    const timerBanner = $("timerBanner");
+    const timerLabel = $("timerLabel");
+    const countdownDisplay = $("countdownDisplay");
 
-    if (roomInfo) {
-      roomInfo.innerHTML = `Room #${currentRoom.room_id} · Status: <b>${escapeHtml(currentRoom.status)}</b> · Pot: <b>${currentRoom.total_pot} ETB</b>`;
-    }
+    if (roomStatusText) roomStatusText.textContent = currentRoom.status;
+    if (roomPotText) roomPotText.textContent = Number(currentRoom.total_pot || 0).toFixed(2) + " ETB";
 
-    if (timerBanner) {
-      timerBanner.classList.remove('hidden');
+    // Handle Timers based on backend state
+    if (currentRoom.status === "OPEN" && currentRoom.selection_remaining !== null) {
+      if (timerLabel) timerLabel.textContent = "Selection Phase";
+      if (countdownDisplay) countdownDisplay.textContent = currentRoom.selection_remaining;
+    } else if (currentRoom.status === "PREPARING" && currentRoom.preparation_remaining !== null) {
+      if (timerLabel) timerLabel.textContent = "Preparation Time";
+      if (countdownDisplay) countdownDisplay.textContent = currentRoom.preparation_remaining;
+    } else if (currentRoom.status === "RUNNING") {
+      if (timerLabel) timerLabel.textContent = "Game Status";
+      if (countdownDisplay) countdownDisplay.textContent = "LIVE";
     }
 
     renderLiveFeed(data.called_numbers || []);
@@ -641,7 +636,7 @@ async function refreshGame() {
       if (selectionArea) selectionArea.classList.remove("hidden");
     }
   } catch(e) {
-    if ($("roomInfo")) $("roomInfo").innerHTML = `Room #1 · Status: <b>OPEN</b> · Pot: <b>100 ETB</b>`;
+    if ($("roomStatusText")) $("roomStatusText").textContent = "OPEN";
     if ($("selectionArea")) $("selectionArea").classList.remove("hidden");
   }
 }
@@ -849,10 +844,9 @@ async function init() {
     await refreshWallet();
     await refreshGame();
   } catch(e) {
-    if ($("roomInfo")) $("roomInfo").innerHTML = `Room #1 · Status: <b>OPEN</b> · Pot: <b>100 ETB</b>`;
     if ($("selectionArea")) $("selectionArea").classList.remove("hidden");
   }
-  setInterval(() => { try { refreshGame(); } catch(err){} }, 3000);
+  setInterval(() => { try { refreshGame(); } catch(err){} }, 2000);
 }
 
 init();
