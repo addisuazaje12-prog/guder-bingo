@@ -181,9 +181,9 @@ textarea {
 
 .cartela-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 4px;
-  max-height: 160px;
+  max-height: 180px;
   overflow-y: auto;
   background: #111c2b;
   padding: 8px;
@@ -314,9 +314,9 @@ footer {
     Room #1 · Status: <b>OPEN</b> · Pot: <b>100 ETB</b>
   </div>
 
-  <!-- TIMER BANNER -->
+  <!-- LIVE COUNTDOWN BANNER (30s Selection -> 5s Prep) -->
   <div id="timerBanner" style="background: #2b3c54; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; font-weight: bold; color: #ffd77b;">
-    ⏳ Selection Phase: <span id="countdownDisplay">30</span>s remaining
+    ⏳ <span id="timerLabel">Selection Phase</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
 
   <!-- TOP: NUMBER CALLING FEED -->
@@ -331,11 +331,18 @@ footer {
   <!-- BOTTOM: PLAYING CARTELA POSITION -->
   <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
     
-    <!-- Cartela Selection Area -->
+    <!-- Cartela Selection Area (1-800 touch grid) -->
     <div id="selectionArea">
-      <p class="muted">Touch a cartela number below (1–50 quick grid) or enter number (1–800):</p>
+      <p class="muted">Touch a cartela number (1–800) or enter manually:</p>
       
-      <!-- Quick Touch Grid -->
+      <!-- Quick Range Selector -->
+      <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+        <button type="button" onclick="loadCartelaPage(1)" style="flex:1; font-size:11px; padding:6px;">1-100</button>
+        <button type="button" onclick="loadCartelaPage(101)" style="flex:1; font-size:11px; padding:6px;">101-200</button>
+        <button type="button" onclick="loadCartelaPage(201)" style="flex:1; font-size:11px; padding:6px;">201-300</button>
+        <button type="button" onclick="loadCartelaPage(301)" style="flex:1; font-size:11px; padding:6px;">301+</button>
+      </div>
+
       <div class="cartela-grid" id="cartelaTouchGrid"></div>
 
       <label>Selected Cartela Number</label>
@@ -402,7 +409,8 @@ footer {
   <h2>❔ Help & Rules</h2>
   <ol class="muted">
     <li>Deposit at least 10 ETB via Telebirr or CBE.</li>
-    <li>Touch any cartela number from the grid during the 30-second window.</li>
+    <li>Select any Cartela (1–800) during the 30-second selection phase.</li>
+    <li>Wait through the 5-second preparation time.</li>
     <li>Watch called numbers at the top feed with Amharic audio while your playing card stays positioned at the bottom!</li>
   </ol>
   <button onclick="openSupport()" style="width:100%; margin-top:10px;">Contact Support</button>
@@ -440,6 +448,9 @@ let currentRoom = { room_id: 1, status: 'OPEN', total_pot: 100.0 };
 let currentCartela = null;
 let currentMatrix = null;
 let lastSpokenNumber = null;
+let countdownTime = 30;
+let prepTime = 5;
+let gameTimerInterval = null;
 
 const $ = id => document.getElementById(id);
 
@@ -530,15 +541,16 @@ window.submitDeposit = async function(e) {
   } finally { if (btn) btn.disabled = false; }
 };
 
-function buildCartelaTouchGrid() {
+window.loadCartelaPage = function(startNum) {
   const grid = $("cartelaTouchGrid");
-  if (!grid || grid.children.length > 0) return;
+  if (!grid) return;
   let html = "";
-  for (let i = 1; i <= 48; i++) {
+  const endNum = Math.min(startNum + 99, 800);
+  for (let i = startNum; i <= endNum; i++) {
     html += `<button type="button" class="cartela-btn" onclick="selectTouchCartela(${i})">#${i}</button>`;
   }
   grid.innerHTML = html;
-}
+};
 
 window.selectTouchCartela = function(num) {
   if ($("cartelaNo")) $("cartelaNo").value = num;
@@ -549,9 +561,35 @@ window.selectTouchCartela = function(num) {
   selectCartela();
 };
 
+function startClientTimer() {
+  if (gameTimerInterval) return;
+  gameTimerInterval = setInterval(() => {
+    const display = $("countdownDisplay");
+    const label = $("timerLabel");
+    if (!display || !label) return;
+
+    if (countdownTime > 0) {
+      countdownTime--;
+      label.textContent = "Selection Phase";
+      display.textContent = countdownTime;
+    } else if (prepTime > 0) {
+      prepTime--;
+      label.textContent = "Preparation Time";
+      display.textContent = prepTime;
+    } else {
+      label.textContent = "Game Running";
+      display.textContent = "LIVE";
+    }
+  }, 1000);
+}
+
 async function refreshGame() {
   try {
-    buildCartelaTouchGrid();
+    if (!$("cartelaTouchGrid").hasChildNodes()) {
+      loadCartelaPage(1);
+    }
+    startClientTimer();
+
     const data = await api("/api/game/state");
     if ($("balance")) $("balance").textContent = Number(data.balance || 0).toFixed(2) + " ETB";
 
@@ -746,7 +784,7 @@ async function loadHistory() {
     const data = await api("/api/game/history");
     if ($("gameHistory")) {
       $("gameHistory").innerHTML = data.history && data.history.length
-        ? data.history.map(x => `<div class="item">Room #${x.room_id} · Cartela #${x.cartela_no}<br><span class="muted">${escapeHtml(x.created_at)}</span></div>`).join("")
+        ? data.history.map(x => `<div class="item">Room #${escapeHtml(x.room_id)} · Cartela #${escapeHtml(x.cartela_no)}<br><span class="muted">${escapeHtml(x.created_at)}</span></div>`).join("")
         : "No history yet.";
     }
   } catch(e) {}
