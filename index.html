@@ -181,7 +181,7 @@ textarea {
 
 .cartela-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 4px;
   max-height: 180px;
   overflow-y: auto;
@@ -314,7 +314,7 @@ footer {
     Room #1 · Status: <b>OPEN</b> · Pot: <b>100 ETB</b>
   </div>
 
-  <!-- LIVE COUNTDOWN BANNER (30s Selection -> 5s Prep) -->
+  <!-- LIVE COUNTDOWN BANNER -->
   <div id="timerBanner" style="background: #2b3c54; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; font-weight: bold; color: #ffd77b;">
     ⏳ <span id="timerLabel">Selection Phase</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
@@ -331,16 +331,16 @@ footer {
   <!-- BOTTOM: PLAYING CARTELA POSITION -->
   <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
     
-    <!-- Cartela Selection Area (1-800 touch grid) -->
+    <!-- Cartela Selection Area (1-800 touch grid with range selectors) -->
     <div id="selectionArea">
       <p class="muted">Touch a cartela number (1–800) or enter manually:</p>
       
-      <!-- Quick Range Selector -->
+      <!-- Range Selectors for 1-800 -->
       <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-        <button type="button" onclick="loadCartelaPage(1)" style="flex:1; font-size:11px; padding:6px;">1-100</button>
-        <button type="button" onclick="loadCartelaPage(101)" style="flex:1; font-size:11px; padding:6px;">101-200</button>
-        <button type="button" onclick="loadCartelaPage(201)" style="flex:1; font-size:11px; padding:6px;">201-300</button>
-        <button type="button" onclick="loadCartelaPage(301)" style="flex:1; font-size:11px; padding:6px;">301+</button>
+        <button type="button" onclick="loadCartelaPage(1)" style="flex:1; font-size:11px; padding:6px;">1-200</button>
+        <button type="button" onclick="loadCartelaPage(201)" style="flex:1; font-size:11px; padding:6px;">201-400</button>
+        <button type="button" onclick="loadCartelaPage(401)" style="flex:1; font-size:11px; padding:6px;">401-600</button>
+        <button type="button" onclick="loadCartelaPage(601)" style="flex:1; font-size:11px; padding:6px;">601-800</button>
       </div>
 
       <div class="cartela-grid" id="cartelaTouchGrid"></div>
@@ -425,7 +425,7 @@ footer {
 <div id="bingoModal" class="hidden">
   <div class="modal-card">
     <h2>🎉 BINGO VERIFIED!</h2>
-    <p class="muted">እንኳን ደስ አላችሁ! Prize awarded.</p>
+    <p class="muted">እንኳን ደስ አላችሁ! ውድድሩን አሸንፈዋል!</p>
     <div class="countdown-timer" id="modalCountdown">5</div>
   </div>
 </div>
@@ -545,7 +545,7 @@ window.loadCartelaPage = function(startNum) {
   const grid = $("cartelaTouchGrid");
   if (!grid) return;
   let html = "";
-  const endNum = Math.min(startNum + 99, 800);
+  const endNum = Math.min(startNum + 199, 800);
   for (let i = startNum; i <= endNum; i++) {
     html += `<button type="button" class="cartela-btn" onclick="selectTouchCartela(${i})">#${i}</button>`;
   }
@@ -737,8 +737,21 @@ function speakAmharicNumber(n) {
   try {
     if ('speechSynthesis' in window) {
       const letter = letterFor(n);
-      const utterance = new SpeechSynthesisUtterance(`ቁጥር ${letter} ${n}`);
+      const text = `ቁጥር ${letter} ${n}`;
+      const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'am-ET';
+      window.speechSynthesis.speak(utterance);
+    }
+  } catch(e) {}
+}
+
+function speakWinnerAnnouncement() {
+  try {
+    if ('speechSynthesis' in window) {
+      const text = "እንኳን ደስ አላችሁ! ቢንጎ አሸናፊ ተገኝቷል!";
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'am-ET';
+      utterance.rate = 1.0;
       window.speechSynthesis.speak(utterance);
     }
   } catch(e) {}
@@ -757,6 +770,7 @@ window.claimBingo = async function() {
     });
     
     if (data.status === "winner") {
+      speakWinnerAnnouncement();
       const modal = $("bingoModal");
       const cd = $("modalCountdown");
       if (modal) modal.classList.remove("hidden");
@@ -766,7 +780,7 @@ window.claimBingo = async function() {
         t--; if (cd) cd.textContent = t;
         if (t <= 0) { clearInterval(timer); if (modal) modal.classList.add("hidden"); }
       }, 1000);
-      toast("Bingo verified!");
+      toast("Bingo verified successfully!");
     } else {
       toast(data.message);
     }
