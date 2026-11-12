@@ -441,6 +441,7 @@ const initData = tg && tg.initData ? tg.initData : "";
 let currentRoom = null;
 let currentCartela = null;
 let currentMatrix = null;
+let lastSpokenNumber = null;
 
 const $ = id => document.getElementById(id);
 
@@ -457,9 +458,11 @@ function toast(message) {
 }
 
 function setStatus(message, error = false) {
-  $("statusMessage").textContent = message;
-  $("statusMessage").style.background =
-    error ? "#49252b" : "#332b19";
+  const statusEl = $("statusMessage");
+  if (statusEl) {
+    statusEl.textContent = message;
+    statusEl.style.background = error ? "#49252b" : "#332b19";
+  }
 }
 
 function headers() {
@@ -501,7 +504,8 @@ window.showSection = function(id) {
     "historySection",
     "helpSection"
   ].forEach(section => {
-    $(section).classList.toggle("hidden", section !== id);
+    const el = $(section);
+    if (el) el.classList.toggle("hidden", section !== id);
   });
 
   if (id === "walletSection") refreshWallet();
@@ -514,11 +518,14 @@ window.refreshWallet = async function() {
   try {
     const data = await api("/api/wallet");
 
-    $("balance").textContent =
-      Number(data.balance).toFixed(2) + " ETB";
+    const balanceEl = $("balance");
+    if (balanceEl) {
+      balanceEl.textContent = Number(data.balance).toFixed(2) + " ETB";
+    }
 
-    $("walletTransactions").innerHTML =
-      data.transactions.length
+    const txEl = $("walletTransactions");
+    if (txEl) {
+      txEl.innerHTML = data.transactions.length
         ? data.transactions.map(t => `
           <div class="item">
             <b>${escapeHtml(t.txn_type)}</b>
@@ -529,6 +536,7 @@ window.refreshWallet = async function() {
           </div>
         `).join("")
         : "No wallet transactions yet.";
+    }
 
   } catch (e) {
     setStatus(e.message, true);
@@ -538,19 +546,20 @@ window.refreshWallet = async function() {
 async function loadConfig() {
   try {
     const config = await api("/api/config");
-
     const phone = config.telebirr_phone || "0913706670";
-
-    $("paymentDetails").innerHTML = `
-      <b>Telebirr payment number:</b>
-      ${escapeHtml(phone)}<br>
-      <span class="muted">
-        Minimum deposit is 10.00 ETB. Submit your SMS receipt reference after transferring.
-      </span>
-    `;
-
+    const paymentEl = $("paymentDetails");
+    if (paymentEl) {
+      paymentEl.innerHTML = `
+        <b>Telebirr payment number:</b>
+        ${escapeHtml(phone)}<br>
+        <span class="muted">
+          Minimum deposit is 10.00 ETB. Submit your SMS receipt reference after transferring.
+        </span>
+      `;
+    }
   } catch (e) {
-    $("paymentDetails").textContent = e.message;
+    const paymentEl = $("paymentDetails");
+    if (paymentEl) paymentEl.textContent = e.message;
   }
 }
 
@@ -558,9 +567,10 @@ window.submitDeposit = async function(event) {
   event.preventDefault();
 
   const button = $("depositSubmit");
-  button.disabled = true;
+  if (button) button.disabled = true;
 
-  $("depositResult").textContent = "Submitting receipt...";
+  const resultEl = $("depositResult");
+  if (resultEl) resultEl.textContent = "Submitting receipt...";
 
   try {
     const data = await api("/api/deposit", {
@@ -573,21 +583,22 @@ window.submitDeposit = async function(event) {
       })
     });
 
-    $("depositResult").textContent =
-      data.message + " Deposit reference: " + data.deposit_id;
+    if (resultEl) {
+      resultEl.textContent = data.message + " Deposit reference: " + data.deposit_id;
+    }
 
-    $("depositForm").reset();
+    const formEl = $("depositForm");
+    if (formEl) formEl.reset();
 
     toast("Receipt submitted for review.");
-
     refreshWallet();
 
   } catch (e) {
-    $("depositResult").textContent = e.message;
+    if (resultEl) resultEl.textContent = e.message;
     toast(e.message);
 
   } finally {
-    button.disabled = false;
+    if (button) button.disabled = false;
   }
 };
 
@@ -595,47 +606,51 @@ async function refreshGame() {
   try {
     const data = await api("/api/game/state");
 
-    $("balance").textContent =
-      Number(data.balance || 0).toFixed(2) + " ETB";
+    const balanceEl = $("balance");
+    if (balanceEl) {
+      balanceEl.textContent = Number(data.balance || 0).toFixed(2) + " ETB";
+    }
 
     currentRoom = data.room;
     currentCartela = data.cartela;
 
-    if (!currentRoom) {
-      $("roomInfo").textContent =
-        "There is no active game room at the moment.";
+    const roomInfo = $("roomInfo");
+    const selectionArea = $("selectionArea");
+    const cardArea = $("cardArea");
 
-      $("selectionArea").classList.add("hidden");
-      $("cardArea").classList.add("hidden");
+    if (!currentRoom) {
+      if (roomInfo) roomInfo.textContent = "There is no active game room at the moment.";
+      if (selectionArea) selectionArea.classList.add("hidden");
+      if (cardArea) cardArea.classList.add("hidden");
       return;
     }
 
-    $("roomInfo").textContent =
-      `Room #${currentRoom.room_id} · Status: ${currentRoom.status}`;
+    if (roomInfo) {
+      roomInfo.textContent = `Room #${currentRoom.room_id} · Status: ${currentRoom.status} · Pot: ${currentRoom.total_pot} ETB`;
+    }
 
     if (currentCartela) {
       currentMatrix = JSON.parse(currentCartela.numbers_json);
 
-      $("selectionArea").classList.add("hidden");
-      $("cardArea").classList.remove("hidden");
+      if (selectionArea) selectionArea.classList.add("hidden");
+      if (cardArea) cardArea.classList.remove("hidden");
 
-      $("myCardLabel").textContent =
-        "Your cartela: #" + currentCartela.cartela_no;
+      const cardLabel = $("myCardLabel");
+      if (cardLabel) cardLabel.textContent = "Your cartela: #" + currentCartela.cartela_no;
 
       renderCard(data.called_numbers || []);
 
     } else {
-      $("cardArea").classList.add("hidden");
+      if (cardArea) cardArea.classList.add("hidden");
 
       const canSelect =
         ["OPEN", "REGISTRATION"].includes(currentRoom.status) &&
         Number(data.balance) >= 10;
 
-      $("selectionArea").classList.toggle("hidden", !canSelect);
+      if (selectionArea) selectionArea.classList.toggle("hidden", !canSelect);
 
-      if (!canSelect && Number(data.balance) < 10) {
-        $("roomInfo").textContent +=
-          " · Minimum 10.00 ETB balance required to choose a cartela.";
+      if (!canSelect && Number(data.balance) < 10 && roomInfo) {
+        roomInfo.textContent += " · Minimum 10.00 ETB balance required to choose a cartela.";
       }
     }
 
@@ -676,10 +691,11 @@ window.selectCartela = async function() {
   if (!currentRoom) return;
 
   const button = $("selectBtn");
-  button.disabled = true;
+  if (button) button.disabled = true;
 
   try {
-    const cartelaNo = Number($("cartelaNo").value);
+    const cartelaInput = $("cartelaNo");
+    const cartelaNo = Number(cartelaInput ? cartelaInput.value : 1);
 
     if (!Number.isInteger(cartelaNo) ||
         cartelaNo < 1 || cartelaNo > 800) {
@@ -704,11 +720,13 @@ window.selectCartela = async function() {
       numbers_json: JSON.stringify(matrix)
     };
 
-    $("myCardLabel").textContent =
-      "Your cartela: #" + cartelaNo;
+    const cardLabel = $("myCardLabel");
+    if (cardLabel) cardLabel.textContent = "Your cartela: #" + cartelaNo;
 
-    $("selectionArea").classList.add("hidden");
-    $("cardArea").classList.remove("hidden");
+    const selectionArea = $("selectionArea");
+    const cardArea = $("cardArea");
+    if (selectionArea) selectionArea.classList.add("hidden");
+    if (cardArea) cardArea.classList.remove("hidden");
 
     renderCard([]);
 
@@ -724,7 +742,7 @@ window.selectCartela = async function() {
     toast(e.message);
 
   } finally {
-    button.disabled = false;
+    if (button) button.disabled = false;
   }
 };
 
@@ -736,6 +754,7 @@ function renderCard(calls) {
   );
 
   const board = $("bingoBoard");
+  if (!board) return;
   board.innerHTML = "";
 
   currentMatrix.forEach(row => {
@@ -758,14 +777,25 @@ function renderCard(calls) {
     ? Number(calls[calls.length - 1].number)
     : null;
 
-  $("latestCall").textContent = latest
-    ? letterFor(latest) + " - " + latest
-    : "Waiting for the first call";
+  const latestCallEl = $("latestCall");
+  if (latestCallEl) {
+    latestCallEl.textContent = latest
+      ? letterFor(latest) + " - " + latest
+      : "Waiting for the first call";
+  }
 
-  $("recentCalls").innerHTML =
-    calls.slice(-10).reverse().map(c =>
-      `<span>${letterFor(Number(c.number))}-${Number(c.number)}</span>`
-    ).join("");
+  const recentCallsEl = $("recentCalls");
+  if (recentCallsEl) {
+    recentCallsEl.innerHTML =
+      calls.slice(-10).reverse().map(c =>
+        `<span>${letterFor(Number(c.number))}-${Number(c.number)}</span>`
+      ).join("");
+  }
+
+  if (latest && latest !== lastSpokenNumber) {
+    lastSpokenNumber = latest;
+    speakAmharicNumber(latest);
+  }
 }
 
 function letterFor(n) {
@@ -776,20 +806,30 @@ function letterFor(n) {
   return "O";
 }
 
+function speakAmharicNumber(n) {
+  if ('speechSynthesis' in window) {
+    const letter = letterFor(n);
+    const text = `ቁጥር ${letter} ${n}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'am-ET';
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
 function showBingoCelebrationModal() {
   const modal = $("bingoModal");
   const countdownEl = $("modalCountdown");
   let timeLeft = 5;
   
-  modal.classList.remove("hidden");
-  countdownEl.textContent = timeLeft;
+  if (modal) modal.classList.remove("hidden");
+  if (countdownEl) countdownEl.textContent = timeLeft;
 
   const timer = setInterval(() => {
     timeLeft--;
-    countdownEl.textContent = timeLeft;
+    if (countdownEl) countdownEl.textContent = timeLeft;
     if (timeLeft <= 0) {
       clearInterval(timer);
-      modal.classList.add("hidden");
+      if (modal) modal.classList.add("hidden");
     }
   }, 1000);
 }
@@ -797,7 +837,8 @@ function showBingoCelebrationModal() {
 window.claimBingo = async function() {
   if (!currentRoom || !currentCartela) return;
 
-  $("bingoBtn").disabled = true;
+  const btn = $("bingoBtn");
+  if (btn) btn.disabled = true;
 
   try {
     const data = await api("/api/claim-bingo", {
@@ -831,7 +872,7 @@ window.claimBingo = async function() {
     toast(e.message);
 
   } finally {
-    $("bingoBtn").disabled = false;
+    if (btn) btn.disabled = false;
     await refreshGame();
   }
 };
@@ -840,18 +881,22 @@ async function loadHistory() {
   try {
     const data = await api("/api/game/history");
 
-    $("gameHistory").innerHTML =
-      data.history.length
-        ? data.history.map(x => `
-          <div class="item">
-            Room #${x.room_id} · Cartela #${x.cartela_no}<br>
-            <span class="muted">${escapeHtml(x.created_at)}</span>
-          </div>
-        `).join("")
-        : "No completed games yet.";
+    const historyEl = $("gameHistory");
+    if (historyEl) {
+      historyEl.innerHTML =
+        data.history.length
+          ? data.history.map(x => `
+            <div class="item">
+              Room #${x.room_id} · Cartela #${x.cartela_no}<br>
+              <span class="muted">${escapeHtml(x.created_at)}</span>
+            </div>
+          `).join("")
+          : "No completed games yet.";
+    }
 
   } catch (e) {
-    $("gameHistory").textContent = e.message;
+    const historyEl = $("gameHistory");
+    if (historyEl) historyEl.textContent = e.message;
   }
 }
 
@@ -898,8 +943,10 @@ async function init() {
       true
     );
 
-    $("roomInfo").textContent =
-      "Telegram Web App authentication is required.";
+    const roomInfo = $("roomInfo");
+    if (roomInfo) {
+      roomInfo.textContent = "Telegram Web App authentication is required.";
+    }
 
     return;
   }
