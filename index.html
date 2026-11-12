@@ -179,6 +179,35 @@ textarea {
   font-size: 12px;
 }
 
+.cartela-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  background: #111c2b;
+  padding: 8px;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.cartela-btn {
+  background: #26364d;
+  color: #fff;
+  border: none;
+  padding: 6px 2px;
+  font-size: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.cartela-btn.selected {
+  background: var(--green);
+  color: #062d20;
+  font-weight: bold;
+}
+
 .note {
   background: #2c281d;
   color: #f4dda4;
@@ -285,12 +314,12 @@ footer {
     Room #1 · Status: <b>OPEN</b> · Pot: <b>100 ETB</b>
   </div>
 
-  <!-- TIMER BANNER FOR 30s SELECTION & 5s PREPARATION -->
+  <!-- TIMER BANNER -->
   <div id="timerBanner" style="background: #2b3c54; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; font-weight: bold; color: #ffd77b;">
     ⏳ Selection Phase: <span id="countdownDisplay">30</span>s remaining
   </div>
 
-  <!-- TOP: NUMBER CALLING FEED & RECENT CALLS -->
+  <!-- TOP: NUMBER CALLING FEED -->
   <div id="callingSection" style="margin-top: 10px;">
     <p class="muted"><b>📢 Calling Number Feed (Top)</b></p>
     <div class="call-number" id="latestCall">
@@ -301,16 +330,15 @@ footer {
 
   <!-- BOTTOM: PLAYING CARTELA POSITION -->
   <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
-    <!-- Cartela Selection Area (Touch numbers or enter 1-800) -->
+    
+    <!-- Cartela Selection Area -->
     <div id="selectionArea">
-      <p class="muted">Touch a cartela number or enter (1–800) to select:</p>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px;">
-        <button onclick="quickSelect(1)" style="background:#26364d; font-size:12px;">Cartela #1</button>
-        <button onclick="quickSelect(5)" style="background:#26364d; font-size:12px;">Cartela #5</button>
-        <button onclick="quickSelect(10)" style="background:#26364d; font-size:12px;">Cartela #10</button>
-        <button onclick="quickSelect(20)" style="background:#26364d; font-size:12px;">Cartela #20</button>
-      </div>
-      <label>Cartela Number</label>
+      <p class="muted">Touch a cartela number below (1–50 quick grid) or enter number (1–800):</p>
+      
+      <!-- Quick Touch Grid -->
+      <div class="cartela-grid" id="cartelaTouchGrid"></div>
+
+      <label>Selected Cartela Number</label>
       <input id="cartelaNo" type="number" min="1" max="800" value="1">
       <button id="selectBtn" onclick="selectCartela()" style="width:100%">
         SELECT CARTELA (10 ETB)
@@ -374,8 +402,7 @@ footer {
   <h2>❔ Help & Rules</h2>
   <ol class="muted">
     <li>Deposit at least 10 ETB via Telebirr or CBE.</li>
-    <li>Touch or select your Cartela (1–800) during the 30-second selection window.</li>
-    <li>Wait through the 5-second preparation time.</li>
+    <li>Touch any cartela number from the grid during the 30-second window.</li>
     <li>Watch called numbers at the top feed with Amharic audio while your playing card stays positioned at the bottom!</li>
   </ol>
   <button onclick="openSupport()" style="width:100%; margin-top:10px;">Contact Support</button>
@@ -424,16 +451,6 @@ function toast(msg) {
     el.style.display = "block";
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => { el.style.display = "none"; }, 4000);
-  } catch(e) {}
-}
-
-function setStatus(msg, isErr = false) {
-  try {
-    const el = $("statusMessage");
-    if (el) {
-      el.textContent = msg;
-      el.style.background = isErr ? "#49252b" : "#332b19";
-    }
   } catch(e) {}
 }
 
@@ -513,8 +530,28 @@ window.submitDeposit = async function(e) {
   } finally { if (btn) btn.disabled = false; }
 };
 
+function buildCartelaTouchGrid() {
+  const grid = $("cartelaTouchGrid");
+  if (!grid || grid.children.length > 0) return;
+  let html = "";
+  for (let i = 1; i <= 48; i++) {
+    html += `<button type="button" class="cartela-btn" onclick="selectTouchCartela(${i})">#${i}</button>`;
+  }
+  grid.innerHTML = html;
+}
+
+window.selectTouchCartela = function(num) {
+  if ($("cartelaNo")) $("cartelaNo").value = num;
+  const buttons = document.querySelectorAll('.cartela-btn');
+  buttons.forEach(b => {
+    b.classList.toggle('selected', b.textContent === `#${num}`);
+  });
+  selectCartela();
+};
+
 async function refreshGame() {
   try {
+    buildCartelaTouchGrid();
     const data = await api("/api/game/state");
     if ($("balance")) $("balance").textContent = Number(data.balance || 0).toFixed(2) + " ETB";
 
@@ -543,7 +580,7 @@ async function refreshGame() {
       
       if (selectionArea) selectionArea.classList.add("hidden");
       if (cardArea) cardArea.classList.remove("hidden");
-      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Cartela Position: #" + currentCartela.cartela_no;
+      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Playing Cartela Position: #" + currentCartela.cartela_no;
       renderPlayerCard(data.called_numbers || []);
     } else {
       if (cardArea) cardArea.classList.add("hidden");
@@ -554,13 +591,6 @@ async function refreshGame() {
     if ($("selectionArea")) $("selectionArea").classList.remove("hidden");
   }
 }
-
-window.quickSelect = function(num) {
-  try {
-    if ($("cartelaNo")) $("cartelaNo").value = num;
-    selectCartela();
-  } catch(e) {}
-};
 
 function makeCard() {
   const cols = [
