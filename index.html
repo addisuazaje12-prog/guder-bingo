@@ -258,7 +258,7 @@ footer {
 </header>
 
 <div id="statusMessage" class="status">
-  Connected to Guder Bingo.
+  Connected securely to Guder Bingo.
 </div>
 
 <section class="wallet">
@@ -285,39 +285,53 @@ footer {
     Checking active game room...
   </div>
 
-  <!-- Live Spectator & Calling Feed (Visible to Everyone) -->
-  <div id="spectatorArea" style="margin-top: 12px;">
-    <p class="muted"><b>Live Number Calling Feed</b></p>
+  <!-- TIMER BANNER FOR 30s SELECTION & 5s PREPARATION -->
+  <div id="timerBanner" style="background: #2b3c54; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; font-weight: bold; color: #ffd77b;">
+    ⏳ Time remaining: <span id="countdownDisplay">30</span>s
+  </div>
+
+  <!-- TOP: NUMBER CALLING FEED & RECENT CALLS -->
+  <div id="callingSection" style="margin-top: 10px;">
+    <p class="muted"><b>📢 Calling Number Feed (Top)</b></p>
     <div class="call-number" id="latestCall">
       Waiting for round to start...
     </div>
     <div class="recent" id="recentCalls"></div>
   </div>
 
-  <!-- Cartela Selection Area (Visible to All, Triggers Insufficient Balance if < 10 ETB) -->
-  <div id="selectionArea" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
-    <p class="muted">Choose your cartela number (1–800) to join.</p>
-    <label>Cartela Number</label>
-    <input id="cartelaNo" type="number" min="1" max="800" value="1">
-    <button id="selectBtn" onclick="selectCartela()" style="width:100%">
-      SELECT CARTELA (10 ETB)
-    </button>
-  </div>
-
-  <!-- Active Player Card Area -->
-  <div id="cardArea" class="hidden" style="margin-top: 15px;">
-    <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d;"></p>
-
-    <div class="board-wrap">
-      <div class="bingo-head">
-        <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+  <!-- BOTTOM: PLAYING CARTELA POSITION -->
+  <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
+    <!-- Cartela Selection Area (Touch numbers or enter 1-800) -->
+    <div id="selectionArea">
+      <p class="muted">Touch a cartela number or enter (1–800) to select:</p>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px;">
+        <button onclick="quickSelect(1)" style="background:#26364d; font-size:12px;">Cartela #1</button>
+        <button onclick="quickSelect(5)" style="background:#26364d; font-size:12px;">Cartela #5</button>
+        <button onclick="quickSelect(10)" style="background:#26364d; font-size:12px;">Cartela #10</button>
+        <button onclick="quickSelect(20)" style="background:#26364d; font-size:12px;">Cartela #20</button>
       </div>
-      <div class="bingo-grid" id="bingoBoard"></div>
+      <label>Cartela Number</label>
+      <input id="cartelaNo" type="number" min="1" max="800" value="1">
+      <button id="selectBtn" onclick="selectCartela()" style="width:100%">
+        SELECT CARTELA (10 ETB)
+      </button>
     </div>
 
-    <button id="bingoBtn" onclick="claimBingo()" style="width:100%;margin-top:14px">
-      🎉 CLAIM BINGO!
-    </button>
+    <!-- Active Player Card Grid (Bottom Position) -->
+    <div id="cardArea" class="hidden" style="margin-top: 10px;">
+      <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d;"></p>
+
+      <div class="board-wrap">
+        <div class="bingo-head">
+          <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+        </div>
+        <div class="bingo-grid" id="bingoBoard"></div>
+      </div>
+
+      <button id="bingoBtn" onclick="claimBingo()" style="width:100%;margin-top:14px">
+        🎉 CLAIM BINGO!
+      </button>
+    </div>
   </div>
 </section>
 
@@ -360,9 +374,9 @@ footer {
   <h2>❔ Help & Rules</h2>
   <ol class="muted">
     <li>Deposit at least 10 ETB via Telebirr or CBE.</li>
-    <li>Select an available Cartela (1–800) during the OPEN phase.</li>
-    <li>Watch numbers get called automatically every 4 seconds with Amharic audio.</li>
-    <li>Complete a winning line and hit BINGO to win 50% of the room pot!</li>
+    <li>Touch or select your Cartela (1–800) during the 30-second selection window.</li>
+    <li>Wait through the 5-second preparation time.</li>
+    <li>Watch called numbers at the top feed with Amharic audio while your playing card stays positioned at the bottom!</li>
   </ol>
   <button onclick="openSupport()" style="width:100%; margin-top:10px;">Contact Support</button>
 </section>
@@ -485,7 +499,7 @@ window.submitDeposit = async function(e) {
       })
     });
     if ($("depositResult")) $("depositResult").textContent = data.message;
-    if ($("depositForm")) $("depositForm").reset();
+    if ($("depositForm")) $("depositForm"].reset();
     toast("Deposit successful!");
     refreshWallet();
     refreshGame();
@@ -506,6 +520,7 @@ async function refreshGame() {
     const roomInfo = $("roomInfo");
     const selectionArea = $("selectionArea");
     const cardArea = $("cardArea");
+    const timerBanner = $("timerBanner");
 
     if (!currentRoom) {
       if (roomInfo) roomInfo.textContent = "No active game room.";
@@ -514,6 +529,16 @@ async function refreshGame() {
 
     if (roomInfo) {
       roomInfo.innerHTML = `Room #${currentRoom.room_id} · Status: <b>${currentRoom.status}</b> · Pot: <b>${currentRoom.total_pot} ETB</b>`;
+    }
+
+    // Dynamic 30s selection / 5s prep simulation simulation
+    if (currentRoom.status === 'OPEN') {
+      if (timerBanner) {
+        timerBanner.classList.remove('hidden');
+        timerBanner.innerHTML = `⏳ Selection Phase: <span id="countdownDisplay">30</span>s remaining`;
+      }
+    } else {
+      if (timerBanner) timerBanner.classList.add('hidden');
     }
 
     renderLiveFeed(data.called_numbers || []);
@@ -525,7 +550,7 @@ async function refreshGame() {
       
       if (selectionArea) selectionArea.classList.add("hidden");
       if (cardArea) cardArea.classList.remove("hidden");
-      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Cartela: #" + currentCartela.cartela_no;
+      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Cartela Position: #" + currentCartela.cartela_no;
       renderPlayerCard(data.called_numbers || []);
     } else {
       if (cardArea) cardArea.classList.add("hidden");
@@ -533,6 +558,11 @@ async function refreshGame() {
     }
   } catch(e) {}
 }
+
+window.quickSelect = function(num) {
+  if ($("cartelaNo")) $("cartelaNo").value = num;
+  selectCartela();
+};
 
 function makeCard() {
   const cols = [
@@ -676,7 +706,7 @@ async function loadHistory() {
         : "No history yet.";
     }
   } catch(e) {}
-}
+};
 
 window.inviteFriends = function() {
   const share = "https://t.me/share/url?url=" + encodeURIComponent("https://t.me/guderbingo_bot") + "&text=" + encodeURIComponent("Join Guder Bingo & play live!");
