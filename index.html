@@ -1,3 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guder Bingo</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+:root {
+  --bg: #101827;
+  --text: #f5f7fb;
+  --accent: #1687d9;
+  --green: #20b879;
+  --panel: #1a2638;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+.app {
+  max-width: 520px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: 25px; }
+
+.status {
+  background: #332b19;
+  color: #ffd77b;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.wallet {
+  background: #173e56;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.balance {
+  font-size: 23px;
+  font-weight: bold;
+}
+
+button {
+  border: none;
+  border-radius: 9px;
+  padding: 11px;
+  background: var(--accent);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .5;
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 15px 0;
+}
+
+.menu button {
+  background: #223149;
+  font-size: 13px;
+}
+
+.panel {
+  background: var(--panel);
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.hidden { display: none !important; }
+
+.muted {
+  color: #aab7c9;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 11px;
+  margin: 5px 0 10px;
+  border-radius: 8px;
+  border: 1px solid #46566d;
+  background: #111c2b;
+  color: white;
+}
+
+textarea {
+  min-height: 100px;
+}
+
+.board-wrap {
+  max-width: 390px;
+  margin: 12px auto;
+}
+
+.bingo-head, .bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.bingo-head div {
+  text-align: center;
+  color: #ffd36d;
+  font-weight: bold;
+  padding: 5px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #26364d;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.cell.marked {
+  background: var(--green);
+  color: #062d20;
+}
+
+.cell.free {
+  background: #b93e59;
+  color: white;
+}
+
+.call-number {
+  text-align: center;
+  font-size: 25px;
+  font-weight: bold;
+  color: #ffda76;
+  padding: 12px;
+  background: #101c2c;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.recent span {
+  background: #2b3c54;
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.note {
+  background: #2c281d;
+  color: #f4dda4;
+  padding: 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.item {
+  border-bottom: 1px solid #46566d;
+  padding: 9px 0;
+  font-size: 13px;
+}
+
+#bingoModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(16, 24, 39, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-card {
+  background: #1a2638;
+  border: 2px solid #ffd36d;
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+  width: 85%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.countdown-timer {
+  font-size: 48px;
+  font-weight: bold;
+  color: var(--green);
+  margin: 15px 0;
+}
+
+#toast {
+  position: fixed;
+  bottom: 18px;
+  left: 5%;
+  width: 90%;
+  background: #26364d;
+  color: #fff;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  display: none;
+  z-index: 1000;
+  font-weight: bold;
+}
+
+footer {
+  text-align: center;
+  color: #aab7c9;
+  font-size: 12px;
+  margin: 18px 0;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <h1>🎱 Guder Bingo</h1>
+  <div class="muted">እንኳን ወደ ጉደር ቢንጎ በደህና መጡ !</div>
+</header>
+
+<div id="statusMessage" class="status">
+  Connected to Guder Bingo.
+</div>
+
+<section class="wallet">
+  <div>
+    <small>MY WALLET</small>
+    <div class="balance" id="balance">0.00 ETB</div>
+  </div>
+  <button onclick="refreshWallet()">Refresh</button>
+</section>
+
+<nav class="menu">
+  <button onclick="showSection('gameSection')">🎮 Play</button>
+  <button onclick="showSection('depositSection')">➕ Deposit</button>
+  <button onclick="showSection('walletSection')">👛 Wallet</button>
+  <button onclick="showSection('historySection')">📜 History</button>
+  <button onclick="inviteFriends()">👥 Invite</button>
+  <button onclick="showSection('helpSection')">❔ Help</button>
+</nav>
+
+<section class="panel" id="gameSection">
+  <h2>🎮 Game Room</h2>
+
+  <div id="roomInfo" class="muted">
+    Checking active game room...
+  </div>
+
+  <!-- Live Spectator & Calling Feed (Visible to Everyone) -->
+  <div id="spectatorArea" style="margin-top: 12px;">
+    <p class="muted"><b>Live Number Calling Feed</b></p>
+    <div class="call-number" id="latestCall">
+      Waiting for round to start...
+    </div>
+    <div class="recent" id="recentCalls"></div>
+  </div>
+
+  <!-- Cartela Selection Area (Visible to All, Triggers Insufficient Balance if < 10 ETB) -->
+  <div id="selectionArea" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
+    <p class="muted">Choose your cartela number (1–800) to join.</p>
+    <label>Cartela Number</label>
+    <input id="cartelaNo" type="number" min="1" max="800" value="1">
+    <button id="selectBtn" onclick="selectCartela()" style="width:100%">
+      SELECT CARTELA (10 ETB)
+    </button>
+  </div>
+
+  <!-- Active Player Card Area -->
+  <div id="cardArea" class="hidden" style="margin-top: 15px;">
+    <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d;"></p>
+
+    <div class="board-wrap">
+      <div class="bingo-head">
+        <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+      </div>
+      <div class="bingo-grid" id="bingoBoard"></div>
+    </div>
+
+    <button id="bingoBtn" onclick="claimBingo()" style="width:100%;margin-top:14px">
+      🎉 CLAIM BINGO!
+    </button>
+  </div>
+</section>
+
+<section class="panel hidden" id="depositSection">
+  <h2>➕ Deposit</h2>
+  <div class="note">
+    Send money using the payment details below, then submit your receipt reference. Your wallet is credited instantly.
+  </div>
+  <div id="paymentDetails" class="muted" style="margin-top:10px">
+    Loading payment details...
+  </div>
+  <form id="depositForm" onsubmit="submitDeposit(event)">
+    <label>Payment Method</label>
+    <select id="paymentMethod">
+      <option value="TELEBIRR">Telebirr (0913706670)</option>
+      <option value="CBE">Commercial Bank of Ethiopia</option>
+    </select>
+    <label>Amount (ETB)</label>
+    <input id="depositAmount" type="number" min="10" step="0.01" value="10" required>
+    <label>Transaction Reference</label>
+    <input id="payerReference" placeholder="e.g. TR12345678" required>
+    <label>Paste Transaction Receipt Text</label>
+    <textarea id="receiptText" placeholder="Paste SMS receipt here..." required></textarea>
+    <button type="submit" id="depositSubmit" style="width:100%">SUBMIT DEPOSIT</button>
+  </form>
+  <div id="depositResult" class="muted" style="margin-top:8px;"></div>
+</section>
+
+<section class="panel hidden" id="walletSection">
+  <h2>👛 Wallet Transactions</h2>
+  <div id="walletTransactions" class="muted">Loading ledger...</div>
+</section>
+
+<section class="panel hidden" id="historySection">
+  <h2>📜 Game History</h2>
+  <div id="gameHistory" class="muted">Loading history...</div>
+</section>
+
+<section class="panel hidden" id="helpSection">
+  <h2>❔ Help & Rules</h2>
+  <ol class="muted">
+    <li>Deposit at least 10 ETB via Telebirr or CBE.</li>
+    <li>Select an available Cartela (1–800) during the OPEN phase.</li>
+    <li>Watch numbers get called automatically every 4 seconds with Amharic audio.</li>
+    <li>Complete a winning line and hit BINGO to win 50% of the room pot!</li>
+  </ol>
+  <button onclick="openSupport()" style="width:100%; margin-top:10px;">Contact Support</button>
+</section>
+
+<footer>
+  Guder Bingo • Spectator & Live Gaming Platform
+</footer>
+
+</div>
+
+<div id="bingoModal" class="hidden">
+  <div class="modal-card">
+    <h2>🎉 BINGO VERIFIED!</h2>
+    <p class="muted">እንኳን ደስ አላችሁ! Prize awarded.</p>
+    <div class="countdown-timer" id="modalCountdown">5</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <script>
 (() => {
 "use strict";
@@ -39,46 +424,56 @@ function headers() {
 }
 
 async function api(path, opts = {}) {
-  const res = await fetch(API + path, { ...opts, headers: { ...headers(), ...(opts.headers || {}) } });
-  let data;
-  try { data = await res.json(); } catch(e) { throw new Error("Server response error."); }
-  if (!res.ok) throw new Error(data.message || "Request failed.");
-  return data;
+  try {
+    const res = await fetch(API + path, { ...opts, headers: { ...headers(), ...(opts.headers || {}) } });
+    let data;
+    try { data = await res.json(); } catch(e) { throw new Error("Server response error."); }
+    if (!res.ok) throw new Error(data.message || "Request failed.");
+    return data;
+  } catch (err) {
+    throw err;
+  }
 }
 
 window.showSection = function(id) {
-  ["gameSection", "depositSection", "walletSection", "historySection", "helpSection"].forEach(s => {
-    const el = $(s);
-    if (el) el.classList.toggle("hidden", s !== id);
-  });
-  if (id === "walletSection") refreshWallet();
-  if (id === "historySection") loadHistory();
-  if (id === "gameSection") refreshGame();
-  if (id === "depositSection") loadConfig();
+  try {
+    ["gameSection", "depositSection", "walletSection", "historySection", "helpSection"].forEach(s => {
+      const el = $(s);
+      if (el) el.classList.toggle("hidden", s !== id);
+    });
+    if (id === "walletSection") refreshWallet();
+    if (id === "historySection") loadHistory();
+    if (id === "gameSection") refreshGame();
+    if (id === "depositSection") loadConfig();
+  } catch(e) {}
 };
 
 window.refreshWallet = async function() {
   try {
     const data = await api("/api/wallet");
-    $("balance").textContent = Number(data.balance).toFixed(2) + " ETB";
-    $("walletTransactions").innerHTML = data.transactions && data.transactions.length
-      ? data.transactions.map(t => `<div class="item"><b>${t.txn_type}</b> · ${Number(t.amount).toFixed(2)} ETB<br><span class="muted">${t.created_at}</span></div>`).join("")
-      : "No transactions yet.";
-  } catch(e) { setStatus(e.message, true); }
+    if ($("balance")) $("balance").textContent = Number(data.balance).toFixed(2) + " ETB";
+    if ($("walletTransactions")) {
+      $("walletTransactions").innerHTML = data.transactions && data.transactions.length
+        ? data.transactions.map(t => `<div class="item"><b>${t.txn_type}</b> · ${Number(t.amount).toFixed(2)} ETB<br><span class="muted">${t.created_at}</span></div>`).join("")
+        : "No transactions yet.";
+    }
+  } catch(e) {}
 };
 
 async function loadConfig() {
   try {
     const cfg = await api("/api/config");
-    $("paymentDetails").innerHTML = `<b>Telebirr:</b> ${cfg.telebirr_phone || "0913706670"}<br><span class="muted">Min deposit: 10.00 ETB</span>`;
-  } catch(e) { $("paymentDetails").textContent = e.message; }
+    if ($("paymentDetails")) {
+      $("paymentDetails").innerHTML = `<b>Telebirr:</b> ${cfg.telebirr_phone || "0913706670"}<br><span class="muted">Min deposit: 10.00 ETB</span>`;
+    }
+  } catch(e) {}
 }
 
 window.submitDeposit = async function(e) {
   e.preventDefault();
   const btn = $("depositSubmit");
-  btn.disabled = true;
-  $("depositResult").textContent = "Submitting deposit...";
+  if (btn) btn.disabled = true;
+  if ($("depositResult")) $("depositResult").textContent = "Submitting deposit...";
   try {
     const data = await api("/api/deposit", {
       method: "POST",
@@ -89,21 +484,21 @@ window.submitDeposit = async function(e) {
         receipt_text: $("receiptText").value.trim()
       })
     });
-    $("depositResult").textContent = data.message;
-    $("depositForm").reset();
+    if ($("depositResult")) $("depositResult").textContent = data.message;
+    if ($("depositForm")) $("depositForm").reset();
     toast("Deposit successful!");
     refreshWallet();
     refreshGame();
   } catch(err) {
-    $("depositResult").textContent = err.message;
+    if ($("depositResult")) $("depositResult").textContent = err.message;
     toast(err.message);
-  } finally { btn.disabled = false; }
+  } finally { if (btn) btn.disabled = false; }
 };
 
 async function refreshGame() {
   try {
     const data = await api("/api/game/state");
-    $("balance").textContent = Number(data.balance || 0).toFixed(2) + " ETB";
+    if ($("balance")) $("balance").textContent = Number(data.balance || 0).toFixed(2) + " ETB";
 
     currentRoom = data.room;
     currentCartela = data.cartela;
@@ -113,35 +508,30 @@ async function refreshGame() {
     const cardArea = $("cardArea");
 
     if (!currentRoom) {
-      roomInfo.textContent = "No active game room.";
+      if (roomInfo) roomInfo.textContent = "No active game room.";
       return;
     }
 
-    roomInfo.innerHTML = `Room #${currentRoom.room_id} · Status: <b>${currentRoom.status}</b> · Pot: <b>${currentRoom.total_pot} ETB</b>`;
+    if (roomInfo) {
+      roomInfo.innerHTML = `Room #${currentRoom.room_id} · Status: <b>${currentRoom.status}</b> · Pot: <b>${currentRoom.total_pot} ETB</b>`;
+    }
 
-    // Render live called numbers for everyone
     renderLiveFeed(data.called_numbers || []);
 
-    const userBalance = Number(data.balance || 0);
-
     if (currentCartela) {
-      currentMatrix = JSON.parse(currentCartela.numbers_json);
-      selectionArea.classList.add("hidden");
-      cardArea.classList.remove("hidden");
-      $("myCardLabel").textContent = "Your Cartela: #" + currentCartela.cartela_no;
+      try {
+        currentMatrix = JSON.parse(currentCartela.numbers_json);
+      } catch(err) { currentMatrix = null; }
+      
+      if (selectionArea) selectionArea.classList.add("hidden");
+      if (cardArea) cardArea.classList.remove("hidden");
+      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Cartela: #" + currentCartela.cartela_no;
       renderPlayerCard(data.called_numbers || []);
     } else {
-      cardArea.classList.add("hidden");
-      // Always show selection area so everyone can see it!
-      selectionArea.classList.remove("hidden");
-
-      if (userBalance < 10) {
-        roomInfo.innerHTML += `<br><span style="color: #ffd77b;">👀 Spectator Mode: Visible to all. Deposit 10 ETB to play!</span>`;
-      }
+      if (cardArea) cardArea.classList.add("hidden");
+      if (selectionArea) selectionArea.classList.remove("hidden");
     }
-  } catch(e) {
-    setStatus(e.message, true);
-  }
+  } catch(e) {}
 }
 
 function makeCard() {
@@ -167,14 +557,16 @@ function randomUnique(min, max, count) {
 window.selectCartela = async function() {
   if (!currentRoom) return;
 
-  const userBalance = parseFloat($("balance").textContent) || 0;
+  const balanceText = $("balance") ? $("balance").textContent : "0";
+  const userBalance = parseFloat(balanceText) || 0;
+
   if (userBalance < 10) {
-    toast("Insufficient balance! Please deposit at least 10 ETB to select a cartela.");
+    toast("Insufficient balance! Please deposit at least 10 ETB to play.");
     return;
   }
 
   const btn = $("selectBtn");
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
   try {
     const cartelaNo = Number($("cartelaNo").value);
     if (!cartelaNo || cartelaNo < 1 || cartelaNo > 800) throw new Error("Enter cartela 1-800.");
@@ -191,13 +583,17 @@ window.selectCartela = async function() {
     refreshGame();
   } catch(e) {
     toast(e.message);
-  } finally { btn.disabled = false; }
+  } finally { if (btn) btn.disabled = false; }
 };
 
 function renderLiveFeed(calls) {
-  const latest = calls.length ? Number(calls[calls.length - 1].number) : null;
-  $("latestCall").textContent = latest ? letterFor(latest) + " - " + latest : "Waiting for calls...";
-  $("recentCalls").innerHTML = calls.slice(-10).reverse().map(c => `<span>${letterFor(c.number)}-${c.number}</span>`).join("");
+  const latest = calls && calls.length ? Number(calls[calls.length - 1].number) : null;
+  if ($("latestCall")) {
+    $("latestCall").textContent = latest ? letterFor(latest) + " - " + latest : "Waiting for calls...";
+  }
+  if ($("recentCalls")) {
+    $("recentCalls").innerHTML = (calls || []).slice(-10).reverse().map(c => `<span>${letterFor(c.number)}-${c.number}</span>`).join("");
+  }
 
   if (latest && latest !== lastSpokenNumber) {
     lastSpokenNumber = latest;
@@ -207,8 +603,9 @@ function renderLiveFeed(calls) {
 
 function renderPlayerCard(calls) {
   if (!currentMatrix) return;
-  const called = new Set(calls.map(c => Number(c.number)));
+  const called = new Set((calls || []).map(c => Number(c.number)));
   const board = $("bingoBoard");
+  if (!board) return;
   board.innerHTML = "";
 
   currentMatrix.forEach(row => {
@@ -245,7 +642,7 @@ function speakAmharicNumber(n) {
 window.claimBingo = async function() {
   if (!currentRoom || !currentCartela) return;
   const btn = $("bingoBtn");
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
   try {
     const data = await api("/api/claim-bingo", {
       method: "POST",
@@ -254,12 +651,12 @@ window.claimBingo = async function() {
     if (data.status === "winner") {
       const modal = $("bingoModal");
       const cd = $("modalCountdown");
-      modal.classList.remove("hidden");
+      if (modal) modal.classList.remove("hidden");
       let t = 5;
-      cd.textContent = t;
+      if (cd) cd.textContent = t;
       const timer = setInterval(() => {
-        t--; cd.textContent = t;
-        if (t <= 0) { clearInterval(timer); modal.classList.add("hidden"); }
+        t--; if (cd) cd.textContent = t;
+        if (t <= 0) { clearInterval(timer); if (modal) modal.classList.add("hidden"); }
       }, 1000);
       toast("Bingo verified!");
     } else {
@@ -267,16 +664,18 @@ window.claimBingo = async function() {
     }
   } catch(e) {
     toast(e.message);
-  } finally { btn.disabled = false; refreshGame(); }
+  } finally { if (btn) btn.disabled = false; refreshGame(); }
 };
 
 async function loadHistory() {
   try {
     const data = await api("/api/game/history");
-    $("gameHistory").innerHTML = data.history && data.history.length
-      ? data.history.map(x => `<div class="item">Room #${x.room_id} · Cartela #${x.cartela_no}<br><span class="muted">${x.created_at}</span></div>`).join("")
-      : "No history yet.";
-  } catch(e) { $("gameHistory").textContent = e.message; }
+    if ($("gameHistory")) {
+      $("gameHistory").innerHTML = data.history && data.history.length
+        ? data.history.map(x => `<div class="item">Room #${x.room_id} · Cartela #${x.cartela_no}<br><span class="muted">${x.created_at}</span></div>`).join("")
+        : "No history yet.";
+    }
+  } catch(e) {}
 }
 
 window.inviteFriends = function() {
@@ -296,9 +695,7 @@ async function init() {
     await loadConfig();
     await refreshWallet();
     await refreshGame();
-  } catch(e) {
-    setStatus("Running in offline view.", true);
-  }
+  } catch(e) {}
   setInterval(() => { try { refreshGame(); } catch(err){} }, 3000);
 }
 
@@ -306,3 +703,6 @@ init();
 
 })();
 </script>
+
+</body>
+</html>
