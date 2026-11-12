@@ -100,6 +100,60 @@ def get_room():
         })
     return jsonify({"status": "error", "message": "No active room found"}), 404
 
+@app.route('/api/wallet', methods=['GET'])
+def get_wallet():
+    phone = request.args.get('phone', '251913706670')
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (phone,))
+    row = cursor.fetchone()
+    user_id = row[0] if row else None
+    balance = get_user_balance(user_id) if user_id else 0.0
+    
+    transactions = []
+    if user_id:
+        cursor.execute('SELECT txn_id, amount, type, created_at FROM ledger_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', (user_id,))
+        for tx in cursor.fetchall():
+            transactions.append({"txn_type": tx[2], "amount": tx[1], "created_at": tx[3]})
+    conn.close()
+    return jsonify({"status": "success", "balance": balance, "transactions": transactions})
+
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    return jsonify({"status": "success", "telebirr_phone": "0913706670", "cbe_account": CBE_ACCOUNT})
+
+@app.route('/api/game/state', methods=['GET'])
+def get_game_state():
+    phone = request.args.get('phone', '251913706670')
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT user_id FROM users WHERE phone_number = ?', (phone,))
+    row = cursor.fetchone()
+    user_id = row[0] if row else None
+    balance = get_user_balance(user_id) if user_id else 0.0
+
+    cursor.execute('SELECT room_id, status, total_pot FROM game_rooms ORDER BY room_id DESC LIMIT 1')
+    room_row = cursor.fetchone()
+    room = {"room_id": room_row[0], "status": room_row[1], "total_pot": room_row[2]} if room_row else None
+    conn.close()
+
+    return jsonify({
+        "status": "success",
+        "balance": balance,
+        "room": room,
+        "cartela": None,
+        "called_numbers": []
+    })
+
+@app.route('/api/game/history', methods=['GET'])
+def get_game_history():
+    return jsonify({"status": "success", "history": []})
+
+@app.route('/api/cartela/select', methods=['POST'])
+def select_cartela_endpoint():
+    data = request.json
+    return jsonify({"status": "success", "message": "Cartela selected successfully.", "cartela_no": data.get('cartela_no')})
+
 @app.route('/api/deposit', methods=['POST'])
 def deposit_funds():
     data = request.json
