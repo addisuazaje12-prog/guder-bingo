@@ -183,7 +183,7 @@ textarea {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 4px;
-  max-height: 180px;
+  max-height: 220px;
   overflow-y: auto;
   background: #111c2b;
   padding: 8px;
@@ -336,16 +336,16 @@ footer {
   <!-- BOTTOM: PLAYING CARTELA POSITION -->
   <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
     
-    <!-- Cartela Selection Area (1-800 touch grid with 4 range buttons) -->
+    <!-- Cartela Selection Area (1-800 touch grid with range selectors) -->
     <div id="selectionArea">
       <p class="muted">Touch a cartela number (1–800) or enter manually:</p>
       
-      <!-- Range Selectors covering 1 to 800 -->
+      <!-- Range Selectors covering 1 to 800 in 200 blocks -->
       <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-        <button type="button" id="rangeBtn1" class="range-btn active-range" onclick="loadCartelaPage(1)" style="flex:1; font-size:11px; padding:6px;">1-200</button>
-        <button type="button" id="rangeBtn201" class="range-btn" onclick="loadCartelaPage(201)" style="flex:1; font-size:11px; padding:6px;">201-400</button>
-        <button type="button" id="rangeBtn401" class="range-btn" onclick="loadCartelaPage(401)" style="flex:1; font-size:11px; padding:6px;">401-600</button>
-        <button type="button" id="rangeBtn601" class="range-btn" onclick="loadCartelaPage(601)" style="flex:1; font-size:11px; padding:6px;">601-800</button>
+        <button type="button" id="rangeBtn1" class="range-btn active-range" onclick="loadCartelaPage(1, 200)" style="flex:1; font-size:11px; padding:6px;">1-200</button>
+        <button type="button" id="rangeBtn201" class="range-btn" onclick="loadCartelaPage(201, 400)" style="flex:1; font-size:11px; padding:6px;">201-400</button>
+        <button type="button" id="rangeBtn401" class="range-btn" onclick="loadCartelaPage(401, 600)" style="flex:1; font-size:11px; padding:6px;">401-600</button>
+        <button type="button" id="rangeBtn601" class="range-btn" onclick="loadCartelaPage(601, 800)" style="flex:1; font-size:11px; padding:6px;">601-800</button>
       </div>
 
       <div class="cartela-grid" id="cartelaTouchGrid"></div>
@@ -555,11 +555,10 @@ window.submitDeposit = async function(e) {
   } finally { if (btn) btn.disabled = false; }
 };
 
-window.loadCartelaPage = function(startNum) {
+window.loadCartelaPage = function(startNum, endNum) {
   const grid = $("cartelaTouchGrid");
   if (!grid) return;
   let html = "";
-  const endNum = Math.min(startNum + 199, 800);
   for (let i = startNum; i <= endNum; i++) {
     html += `<button type="button" class="cartela-btn" onclick="selectTouchCartela(${i})">#${i}</button>`;
   }
@@ -588,7 +587,7 @@ window.selectTouchCartela = function(num) {
 async function refreshGame() {
   try {
     if (!$("cartelaTouchGrid").hasChildNodes()) {
-      loadCartelaPage(1);
+      loadCartelaPage(1, 200);
     }
 
     const data = await api("/api/game/state");
@@ -813,7 +812,7 @@ async function loadHistory() {
         : "No history yet.";
     }
   } catch(e) {}
-}
+};
 
 window.inviteFriends = function() {
   try {
