@@ -181,9 +181,9 @@ textarea {
 
 .cartela-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 4px;
-  max-height: 220px;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  max-height: 200px;
   overflow-y: auto;
   background: #111c2b;
   padding: 8px;
@@ -195,9 +195,9 @@ textarea {
   background: #26364d;
   color: #fff;
   border: none;
-  padding: 6px 2px;
-  font-size: 11px;
-  border-radius: 4px;
+  padding: 5px 1px;
+  font-size: 10px;
+  border-radius: 3px;
   cursor: pointer;
   text-align: center;
 }
@@ -324,7 +324,7 @@ footer {
     ⏳ <span id="timerLabel">Selection Phase</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
 
-  <!-- TOP: NUMBER CALLING FEED -->
+  <!-- TOP: NUMBER CALLING FEED (Visible to Everyone) -->
   <div id="callingSection" style="margin-top: 10px;">
     <p class="muted"><b>📢 Calling Number Feed (Top)</b></p>
     <div class="call-number" id="latestCall">
@@ -336,9 +336,9 @@ footer {
   <!-- BOTTOM: PLAYING CARTELA POSITION -->
   <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
     
-    <!-- Cartela Selection Area (1-800 touch grid with range selectors) -->
+    <!-- Cartela Selection Area (Full 1-800 access with range buttons) -->
     <div id="selectionArea">
-      <p class="muted">Touch a cartela number (1–800) or enter manually:</p>
+      <p class="muted">Touch any cartela number (1–800) below or enter manually:</p>
       
       <!-- Range Selectors covering 1 to 800 in 200 blocks -->
       <div style="display: flex; gap: 4px; margin-bottom: 6px;">
@@ -457,7 +457,6 @@ let audioUnlocked = false;
 
 const $ = id => document.getElementById(id);
 
-// Unlock browser audio synthesis on first user interaction
 document.addEventListener('click', () => {
   if (!audioUnlocked && 'speechSynthesis' in window) {
     audioUnlocked = true;
@@ -564,7 +563,6 @@ window.loadCartelaPage = function(startNum, endNum) {
   }
   grid.innerHTML = html;
 
-  // Highlight active range button
   ["rangeBtn1", "rangeBtn201", "rangeBtn401", "rangeBtn601"].forEach(id => {
     const el = $(id);
     if (el) el.classList.remove("active-range");
@@ -606,7 +604,6 @@ async function refreshGame() {
     if (roomStatusText) roomStatusText.textContent = currentRoom.status;
     if (roomPotText) roomPotText.textContent = Number(currentRoom.total_pot || 0).toFixed(2) + " ETB";
 
-    // Handle Timers based on backend state
     if (currentRoom.status === "OPEN" && currentRoom.selection_remaining !== null) {
       if (timerLabel) timerLabel.textContent = "Selection Phase";
       if (countdownDisplay) countdownDisplay.textContent = currentRoom.selection_remaining;
@@ -625,7 +622,6 @@ async function refreshGame() {
         currentMatrix = JSON.parse(currentCartela.numbers_json);
       } catch(err) { currentMatrix = null; }
       
-      // Smooth transition to playing view
       if (selectionArea) selectionArea.classList.add("hidden");
       if (cardArea) cardArea.classList.remove("hidden");
       if ($("myCardLabel")) $("myCardLabel").textContent = "Your Playing Cartela Position: #" + currentCartela.cartela_no;
@@ -812,7 +808,7 @@ async function loadHistory() {
         : "No history yet.";
     }
   } catch(e) {}
-};
+}
 
 window.inviteFriends = function() {
   try {
