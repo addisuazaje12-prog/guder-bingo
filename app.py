@@ -241,7 +241,7 @@ def select_cartela_endpoint():
         current_bal = get_user_balance(user_id)
         if current_bal < stake:
             conn.rollback()
-            return jsonify({"status": "error", "message": "Insufficient wallet balance to select cartela."}), 400
+            return jsonify({"status": "error", "message": "Spectator mode: Minimum 10 ETB deposit required to join and select a cartela."}), 400
             
         txn_id = f"stake_{room_id}_{user_id}_{int(time.time())}"
         cursor.execute('''
