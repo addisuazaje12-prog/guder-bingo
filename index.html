@@ -1,3 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guder Bingo</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+:root {
+  --bg: var(--tg-theme-bg-color, #101827);
+  --text: var(--tg-theme-text-color, #f5f7fb);
+  --accent: var(--tg-theme-button-color, #1687d9);
+  --green: #20b879;
+  --panel: #1a2638;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+.app {
+  max-width: 520px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: 25px; }
+
+.status {
+  background: #332b19;
+  color: #ffd77b;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.wallet {
+  background: #173e56;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.balance {
+  font-size: 23px;
+  font-weight: bold;
+}
+
+button {
+  border: none;
+  border-radius: 9px;
+  padding: 11px;
+  background: var(--accent);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .5;
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 15px 0;
+}
+
+.menu button {
+  background: #223149;
+  font-size: 13px;
+}
+
+.panel {
+  background: var(--panel);
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.hidden { display: none !important; }
+
+.muted {
+  color: #aab7c9;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 11px;
+  margin: 5px 0 10px;
+  border-radius: 8px;
+  border: 1px solid #46566d;
+  background: #111c2b;
+  color: white;
+}
+
+textarea {
+  min-height: 100px;
+}
+
+.board-wrap {
+  max-width: 390px;
+  margin: 12px auto;
+}
+
+.bingo-head, .bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.bingo-head div {
+  text-align: center;
+  color: #ffd36d;
+  font-weight: bold;
+  padding: 5px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #26364d;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.cell.marked {
+  background: var(--green);
+  color: #062d20;
+}
+
+.cell.free {
+  background: #b93e59;
+  color: white;
+}
+
+.call-number {
+  text-align: center;
+  font-size: 25px;
+  font-weight: bold;
+  color: #ffda76;
+  padding: 12px;
+  background: #101c2c;
+  border-radius: 10px;
+}
+
+.recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recent span {
+  background: #2b3c54;
+  padding: 6px 9px;
+  border-radius: 7px;
+}
+
+.note {
+  background: #2c281d;
+  color: #f4dda4;
+  padding: 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.item {
+  border-bottom: 1px solid #46566d;
+  padding: 9px 0;
+  font-size: 13px;
+}
+
+#bingoModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(16, 24, 39, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-card {
+  background: #1a2638;
+  border: 2px solid #ffd36d;
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+  width: 85%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.modal-card h2 {
+  color: #ffd36d;
+  font-size: 28px;
+  margin-top: 0;
+}
+
+.countdown-timer {
+  font-size: 48px;
+  font-weight: bold;
+  color: var(--green);
+  margin: 15px 0;
+}
+
+#toast {
+  position: fixed;
+  bottom: 18px;
+  left: 5%;
+  width: 90%;
+  background: #26364d;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  display: none;
+  z-index: 1000;
+}
+
+footer {
+  text-align: center;
+  color: #aab7c9;
+  font-size: 12px;
+  margin: 18px 0;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <h1>🎱 Guder Bingo</h1>
+  <div class="muted">እንኳን ወደ ጉደር ቢንጎ በደህና መጡ !</div>
+</header>
+
+<div id="statusMessage" class="status">
+  Connecting securely to the game...
+</div>
+
+<section class="wallet">
+  <div>
+    <small>MY WALLET</small>
+    <div class="balance" id="balance">— ETB</div>
+  </div>
+  <button onclick="refreshWallet()">Refresh</button>
+</section>
+
+<nav class="menu">
+  <button onclick="showSection('gameSection')">🎮 Play</button>
+  <button onclick="showSection('depositSection')">➕ Deposit</button>
+  <button onclick="showSection('walletSection')">👛 Wallet</button>
+  <button onclick="showSection('historySection')">📜 History</button>
+  <button onclick="inviteFriends()">👥 Invite</button>
+  <button onclick="showSection('helpSection')">❔ Help</button>
+</nav>
+
+<section class="panel" id="gameSection">
+  <h2>🎮 Game Room</h2>
+
+  <div id="roomInfo" class="muted">
+    Checking the current game room...
+  </div>
+
+  <div id="selectionArea" class="hidden">
+    <p class="muted">Choose your cartela number (1–800).</p>
+
+    <label>Cartela Number</label>
+    <input id="cartelaNo" type="number" min="1" max="800" value="1">
+
+    <button id="selectBtn" onclick="selectCartela()" style="width:100%">
+      SELECT CARTELA (10 ETB)
+    </button>
+  </div>
+
+  <div id="cardArea" class="hidden">
+    <p id="myCardLabel" class="muted"></p>
+
+    <div class="board-wrap">
+      <div class="bingo-head">
+        <div>B</div>
+        <div>I</div>
+        <div>N</div>
+        <div>G</div>
+        <div>O</div>
+      </div>
+
+      <div class="bingo-grid" id="bingoBoard"></div>
+    </div>
+
+    <p class="muted">Latest Called Number</p>
+    <div class="call-number" id="latestCall">
+      Waiting for the first call
+    </div>
+
+    <p class="muted">Recently Called Numbers</p>
+    <div class="recent" id="recentCalls"></div>
+
+    <button id="bingoBtn" onclick="claimBingo()" style="width:100%;margin-top:14px">
+      🎉 BINGO!
+    </button>
+
+    <p class="muted">
+      Numbers are marked automatically when the server reports them.
+    </p>
+  </div>
+</section>
+
+<section class="panel hidden" id="depositSection">
+  <h2>➕ Deposit</h2>
+
+  <div class="note">
+    Send money using the displayed payment details. Then submit your
+    transaction receipt. Your wallet is credited only after verification.
+  </div>
+
+  <div id="paymentDetails" class="muted" style="margin-top:10px">
+    Loading payment details...
+  </div>
+
+  <form id="depositForm" onsubmit="submitDeposit(event)">
+
+    <label>Payment Method</label>
+    <select id="paymentMethod">
+      <option value="TELEBIRR">Telebirr</option>
+      <option value="CBE">Commercial Bank of Ethiopia</option>
+    </select>
+
+    <label>Amount (ETB)</label>
+    <input id="depositAmount" type="number" min="10" step="0.01" required>
+
+    <label>Transaction Reference</label>
+    <input id="payerReference" maxlength="120" required>
+
+    <label>Paste Transaction Receipt Text</label>
+    <textarea id="receiptText" maxlength="5000" required></textarea>
+
+    <button type="submit" id="depositSubmit" style="width:100%">
+      SUBMIT RECEIPT
+    </button>
+  </form>
+
+  <div id="depositResult" class="muted"></div>
+</section>
+
+<section class="panel hidden" id="walletSection">
+  <h2>👛 Wallet Transactions</h2>
+  <div id="walletTransactions" class="muted">
+    Loading wallet...
+  </div>
+</section>
+
+<section class="panel hidden" id="historySection">
+  <h2>📜 Game History</h2>
+  <div id="gameHistory" class="muted">
+    Loading history...
+  </div>
+</section>
+
+<section class="panel hidden" id="helpSection">
+  <h2>❔ Help and Instructions</h2>
+
+  <ol class="muted">
+    <li>Open Guder Bingo through the Telegram bot.</li>
+    <li>Make a deposit (minimum 10 ETB) and wait for verification.</li>
+    <li>Choose an available cartela when registration opens.</li>
+    <li>Called numbers are marked automatically with Amharic voice calls.</li>
+    <li>Press BINGO after completing a valid line to win 50% of the pot!</li>
+  </ol>
+
+  <div class="note">
+    Standard 75-ball Bingo ranges:<br>
+    B = 1–15<br>
+    I = 16–30<br>
+    N = 31–45<br>
+    G = 46–60<br>
+    O = 61–75
+  </div>
+
+  <p class="muted">Contact support for assistance.</p>
+  <button onclick="openSupport()">Contact Support</button>
+</section>
+
+<footer>
+  Guder Bingo • Keep your payment receipt until your deposit is reviewed.
+</footer>
+
+</div>
+
+<div id="bingoModal" class="hidden">
+  <div class="modal-card">
+    <h2>🎉 BINGO!</h2>
+    <p id="modalWinnerMsg" style="font-size: 16px; margin: 10px 0;">እንኳን ደስ አላችሁ! ውድድሩን አሸንፈዋል!</p>
+    <div class="countdown-timer" id="modalCountdown">5</div>
+    <p class="muted">Returning to lobby...</p>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <script>
 (() => {
 "use strict";
@@ -6,8 +429,10 @@ const tg = window.Telegram && window.Telegram.WebApp
   ? window.Telegram.WebApp : null;
 
 if (tg) {
-  tg.ready();
-  tg.expand();
+  try {
+    tg.ready();
+    tg.expand();
+  } catch(e) {}
 }
 
 const API = "https://guder-bingo-server.onrender.com";
@@ -342,13 +767,15 @@ function letterFor(n) {
 }
 
 function speakAmharicNumber(n) {
-  if ('speechSynthesis' in window) {
-    const letter = letterFor(n);
-    const text = `ቁጥር ${letter} ${n}`;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'am-ET';
-    window.speechSynthesis.speak(utterance);
-  }
+  try {
+    if ('speechSynthesis' in window) {
+      const letter = letterFor(n);
+      const text = `ቁጥር ${letter} ${n}`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'am-ET';
+      window.speechSynthesis.speak(utterance);
+    }
+  } catch(e) {}
 }
 
 function showBingoCelebrationModal() {
@@ -444,22 +871,23 @@ function escapeHtml(value) {
 }
 
 async function init() {
-  if (!tg || !initData) {
-    setStatus("Connected in test mode.", false);
-  } else {
+  try {
     setStatus("Connected securely to Guder Bingo.", false);
+    await loadConfig();
+    await refreshWallet();
+    await refreshGame();
+  } catch (e) {
+    setStatus("Running in offline view mode.", true);
   }
 
-  await loadConfig();
-  await refreshWallet();
-  await refreshGame();
-
-  setInterval(refreshGame, 3000);
+  setInterval(() => {
+    try { refreshGame(); } catch(err) {}
+  }, 3000);
 }
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    refreshGame();
+    try { refreshGame(); } catch(e) {}
   }
 });
 
@@ -467,3 +895,6 @@ init();
 
 })();
 </script>
+
+</body>
+</html>
