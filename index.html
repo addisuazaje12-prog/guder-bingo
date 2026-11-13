@@ -1,261 +1,826 @@
 <!DOCTYPE html>
-<html lang="am">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guder Bingo / ግርር ቢንጎ</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            max-width: 480px;
-            width: 100%;
-            background: #1e293b;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        h1 {
-            font-size: 1.4rem;
-            text-align: center;
-            color: #38bdf8;
-            margin-bottom: 5px;
-        }
-        .subtitle {
-            text-align: center;
-            font-size: 0.85rem;
-            color: #94a3b8;
-            margin-bottom: 15px;
-        }
-        .wallet-card {
-            background: #0f172a;
-            padding: 12px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            border: 1px solid #334155;
-        }
-        .status-badge {
-            background: #065f46;
-            color: #34d399;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            text-align: center;
-            margin-bottom: 12px;
-        }
-        .timer-box {
-            background: #d97706;
-            color: #fff;
-            padding: 8px;
-            border-radius: 6px;
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
-        .calling-feed {
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 1.2rem;
-            color: #facc15;
-            margin-bottom: 15px;
-            border: 1px solid #334155;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 4px;
-            max-height: 200px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            padding: 5px;
-            background: #0f172a;
-            border-radius: 6px;
-        }
-        .cartela-btn {
-            background: #334155;
-            color: #fff;
-            border: none;
-            padding: 6px 2px;
-            font-size: 0.7rem;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: center;
-        }
-        .cartela-btn:hover { background: #0284c7; }
-        .cartela-btn.selected { background: #16a34a; font-weight: bold; }
-        .action-btn {
-            background: #0284c7;
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-        .action-btn:hover { background: #0369a1; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guder Bingo - ጉደር ቢንጎ</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+:root {
+  --bg: #101827;
+  --text: #f5f7fb;
+  --accent: #1687d9;
+  --green: #20b879;
+  --panel: #1a2638;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+.app {
+  max-width: 520px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: 25px; }
+
+.status {
+  background: #332b19;
+  color: #ffd77b;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.wallet {
+  background: #173e56;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.balance {
+  font-size: 23px;
+  font-weight: bold;
+}
+
+button {
+  border: none;
+  border-radius: 9px;
+  padding: 11px;
+  background: var(--accent);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .5;
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 15px 0;
+}
+
+.menu button {
+  background: #223149;
+  font-size: 13px;
+}
+
+.panel {
+  background: var(--panel);
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.hidden { display: none !important; }
+
+.muted {
+  color: #aab7c9;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 11px;
+  margin: 5px 0 10px;
+  border-radius: 8px;
+  border: 1px solid #46566d;
+  background: #111c2b;
+  color: white;
+}
+
+textarea {
+  min-height: 100px;
+}
+
+.board-wrap {
+  max-width: 390px;
+  margin: 12px auto;
+}
+
+.bingo-head, .bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.bingo-head div {
+  text-align: center;
+  color: #ffd36d;
+  font-weight: bold;
+  padding: 5px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #26364d;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.cell.marked {
+  background: var(--green);
+  color: #062d20;
+}
+
+.cell.free {
+  background: #b93e59;
+  color: white;
+}
+
+.call-number {
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffda76;
+  padding: 14px;
+  background: #101c2c;
+  border-radius: 10px;
+  margin-top: 8px;
+  border: 2px solid #ffd36d;
+}
+
+.recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.recent span {
+  background: #2b3c54;
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.cartela-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: #111c2b;
+  padding: 8px;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.cartela-btn {
+  background: #26364d;
+  color: #fff;
+  border: none;
+  padding: 5px 1px;
+  font-size: 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.cartela-btn.selected {
+  background: var(--green);
+  color: #062d20;
+  font-weight: bold;
+}
+
+.note {
+  background: #2c281d;
+  color: #f4dda4;
+  padding: 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.item {
+  border-bottom: 1px solid #46566d;
+  padding: 9px 0;
+  font-size: 13px;
+}
+
+#bingoModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(16, 24, 39, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-card {
+  background: #1a2638;
+  border: 3px solid #ffd36d;
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+  width: 85%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.countdown-timer {
+  font-size: 48px;
+  font-weight: bold;
+  color: var(--green);
+  margin: 15px 0;
+}
+
+#toast {
+  position: fixed;
+  bottom: 18px;
+  left: 5%;
+  width: 90%;
+  background: #26364d;
+  color: #fff;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  display: none;
+  z-index: 1000;
+  font-weight: bold;
+}
+
+footer {
+  text-align: center;
+  color: #aab7c9;
+  font-size: 12px;
+  margin: 18px 0;
+}
+</style>
 </head>
+
 <body>
+<div class="app">
 
-<div class="container">
-    <h1>Guder Bingo / ግርር ቢንጎ</h1>
-    <div class="subtitle">እንኳን ወደ ግርር ቢንጎ በደህና መጡ! / Welcome to Guder Bingo!</div>
+<header>
+  <h1>🎱 Guder Bingo / ጉደር ቢንጎ</h1>
+  <div class="muted">እንኳን ወደ ጉደር ቢንጎ በደህና መጡ! / Welcome to Guder Bingo!</div>
+</header>
 
-    <div class="status-badge">Connected securely / ደህንነቱ የተጠበቀ ነው</div>
-
-    <div class="wallet-card">
-        <div>
-            <div style="font-size: 0.75rem; color: #94a3b8;">MY WALLET / የዕቃ ቦርሳ</div>
-            <div id="balance-display" style="font-size: 1.2rem; font-weight: bold; color: #38bdf8;">0.00 ETB</div>
-        </div>
-        <button onclick="refreshWallet()" style="background:#0284c7; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Refresh / አድስ</button>
-    </div>
-
-    <div id="room-status-box" class="timer-box">Loading room state...</div>
-
-    <div class="calling-feed">
-        📢 Called Number / የተጠራ ቁጥር: <span id="latest-number" style="font-size: 1.5rem; font-weight: bold;">--</span>
-    </div>
-
-    <div style="font-size: 0.85rem; margin-bottom: 5px;">Select Cartela (1–800) / ካርቴላ ይምረጡ:</div>
-    <div class="grid-container" id="cartela-grid"></div>
-
-    <div style="font-size: 0.85rem; margin-bottom: 5px;">Selected Cartela / የተመረጠው ካርቴላ ቁጥር:</div>
-    <input type="text" id="selected-cartela-input" readonly style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; margin-bottom: 10px;" placeholder="None selected">
-
-    <button class="action-btn" onclick="selectCartela()">SELECT CARTELA (10 ETB) / ካርቴላ መረጠ (10 ብር)</button>
-    <button class="action-btn" style="background: #16a34a;" onclick="depositFunds()">+ Deposit / ማስገባት (50 ETB)</button>
+<div id="statusMessage" class="status">
+  Connected securely / ደህና ተገናኝቷል
 </div>
 
+<section class="wallet">
+  <div>
+    <small>MY WALLET / የራሴ ቦርሳ</small>
+    <div class="balance" id="balance">0.00 ETB</div>
+  </div>
+  <button onclick="refreshWallet()">Refresh / አድስ</button>
+</section>
+
+<nav class="menu">
+  <button onclick="showSection('gameSection')">🎮 <<መጫወት>> / Play</button>
+  <button onclick="showSection('depositSection')">➕ Deposit / አስገባ</button>
+  <button onclick="showSection('walletSection')">👛 Wallet / ቦርሳ</button>
+  <button onclick="showSection('historySection')">📜 History / ታሪክ</button>
+  <button onclick="inviteFriends()">👥 Invite / ግብዣ</button>
+  <button onclick="showSection('helpSection')">❔ Help / እርዳታ</button>
+</nav>
+
+<section class="panel" id="gameSection">
+  <h2>🎮 Game Room / የጨዋታ ክፍል</h2>
+
+  <div id="roomInfo" class="muted">
+    Room #1 · Status / ሁኔታ: <b id="roomStatusText">OPEN / ክፍት</b> · Pot / ድምር: <b id="roomPotText">0 ETB</b>
+  </div>
+
+  <!-- COUNTDOWN TIMERS BANNER -->
+  <div id="timerBanner" style="background: #2b3c54; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; font-weight: bold; color: #ffd77b;">
+    ⏳ <span id="timerLabel">Selection Phase / የምርጫ ጊዜ</span>: <span id="countdownDisplay">30</span>s remaining
+  </div>
+
+  <!-- NUMBER CALLING FEED (1-75) AT THE TOP -->
+  <div id="callingSection" style="margin-top: 10px;">
+    <p class="muted"><b>📢 Calling Number Feed (1–75) / የቁጥር ጥሪ ማሳያ</b></p>
+    <div class="call-number" id="latestCall">
+      Waiting for round to start... / ዙሩ እስኪጀምር በመጠበቅ ላይ...
+    </div>
+    <div class="recent" id="recentCalls"></div>
+  </div>
+
+  <!-- ACTIVE PLAYING CARD LOCATED BELOW NUMBER CALLING -->
+  <div id="topLivePlayingArea" class="hidden" style="margin-top: 15px; border: 2px solid var(--green); padding: 10px; border-radius: 10px; background: #142235;">
+    <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d; text-align: center; margin-bottom: 6px;"></p>
+    <div class="board-wrap" style="margin: 4px auto;">
+      <div class="bingo-head">
+        <div>B<br><small style="font-size:9px">1-15</small></div>
+        <div>I<br><small style="font-size:9px">16-30</small></div>
+        <div>N<br><small style="font-size:9px">31-45</small></div>
+        <div>G<br><small style="font-size:9px">46-60</small></div>
+        <div>O<br><small style="font-size:9px">61-75</small></div>
+      </div>
+      <div class="bingo-grid" id="bingoBoardTop"></div>
+    </div>
+    <button id="bingoBtn" onclick="claimBingo()" style="width:100%; margin-top:10px; background: var(--green); color: #062d20; font-size:16px;">
+      🎉 CLAIM BINGO! / ቢንጎ አሸነፍኩ!
+    </button>
+  </div>
+
+  <!-- CARTELA SELECTION GRID (1-800) -->
+  <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
+    <div id="selectionArea">
+      <p class="muted">Select any cartela number (1–800) from the grid below to play / ከታች ካሉት ካርቴላዎች (1-800) ይምረጡ:</p>
+      
+      <div class="cartela-grid" id="cartelaTouchGrid"></div>
+
+      <label>Selected Cartela Number / የተመረጠው ካርቴላ ቁጥር</label>
+      <input id="cartelaNo" type="number" min="1" max="800" value="1">
+      <button id="selectBtn" onclick="selectCartela()" style="width:100%">
+        SELECT CARTELA (10 ETB) / ካርቴላ ምረጥ (10 ብር)
+      </button>
+    </div>
+  </div>
+</section>
+
+<section class="panel hidden" id="depositSection">
+  <h2>➕ Deposit / ገንዘብ ማስገባት</h2>
+  <div class="note">
+    Send money using the payment details below, then paste your receipt text. Deposit at least 10 ETB to play.<br>
+    ከታች ባሉት የክፍያ አማራጮች ገንዘብ ያስተላልፉና የደረሰኝ ጽሁፍ ይለጥፉ። ለመጫወት ቢያንስ 10 ብር ያስገቡ።
+  </div>
+  <div id="paymentDetails" class="muted" style="margin-top:10px">
+    Loading payment details... / የክፍያ መረጃ በመጫን ላይ...
+  </div>
+  <form id="depositForm" onsubmit="submitDeposit(event)">
+    <label>Payment Method / የክፍያ ዘዴ</label>
+    <select id="paymentMethod">
+      <option value="TELEBIRR">Telebirr (ቴሌብር) - 0913706670</option>
+      <option value="CBE">Commercial Bank of Ethiopia / የኢትዮጵያ ንግድ ባንክ</option>
+    </select>
+    <label>Amount (ETB) / መጠን (ብር)</label>
+    <input id="depositAmount" type="number" min="10" step="0.01" value="10" required>
+    
+    <label>Paste Transaction Receipt Text / የደረሰኝ ጽሁፍ ይለጥፉ</label>
+    <textarea id="receiptText" placeholder="Paste SMS receipt here... / የኤስኤምኤስ ደረሰኝ እዚህ ይለጥፉ..." required></textarea>
+    <button type="submit" id="depositSubmit" style="width:100%">SUBMIT DEPOSIT / ተቀማጭ ላክ</button>
+  </form>
+  <div id="depositResult" class="muted" style="margin-top:8px;"></div>
+</section>
+
+<section class="panel hidden" id="walletSection">
+  <h2>👛 Wallet Transactions / የቦርሳ ግብይቶች</h2>
+  <div id="walletTransactions" class="muted">Loading ledger... / መዝገብ በመጫን ላይ...</div>
+</section>
+
+<section class="panel hidden" id="historySection">
+  <h2>📜 Game History / የጨዋታ ታሪክ</h2>
+  <div id="gameHistory" class="muted">Loading history... / ታሪክ በመጫን ላይ...</div>
+</section>
+
+<section class="panel hidden" id="helpSection">
+  <h2>❔ Help & Rules / እርዳታ እና ህጎች</h2>
+  <ol class="muted">
+    <li>Spectators can watch all game moments, number calling feeds, and player cards live.<br>ተመልካቾች ሁሉንም የጨዋታ ሂደት መከታተል ይችላሉ።</li>
+    <li>To participate and select a cartela, deposit at least 10 ETB.<br>ለመጫወት እና ካርቴላ ለመምረጥ ቢያንስ 10 ብር ያስገቡ።</li>
+    <li>Cartela selection lasts for a 30-second countdown.<br>የካርቴላ ምርጫ ለ 30 ሰከንዶች ይቆያል።</li>
+    <li>Followed by a 5-second preparation phase before 1–75 number calling begins.<br>ቁጥር ከመጠራቱ በፊት የ 5 ሰከንድ ዝግጅት ይኖራል።</li>
+    <li>Listen to Amharic voice number announcements and winner celebrations!<br>የአማርኛ የቁጥር ጥሪ ድምፅ እና የአሸናፊዎችን ዝግጅት ያዳምጡ!</li>
+  </ol>
+  <button onclick="openSupport()" style="width:100%; margin-top:10px;">Contact Support / ድጋፍ ማግኘት</button>
+</section>
+
+<footer>
+  Guder Bingo • Spectator & Live Gaming Platform / ጉደር ቢንጎ • የቀጥታ ጨዋታ መድረክ
+</footer>
+
+</div>
+
+<!-- Winner Modal -->
+<div id="bingoModal" class="hidden">
+  <div class="modal-card">
+    <h2>🎉 BINGO VERIFIED! / ቢንጎ ተረጋግጧል!</h2>
+    <p class="muted">ቢንጎ! እንኳን ደስ አላችሁ! አሸናፊ ሆነዋል!<br>Congratulations! You won the game!</p>
+    <div class="countdown-timer" id="modalCountdown">5</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <script>
-    let tg = window.Telegram?.WebApp;
-    if (tg) {
-        tg.expand();
+(() => {
+"use strict";
+
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) {
+  try { tg.ready(); tg.expand(); } catch(e) {}
+}
+
+const API = "https://guder-bingo-server.onrender.com";
+const initData = tg && tg.initData ? tg.initData : "";
+
+let currentRoom = { room_id: 1, status: 'OPEN', total_pot: 0.0 };
+let currentCartela = null;
+let currentMatrix = null;
+let lastSpokenNumber = null;
+let audioUnlocked = false;
+
+const $ = id => document.getElementById(id);
+
+document.addEventListener('click', () => {
+  if (!audioUnlocked && 'speechSynthesis' in window) {
+    audioUnlocked = true;
+    try {
+      const dummy = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(dummy);
+    } catch(e) {}
+  }
+}, { once: true });
+
+function toast(msg) {
+  try {
+    const el = $("toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = "block";
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => { el.style.display = "none"; }, 4000);
+  } catch(e) {}
+}
+
+function headers() {
+  return { "Content-Type": "application/json", "X-Telegram-Init-Data": initData };
+}
+
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(API + path, { ...opts, headers: { ...headers(), ...(opts.headers || {}) } });
+    let data;
+    try { data = await res.json(); } catch(e) { throw new Error("Server response error."); }
+    if (!res.ok) throw new Error(data.message || "Request failed.");
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
+
+window.showSection = function(id) {
+  try {
+    ["gameSection", "depositSection", "walletSection", "historySection", "helpSection"].forEach(s => {
+      const el = $(s);
+      if (el) el.classList.toggle("hidden", s !== id);
+    });
+    if (id === "walletSection") refreshWallet();
+    if (id === "historySection") loadHistory();
+    if (id === "gameSection") refreshGame();
+    if (id === "depositSection") loadConfig();
+  } catch(e) {}
+};
+
+window.refreshWallet = async function() {
+  try {
+    const data = await api("/api/wallet");
+    if ($("balance")) $("balance").textContent = Number(data.balance).toFixed(2) + " ETB";
+    if ($("walletTransactions")) {
+      $("walletTransactions").innerHTML = data.transactions && data.transactions.length
+        ? data.transactions.map(t => `<div class="item"><b>${escapeHtml(t.txn_type)}</b> · ${Number(t.amount).toFixed(2)} ETB<br><span class="muted">${escapeHtml(t.created_at)}</span></div>`).join("")
+        : "No transactions yet. / ምንም ግብይቶች የሉም።";
     }
-    const initData = tg?.initData || "";
+  } catch(e) {}
+};
 
-    let selectedCartelaNo = null;
+async function loadConfig() {
+  try {
+    const cfg = await api("/api/config");
+    if ($("paymentDetails")) {
+      $("paymentDetails").innerHTML = `<b>Telebirr / ቴሌብር:</b> ${escapeHtml(cfg.telebirr_phone || "0913706670")}<br><span class="muted">Min deposit: 10.00 ETB to play. / ለመጫወት ቢያንስ 10 ብር።</span>`;
+    }
+  } catch(e) {}
+}
 
-    // Build Cartela Grid 1-800
-    const gridEl = document.getElementById('cartela-grid');
-    for (let i = 1; i <= 800; i++) {
-        let btn = document.createElement('button');
-        btn.className = 'cartela-btn';
-        btn.innerText = i;
-        btn.onclick = () => {
-            document.querySelectorAll('.cartela-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedCartelaNo = i;
-            document.getElementById('selected-cartela-input.value', i);
-            document.getElementById('selected-cartela-input').value = i;
-        };
-        gridEl.appendChild(btn);
+window.submitDeposit = async function(e) {
+  e.preventDefault();
+  const btn = $("depositSubmit");
+  if (btn) btn.disabled = true;
+  if ($("depositResult")) $("depositResult").textContent = "Submitting deposit... / ተቀማጭ በመላክ ላይ...";
+  try {
+    const receiptTextVal = $("receiptText").value.trim();
+    const data = await api("/api/deposit", {
+      method: "POST",
+      body: JSON.stringify({
+        payment_method: $("paymentMethod").value,
+        amount: Number($("depositAmount").value),
+        payer_reference: receiptTextVal.substring(0, 50),
+        receipt_text: receiptTextVal
+      })
+    });
+    if ($("depositResult")) $("depositResult").textContent = data.message;
+    if ($("depositForm")) $("depositForm").reset();
+    toast("Deposit receipt submitted! / የክፍያ ደረሰኝ ገብቷል!");
+    refreshWallet();
+    refreshGame();
+  } catch(err) {
+    if ($("depositResult")) $("depositResult").textContent = err.message;
+    toast(err.message);
+  } finally { if (btn) btn.disabled = false; }
+};
+
+function renderAllCartelas() {
+  const grid = $("cartelaTouchGrid");
+  if (!grid || grid.hasChildNodes()) return;
+  let html = "";
+  for (let i = 1; i <= 800; i++) {
+    html += `<button type="button" class="cartela-btn" onclick="selectTouchCartela(${i})">#${i}</button>`;
+  }
+  grid.innerHTML = html;
+}
+
+window.selectTouchCartela = function(num) {
+  if ($("cartelaNo")) $("cartelaNo").value = num;
+  const buttons = document.querySelectorAll('.cartela-btn');
+  buttons.forEach(b => {
+    b.classList.toggle('selected', Number(b.textContent.replace('#', '')) === num);
+  });
+  selectCartela();
+};
+
+async function refreshGame() {
+  try {
+    renderAllCartelas();
+
+    const data = await api("/api/game/state");
+    if ($("balance")) $("balance").textContent = Number(data.balance || 0).toFixed(2) + " ETB";
+
+    if (data.room) currentRoom = data.room;
+    currentCartela = data.cartela;
+
+    const roomStatusText = $("roomStatusText");
+    const roomPotText = $("roomPotText");
+    const topLivePlayingArea = $("topLivePlayingArea");
+    const timerLabel = $("timerLabel");
+    const countdownDisplay = $("countdownDisplay");
+
+    if (roomStatusText) roomStatusText.textContent = currentRoom.status;
+    if (roomPotText) roomPotText.textContent = Number(currentRoom.total_pot || 0).toFixed(2) + " ETB";
+
+    if (currentRoom.status === "OPEN" && currentRoom.selection_remaining !== null) {
+      if (timerLabel) timerLabel.textContent = "Selection Phase (30s) / የምርጫ ጊዜ";
+      if (countdownDisplay) countdownDisplay.textContent = currentRoom.selection_remaining;
+    } else if (currentRoom.status === "PREPARING" && currentRoom.preparation_remaining !== null) {
+      if (timerLabel) timerLabel.textContent = "Preparation Time (5s) / የዝግጅት ጊዜ";
+      if (countdownDisplay) countdownDisplay.textContent = currentRoom.preparation_remaining;
+    } else if (currentRoom.status === "RUNNING") {
+      if (timerLabel) timerLabel.textContent = "Game Status (1-75) / የጨዋታ ሁኔታ";
+      if (countdownDisplay) countdownDisplay.textContent = "LIVE / በቀጥታ";
     }
 
-    async function fetchGameState() {
-        try {
-            let res = await fetch('/api/game/state', {
-                headers: { 'X-Telegram-Init-Data': initData }
-            });
-            let data = await res.json();
-            if (data.status === 'success') {
-                document.getElementById('balance-display').innerText = data.balance.toFixed(2) + ' ETB';
-                
-                let room = data.room;
-                let timerBox = document.getElementById('room-status-box');
-                
-                if (room) {
-                    if (room.status === 'OPEN') {
-                        timerBox.innerText = `Selection Phase / የምረቃ ጊዜ: ${room.selection_remaining}s remaining - Pot: ${room.total_pot} ETB`;
-                    } else if (room.status === 'PREPARING') {
-                        timerBox.innerText = `Preparing Round / ዝግጅት: ${room.preparation_remaining}s remaining`;
-                    } else if (room.status === 'RUNNING') {
-                        timerBox.innerText = `LIVE PLAYING / ጨዋታ በሂደት ላይ - Pot: ${room.total_pot} ETB`;
-                    } else if (room.status === 'COMPLETED') {
-                        timerBox.innerText = `Round Completed / ጨዋታው ተጠናቀቀ`;
-                    }
-                }
+    renderLiveFeed(data.called_numbers || []);
 
-                if (data.called_numbers && data.called_numbers.length > 0) {
-                    let latest = data.called_numbers[data.called_numbers.length - 1];
-                    document.getElementById('latest-number').innerText = latest.number;
-                } else {
-                    document.getElementById('latest-number').innerText = 'Waiting...';
-                }
-            }
-        } catch (err) {
-            console.error("State fetch error:", err);
-        }
+    if (currentCartela) {
+      try {
+        currentMatrix = JSON.parse(currentCartela.numbers_json);
+      } catch(err) { currentMatrix = null; }
+      
+      if (topLivePlayingArea) topLivePlayingArea.classList.remove("hidden");
+      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Active Playing Cartela: #" + currentCartela.cartela_no + " / የእርስዎ ካርቴላ: #" + currentCartela.cartela_no;
+      renderPlayerCard(data.called_numbers || []);
+    } else {
+      if (topLivePlayingArea) topLivePlayingArea.classList.add("hidden");
+    }
+  } catch(e) {
+    if ($("roomStatusText")) $("roomStatusText").textContent = "OPEN";
+  }
+}
+
+function makeCard() {
+  const cols = [
+    randomUnique(1, 15, 5),
+    randomUnique(16, 30, 5),
+    randomUnique(31, 45, 5),
+    randomUnique(46, 60, 5),
+    randomUnique(61, 75, 5)
+  ];
+  return Array.from({length: 5}, (_, r) => cols.map((col, c) => r === 2 && c === 2 ? "FREE" : col[r]));
+}
+
+function randomUnique(min, max, count) {
+  const vals = [];
+  while(vals.length < count) {
+    const n = Math.floor(Math.random() * (max - min + 1)) + min;
+    if (!vals.includes(n)) vals.push(n);
+  }
+  return vals;
+}
+
+window.selectCartela = async function() {
+  try {
+    const balanceText = $("balance") ? $("balance").textContent : "0";
+    const userBalance = parseFloat(balanceText) || 0;
+
+    if (userBalance < 10) {
+      toast("Restricted: Please deposit at least 10 ETB to select a cartela! / እገዳ: ለመምረጥ ቢያንስ 10 ብር ያስገቡ!");
+      return;
     }
 
-    async function refreshWallet() {
-        fetchGameState();
+    const btn = $("selectBtn");
+    if (btn) btn.disabled = true;
+    
+    const cartelaNo = Number($("cartelaNo") ? $("cartelaNo").value : 1);
+    if (!cartelaNo || cartelaNo < 1 || cartelaNo > 800) {
+      throw new Error("Enter cartela number between 1 and 800. / ከ 1 እስከ 800 ያስገቡ።");
+    }
+    
+    const matrix = makeCard();
+    const rId = currentRoom ? currentRoom.room_id : 1;
+    const data = await api("/api/cartela/select", {
+      method: "POST",
+      body: JSON.stringify({ room_id: rId, cartela_no: cartelaNo, numbers: matrix })
+    });
+
+    currentMatrix = matrix;
+    currentCartela = { cartela_no: cartelaNo, numbers_json: JSON.stringify(matrix) };
+    toast(data.message || "Cartela selected successfully! / ካርቴላው ተሳክቷል!");
+    refreshGame();
+  } catch(e) {
+    toast(e.message);
+  } finally {
+    const btn = $("selectBtn");
+    if (btn) btn.disabled = false;
+  }
+};
+
+function renderLiveFeed(calls) {
+  try {
+    const latest = calls && calls.length ? Number(calls[calls.length - 1].number) : null;
+    if ($("latestCall")) {
+      $("latestCall").textContent = latest ? letterFor(latest) + " - " + latest : "Waiting for round to start... / ዙር በመጠበቅ ላይ...";
+    }
+    if ($("recentCalls")) {
+      $("recentCalls").innerHTML = (calls || []).slice(-10).reverse().map(c => `<span>${letterFor(c.number)}-${c.number}</span>`).join("");
     }
 
-    async function depositFunds() {
-        try {
-            let res = await fetch('/api/deposit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Telegram-Init-Data': initData
-                },
-                body: JSON.stringify({ amount: 50.0 })
-            });
-            let data = await res.json();
-            alert(data.message);
-            fetchGameState();
-        } catch (err) {
-            alert("Deposit error");
-        }
+    if (latest && latest !== lastSpokenNumber) {
+      lastSpokenNumber = latest;
+      speakAmharicNumber(latest);
     }
+  } catch(e) {}
+}
 
-    async function selectCartela() {
-        if (!selectedCartelaNo) {
-            alert("Please select a cartela number first!");
-            return;
-        }
-        let dummyMatrix = [[1,2,3],[4,5,6],[7,8,9]];
-        try {
-            let res = await fetch('/api/cartela/select', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Telegram-Init-Data': initData
-                },
-                body: JSON.stringify({ room_id: 1, cartela_no: selectedCartelaNo, numbers: dummyMatrix })
-            });
-            let data = await res.json();
-            if (data.status === 'success') {
-                alert(data.message);
-                fetchGameState();
-            } else {
-                alert(data.message);
-            }
-        } catch (err) {
-            alert("Selection error");
-        }
+function renderPlayerCard(calls) {
+  try {
+    if (!currentMatrix) return;
+    const called = new Set((calls || []).map(c => Number(c.number)));
+    const board = $("bingoBoardTop");
+    if (!board) return;
+    board.innerHTML = "";
+
+    currentMatrix.forEach(row => {
+      row.forEach(val => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = val;
+        if (String(val).toUpperCase() === "FREE") cell.classList.add("free", "marked");
+        else if (called.has(Number(val))) cell.classList.add("marked");
+        board.appendChild(cell);
+      });
+    });
+  } catch(e) {}
+}
+
+function letterFor(n) {
+  if (n <= 15) return "B";
+  if (n <= 30) return "I";
+  if (n <= 45) return "N";
+  if (n <= 60) return "G";
+  return "O";
+}
+
+function speakAmharicNumber(n) {
+  try {
+    if ('speechSynthesis' in window) {
+      const letter = letterFor(n);
+      const text = `ቁጥር ${letter} ${n}`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'am-ET';
+      window.speechSynthesis.speak(utterance);
     }
+  } catch(e) {}
+}
 
-    // Poll game state every 2 seconds
-    setInterval(fetchGameState, 2000);
-    fetchGameState();
+function speakWinnerAnnouncement() {
+  try {
+    if ('speechSynthesis' in window) {
+      const text = "ቢንጎ! እንኳን ደስ አላችሁ! አሸናፊ ሆነዋል!";
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'am-ET';
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  } catch(e) {}
+}
+
+window.claimBingo = async function() {
+  try {
+    if (!currentRoom || !currentCartela) return;
+    const btn = $("bingoBtn");
+    if (btn) btn.disabled = true;
+    
+    const rId = currentRoom ? currentRoom.room_id : 1;
+    const data = await api("/api/claim-bingo", {
+      method: "POST",
+      body: JSON.stringify({ room_id: rId, cartela_no: currentCartela.cartela_no })
+    });
+    
+    if (data.status === "winner") {
+      speakWinnerAnnouncement();
+      const modal = $("bingoModal");
+      const cd = $("modalCountdown");
+      if (modal) modal.classList.remove("hidden");
+      let t = 5;
+      if (cd) cd.textContent = t;
+      const timer = setInterval(() => {
+        t--; if (cd) cd.textContent = t;
+        if (t <= 0) { clearInterval(timer); if (modal) modal.classList.add("hidden"); }
+      }, 1000);
+      toast("Bingo verified successfully! / ቢንጎ ተረጋግጧል!");
+    } else {
+      toast(data.message);
+    }
+  } catch(e) {
+    toast(e.message);
+  } finally {
+    const btn = $("bingoBtn");
+    if (btn) btn.disabled = false;
+    refreshGame();
+  }
+};
+
+async function loadHistory() {
+  try {
+    const data = await api("/api/game/history");
+    if ($("gameHistory")) {
+      $("gameHistory").innerHTML = data.history && data.history.length
+        ? data.history.map(x => `<div class="item">Room / ክፍል #${escapeHtml(x.room_id)} · Cartela / ካርቴላ #${escapeHtml(x.cartela_no)}<br><span class="muted">${escapeHtml(x.created_at)}</span></div>`).join("")
+        : "No history yet. / ምንም ታሪክ የለም።";
+    }
+  } catch(e) {}
+};
+
+window.inviteFriends = function() {
+  try {
+    const share = "https://t.me/share/url?url=" + encodeURIComponent("https://t.me/guderbingo_bot") + "&text=" + encodeURIComponent("Join Guder Bingo & play live! / ጉደር ቢንጎን ይቀላቀሉ!");
+    if (tg && tg.openTelegramLink) tg.openTelegramLink(share);
+    else window.open(share, "_blank");
+  } catch(e) {}
+};
+
+window.openSupport = function() {
+  try {
+    const url = "https://t.me/Guderbingosupport";
+    if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+    else window.open(url, "_blank");
+  } catch(e) {}
+};
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+async function init() {
+  try {
+    await loadConfig();
+    await refreshWallet();
+    await refreshGame();
+  } catch(e) {}
+  setInterval(() => { try { refreshGame(); } catch(err){} }, 2000);
+}
+
+init();
+
+})();
 </script>
 
 </body>
