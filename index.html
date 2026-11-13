@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Guder Bingo</title>
+<title>Guder Bingo - ጉደር ቢንጎ</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -282,48 +282,48 @@ footer {
 <div class="app">
 
 <header>
-  <h1>🎱 Guder Bingo</h1>
-  <div class="muted">እንኳን ወደ ጉደር ቢንጎ በደህና መጡ !</div>
+  <h1>🎱 Guder Bingo / ጉደር ቢንጎ</h1>
+  <div class="muted">እንኳን ወደ ጉደር ቢንጎ በደህና መጡ! / Welcome to Guder Bingo!</div>
 </header>
 
 <div id="statusMessage" class="status">
-  Connected securely to Guder Bingo.
+  Connected securely / ደህና ተገናኝቷል
 </div>
 
 <section class="wallet">
   <div>
-    <small>MY WALLET</small>
+    <small>MY WALLET / የራሴ ቦርሳ</small>
     <div class="balance" id="balance">0.00 ETB</div>
   </div>
-  <button onclick="refreshWallet()">Refresh</button>
+  <button onclick="refreshWallet()">Refresh / አድስ</button>
 </section>
 
 <nav class="menu">
-  <button onclick="showSection('gameSection')">🎮 Play</button>
-  <button onclick="showSection('depositSection')">➕ Deposit</button>
-  <button onclick="showSection('walletSection')">👛 Wallet</button>
-  <button onclick="showSection('historySection')">📜 History</button>
-  <button onclick="inviteFriends()">👥 Invite</button>
-  <button onclick="showSection('helpSection')">❔ Help</button>
+  <button onclick="showSection('gameSection')">🎮 Play / ጫወት</button>
+  <button onclick="showSection('depositSection')">➕ Deposit / አስገባ</button>
+  <button onclick="showSection('walletSection')">👛 Wallet / ቦርሳ</button>
+  <button onclick="showSection('historySection')">📜 History / ታሪክ</button>
+  <button onclick="inviteFriends()">👥 Invite / ግብዣ</button>
+  <button onclick="showSection('helpSection')">❔ Help / እርዳታ</button>
 </nav>
 
 <section class="panel" id="gameSection">
-  <h2>🎮 Game Room</h2>
+  <h2>🎮 Game Room / የጨዋታ ክፍል</h2>
 
   <div id="roomInfo" class="muted">
-    Room #1 · Status: <b id="roomStatusText">OPEN</b> · Pot: <b id="roomPotText">0 ETB</b>
+    Room #1 · Status / ሁኔታ: <b id="roomStatusText">OPEN / ክፍት</b> · Pot / ድምር: <b id="roomPotText">0 ETB</b>
   </div>
 
   <!-- COUNTDOWN TIMERS BANNER -->
   <div id="timerBanner" style="background: #2b3c54; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; font-weight: bold; color: #ffd77b;">
-    ⏳ <span id="timerLabel">Selection Phase</span>: <span id="countdownDisplay">30</span>s remaining
+    ⏳ <span id="timerLabel">Selection Phase / የምርጫ ጊዜ</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
 
   <!-- TOP: NUMBER CALLING FEED (1-75) -->
   <div id="callingSection" style="margin-top: 10px;">
-    <p class="muted"><b>📢 Calling Number Feed (1–75)</b></p>
+    <p class="muted"><b>📢 Calling Number Feed / የቁጥር ጥሪ ማሳያ (1–75)</b></p>
     <div class="call-number" id="latestCall">
-      Waiting for round to start...
+      Waiting for round to start... / ዙሩ እስኪጀምር በመጠበቅ ላይ...
     </div>
     <div class="recent" id="recentCalls"></div>
   </div>
@@ -333,14 +333,14 @@ footer {
     
     <!-- Cartela Selection Area (1-800 visible to everyone) -->
     <div id="selectionArea">
-      <p class="muted">Select any cartela number (1–800) from the grid below to play:</p>
+      <p class="muted">Select any cartela number (1–800) from the grid below to play / ከታች ካሉት ካርቴላዎች (1-800) ይምረጡ:</p>
       
       <div class="cartela-grid" id="cartelaTouchGrid"></div>
 
-      <label>Selected Cartela Number</label>
+      <label>Selected Cartela Number / የተመረጠው ካርቴላ ቁጥር</label>
       <input id="cartelaNo" type="number" min="1" max="800" value="1">
       <button id="selectBtn" onclick="selectCartela()" style="width:100%">
-        SELECT CARTELA (10 ETB)
+        SELECT CARTELA (10 ETB) / ካርቴላ ምረጥ (10 ብር)
       </button>
     </div>
 
@@ -360,61 +360,61 @@ footer {
       </div>
 
       <button id="bingoBtn" onclick="claimBingo()" style="width:100%;margin-top:14px">
-        🎉 CLAIM BINGO!
+        🎉 CLAIM BINGO! / ቢንጎ አሸነፍኩ!
       </button>
     </div>
   </div>
 </section>
 
 <section class="panel hidden" id="depositSection">
-  <h2>➕ Deposit</h2>
+  <h2>➕ Deposit / ገንዘብ ማስገባት</h2>
   <div class="note">
-    Send money using the payment details below, then submit your receipt reference. Deposit at least 10 ETB to play.
+    Send money using the payment details below, then paste your receipt text. Deposit at least 10 ETB to play.<br>
+    ከታች ባሉት የክፍያ አማራጮች ገንዘብ ያስተላልፉና የደረሰኝ ጽሁፍ ይለጥፉ። ለመጫወት ቢያንስ 10 ብር ያስገቡ።
   </div>
   <div id="paymentDetails" class="muted" style="margin-top:10px">
-    Loading payment details...
+    Loading payment details... / የክፍያ መረጃ በመጫን ላይ...
   </div>
   <form id="depositForm" onsubmit="submitDeposit(event)">
-    <label>Payment Method</label>
+    <label>Payment Method / የክፍያ ዘዴ</label>
     <select id="paymentMethod">
-      <option value="TELEBIRR">Telebirr (0913706670)</option>
-      <option value="CBE">Commercial Bank of Ethiopia</option>
+      <option value="TELEBIRR">Telebirr (ቴሌብር) - 0913706670</option>
+      <option value="CBE">Commercial Bank of Ethiopia / የኢትዮጵያ ንግድ ባንክ</option>
     </select>
-    <label>Amount (ETB)</label>
+    <label>Amount (ETB) / መጠን (ብር)</label>
     <input id="depositAmount" type="number" min="10" step="0.01" value="10" required>
-    <label>Transaction Reference</label>
-    <input id="payerReference" placeholder="e.g. TR12345678" required>
-    <label>Paste Transaction Receipt Text</label>
-    <textarea id="receiptText" placeholder="Paste SMS receipt here..." required></textarea>
-    <button type="submit" id="depositSubmit" style="width:100%">SUBMIT DEPOSIT</button>
+    
+    <label>Paste Transaction Receipt Text / የደረሰኝ ጽሁፍ ይለጥፉ</label>
+    <textarea id="receiptText" placeholder="Paste SMS receipt here... / የኤስኤምኤስ ደረሰኝ እዚህ ይለጥፉ..." required></textarea>
+    <button type="submit" id="depositSubmit" style="width:100%">SUBMIT DEPOSIT / ተቀማጭ ላክ</button>
   </form>
   <div id="depositResult" class="muted" style="margin-top:8px;"></div>
 </section>
 
 <section class="panel hidden" id="walletSection">
-  <h2>👛 Wallet Transactions</h2>
-  <div id="walletTransactions" class="muted">Loading ledger...</div>
+  <h2>👛 Wallet Transactions / የቦርሳ ግብይቶች</h2>
+  <div id="walletTransactions" class="muted">Loading ledger... / መዝገብ በመጫን ላይ...</div>
 </section>
 
 <section class="panel hidden" id="historySection">
-  <h2>📜 Game History</h2>
-  <div id="gameHistory" class="muted">Loading history...</div>
+  <h2>📜 Game History / የጨዋታ ታሪክ</h2>
+  <div id="gameHistory" class="muted">Loading history... / ታሪክ በመጫን ላይ...</div>
 </section>
 
 <section class="panel hidden" id="helpSection">
-  <h2>❔ Help & Rules</h2>
+  <h2>❔ Help & Rules / እርዳታ እና ህጎች</h2>
   <ol class="muted">
-    <li>Spectators can watch all game moments, number calling feeds, and player cards live.</li>
-    <li>To participate and select a cartela, deposit at least 10 ETB.</li>
-    <li>Cartela selection lasts for a 30-second countdown.</li>
-    <li>Followed by a 5-second preparation phase before 1–75 number calling begins.</li>
-    <li>Listen to Amharic voice number announcements and winner celebrations!</li>
+    <li>Spectators can watch all game moments, number calling feeds, and player cards live.<br>ተመልካቾች ሁሉንም የጨዋታ ሂደት መከታተል ይችላሉ።</li>
+    <li>To participate and select a cartela, deposit at least 10 ETB.<br>ለመጫወት እና ካርቴላ ለመምረጥ ቢያንስ 10 ብር ያስገቡ።</li>
+    <li>Cartela selection lasts for a 30-second countdown.<br>የካርቴላ ምርጫ ለ 30 ሰከንዶች ይቆያል።</li>
+    <li>Followed by a 5-second preparation phase before 1–75 number calling begins.<br>ቁጥር ከመጠራቱ በፊት የ 5 ሰከንድ ዝግጅት ይኖራል።</li>
+    <li>Listen to Amharic voice number announcements and winner celebrations!<br>የአማርኛ የቁጥር ጥሪ ድምፅ እና የአሸናፊዎችን ዝግጅት ያዳምጡ!</li>
   </ol>
-  <button onclick="openSupport()" style="width:100%; margin-top:10px;">Contact Support</button>
+  <button onclick="openSupport()" style="width:100%; margin-top:10px;">Contact Support / ድጋፍ ማግኘት</button>
 </section>
 
 <footer>
-  Guder Bingo • Spectator & Live Gaming Platform
+  Guder Bingo • Spectator & Live Gaming Platform / ጉደር ቢንጎ • የቀጥታ ጨዋታ መድረክ
 </footer>
 
 </div>
@@ -422,8 +422,8 @@ footer {
 <!-- Winner Modal stays for around 5 seconds with Amharic voice -->
 <div id="bingoModal" class="hidden">
   <div class="modal-card">
-    <h2>🎉 BINGO VERIFIED!</h2>
-    <p class="muted">እንኳን ደስ አላችሁ! ውድድሩን አሸንፈዋል!</p>
+    <h2>🎉 BINGO VERIFIED! / ቢንጎ ተረጋግጧል!</h2>
+    <p class="muted">እንኳን ደስ አላችሁ! ውድድሩን አሸንፈዋል!<br>Congratulations! You won the game!</p>
     <div class="countdown-timer" id="modalCountdown">5</div>
   </div>
 </div>
@@ -508,7 +508,7 @@ window.refreshWallet = async function() {
     if ($("walletTransactions")) {
       $("walletTransactions").innerHTML = data.transactions && data.transactions.length
         ? data.transactions.map(t => `<div class="item"><b>${escapeHtml(t.txn_type)}</b> · ${Number(t.amount).toFixed(2)} ETB<br><span class="muted">${escapeHtml(t.created_at)}</span></div>`).join("")
-        : "No transactions yet.";
+        : "No transactions yet. / ምንም ግብይቶች የሉም።";
     }
   } catch(e) {}
 };
@@ -517,7 +517,7 @@ async function loadConfig() {
   try {
     const cfg = await api("/api/config");
     if ($("paymentDetails")) {
-      $("paymentDetails").innerHTML = `<b>Telebirr:</b> ${escapeHtml(cfg.telebirr_phone || "0913706670")}<br><span class="muted">Min deposit: 10.00 ETB to play. Spectators can watch freely!</span>`;
+      $("paymentDetails").innerHTML = `<b>Telebirr / ቴሌብር:</b> ${escapeHtml(cfg.telebirr_phone || "0913706670")}<br><span class="muted">Min deposit: 10.00 ETB to play. / ለመጫወት ቢያንስ 10 ብር።</span>`;
     }
   } catch(e) {}
 }
@@ -526,20 +526,21 @@ window.submitDeposit = async function(e) {
   e.preventDefault();
   const btn = $("depositSubmit");
   if (btn) btn.disabled = true;
-  if ($("depositResult")) $("depositResult").textContent = "Submitting deposit...";
+  if ($("depositResult")) $("depositResult").textContent = "Submitting deposit... / ተቀማጭ በመላክ ላይ...";
   try {
+    const receiptTextVal = $("receiptText").value.trim();
     const data = await api("/api/deposit", {
       method: "POST",
       body: JSON.stringify({
         payment_method: $("paymentMethod").value,
         amount: Number($("depositAmount").value),
-        payer_reference: $("payerReference").value.trim(),
-        receipt_text: $("receiptText").value.trim()
+        payer_reference: receiptTextVal.substring(0, 50), // Auto-derive reference from receipt text
+        receipt_text: receiptTextVal
       })
     });
     if ($("depositResult")) $("depositResult").textContent = data.message;
     if ($("depositForm")) $("depositForm").reset();
-    toast("Deposit receipt submitted!");
+    toast("Deposit receipt submitted! / የክፍያ ደረሰኝ ገብቷል!");
     refreshWallet();
     refreshGame();
   } catch(err) {
@@ -590,14 +591,14 @@ async function refreshGame() {
 
     // Live 30s selection countdown & 5s preparation countdown sync from server state
     if (currentRoom.status === "OPEN" && currentRoom.selection_remaining !== null) {
-      if (timerLabel) timerLabel.textContent = "Selection Phase (30s)";
+      if (timerLabel) timerLabel.textContent = "Selection Phase (30s) / የምርጫ ጊዜ";
       if (countdownDisplay) countdownDisplay.textContent = currentRoom.selection_remaining;
     } else if (currentRoom.status === "PREPARING" && currentRoom.preparation_remaining !== null) {
-      if (timerLabel) timerLabel.textContent = "Preparation Time (5s)";
+      if (timerLabel) timerLabel.textContent = "Preparation Time (5s) / የዝግጅት ጊዜ";
       if (countdownDisplay) countdownDisplay.textContent = currentRoom.preparation_remaining;
     } else if (currentRoom.status === "RUNNING") {
-      if (timerLabel) timerLabel.textContent = "Game Status";
-      if (countdownDisplay) countdownDisplay.textContent = "LIVE (1-75)";
+      if (timerLabel) timerLabel.textContent = "Game Status / የጨዋታ ሁኔታ";
+      if (countdownDisplay) countdownDisplay.textContent = "LIVE (1-75) / በቀጥታ";
     }
 
     renderLiveFeed(data.called_numbers || []);
@@ -609,7 +610,7 @@ async function refreshGame() {
       
       if (selectionArea) selectionArea.classList.add("hidden");
       if (cardArea) cardArea.classList.remove("hidden");
-      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Active Playing Cartela: #" + currentCartela.cartela_no;
+      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Active Playing Cartela: #" + currentCartela.cartela_no + " / የእርስዎ ካርቴላ: #" + currentCartela.cartela_no;
       renderPlayerCard(data.called_numbers || []);
     } else {
       if (cardArea) cardArea.classList.add("hidden");
@@ -648,7 +649,7 @@ window.selectCartela = async function() {
     const userBalance = parseFloat(balanceText) || 0;
 
     if (userBalance < 10) {
-      toast("Restricted: Please deposit at least 10 ETB to select a cartela and play! You can still view all live moments.");
+      toast("Restricted: Please deposit at least 10 ETB to select a cartela! / እገዳ: ለመምረጥ ቢያንስ 10 ብር ያስገቡ!");
       return;
     }
 
@@ -657,7 +658,7 @@ window.selectCartela = async function() {
     
     const cartelaNo = Number($("cartelaNo") ? $("cartelaNo").value : 1);
     if (!cartelaNo || cartelaNo < 1 || cartelaNo > 800) {
-      throw new Error("Enter cartela number between 1 and 800.");
+      throw new Error("Enter cartela number between 1 and 800. / ከ 1 እስከ 800 ያስገቡ።");
     }
     
     const matrix = makeCard();
@@ -669,7 +670,7 @@ window.selectCartela = async function() {
 
     currentMatrix = matrix;
     currentCartela = { cartela_no: cartelaNo, numbers_json: JSON.stringify(matrix) };
-    toast(data.message || "Cartela selected successfully!");
+    toast(data.message || "Cartela selected successfully! / ካርቴላው ተሳክቷል!");
     refreshGame();
   } catch(e) {
     toast(e.message);
@@ -683,7 +684,7 @@ function renderLiveFeed(calls) {
   try {
     const latest = calls && calls.length ? Number(calls[calls.length - 1].number) : null;
     if ($("latestCall")) {
-      $("latestCall").textContent = latest ? letterFor(latest) + " - " + latest : "Waiting for round to start...";
+      $("latestCall").textContent = latest ? letterFor(latest) + " - " + latest : "Waiting for round to start... / ዙር በመጠበቅ ላይ...";
     }
     if ($("recentCalls")) {
       $("recentCalls").innerHTML = (calls || []).slice(-10).reverse().map(c => `<span>${letterFor(c.number)}-${c.number}</span>`).join("");
@@ -774,7 +775,7 @@ window.claimBingo = async function() {
         t--; if (cd) cd.textContent = t;
         if (t <= 0) { clearInterval(timer); if (modal) modal.classList.add("hidden"); }
       }, 1000);
-      toast("Bingo verified successfully!");
+      toast("Bingo verified successfully! / ቢንጎ ተረጋግጧል!");
     } else {
       toast(data.message);
     }
@@ -792,15 +793,15 @@ async function loadHistory() {
     const data = await api("/api/game/history");
     if ($("gameHistory")) {
       $("gameHistory").innerHTML = data.history && data.history.length
-        ? data.history.map(x => `<div class="item">Room #${escapeHtml(x.room_id)} · Cartela #${escapeHtml(x.cartela_no)}<br><span class="muted">${escapeHtml(x.created_at)}</span></div>`).join("")
-        : "No history yet.";
+        ? data.history.map(x => `<div class="item">Room / ክፍል #${escapeHtml(x.room_id)} · Cartela / ካርቴላ #${escapeHtml(x.cartela_no)}<br><span class="muted">${escapeHtml(x.created_at)}</span></div>`).join("")
+        : "No history yet. / ምንም ታሪክ የለም።";
     }
   } catch(e) {}
 }
 
 window.inviteFriends = function() {
   try {
-    const share = "https://t.me/share/url?url=" + encodeURIComponent("https://t.me/guderbingo_bot") + "&text=" + encodeURIComponent("Join Guder Bingo & play live!");
+    const share = "https://t.me/share/url?url=" + encodeURIComponent("https://t.me/guderbingo_bot") + "&text=" + encodeURIComponent("Join Guder Bingo & play live! / ጉደር ቢንጎን ይቀላቀሉ!");
     if (tg && tg.openTelegramLink) tg.openTelegramLink(share);
     else window.open(share, "_blank");
   } catch(e) {}
