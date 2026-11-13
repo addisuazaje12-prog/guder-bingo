@@ -316,7 +316,7 @@ footer {
     Room #1 · Status / ሁኔታ: <b id="roomStatusText">OPEN / ክፍት</b> · Pot / ድምር: <b id="roomPotText">0 ETB</b>
   </div>
 
-  <!-- COUNTDOWN TIMERS BANNER (30s Selection -> 5s Prep -> LIVE 1-75) -->
+  <!-- COUNTDOWN TIMERS BANNER -->
   <div id="timerBanner" style="background: #2b3c54; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; font-weight: bold; color: #ffd77b;">
     ⏳ <span id="timerLabel">Selection Phase / የምርጫ ጊዜ</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
@@ -330,7 +330,7 @@ footer {
     <div class="recent" id="recentCalls"></div>
   </div>
 
-  <!-- ACTIVE PLAYING CARD (B:1-15, I:16-30, N:31-45, G:46-60, O:61-75) LOCATED BELOW NUMBER CALLING -->
+  <!-- ACTIVE PLAYING CARD LOCATED BELOW NUMBER CALLING -->
   <div id="topLivePlayingArea" class="hidden" style="margin-top: 15px; border: 2px solid var(--green); padding: 10px; border-radius: 10px; background: #142235;">
     <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d; text-align: center; margin-bottom: 6px;"></p>
     <div class="board-wrap" style="margin: 4px auto;">
@@ -417,7 +417,7 @@ footer {
 
 </div>
 
-<!-- Winner Modal stays for around 5 seconds with Amharic voice -->
+<!-- Winner Modal -->
 <div id="bingoModal" class="hidden">
   <div class="modal-card">
     <h2>🎉 BINGO VERIFIED! / ቢንጎ ተረጋግጧል!</h2>
@@ -448,7 +448,6 @@ let audioUnlocked = false;
 
 const $ = id => document.getElementById(id);
 
-// Unlock browser audio synthesis on first user interaction
 document.addEventListener('click', () => {
   if (!audioUnlocked && 'speechSynthesis' in window) {
     audioUnlocked = true;
