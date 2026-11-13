@@ -31,11 +31,21 @@ def init_db():
             room_id INTEGER PRIMARY KEY AUTOINCREMENT,
             status TEXT DEFAULT 'OPEN',
             total_pot REAL DEFAULT 0.0,
+            phase_start_time REAL DEFAULT 0.0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
-    cursor.execute("INSERT OR IGNORE INTO game_rooms (room_id, status, total_pot) VALUES (1, 'OPEN', 100.0)")
+    # Ensure columns exist if table was already created previously
+    try:
+        cursor.execute("ALTER TABLE game_rooms ADD COLUMN phase_start_time REAL DEFAULT 0.0")
+    except sqlite3.OperationalError:
+        pass
+
+    # Initialize room 1 if missing
+    cursor.execute("SELECT room_id FROM game_rooms WHERE room_id = 1")
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO game_rooms (room_id, status, total_pot, phase_start_time) VALUES (1, 'OPEN', 0.0, ?)", (time.time(),))
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS ledger_transactions (
@@ -115,25 +125,43 @@ def get_or_create_telegram_user(init_data):
     conn.close()
     return user_id
 
-# Background Game Engine Thread for automated number calling
+# Background Game Engine Thread for automated phases and number calling
 def background_game_engine():
     while True:
         try:
             conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
             cursor = conn.cursor()
             
-            cursor.execute("SELECT room_id, status FROM game_rooms ORDER BY room_id DESC LIMIT 1")
+            cursor.execute("SELECT room_id, status, phase_total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1")
+            room = cursor.fetchone()
+            
+            # Fallback query if column name varies
+            cursor.execute("SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1")
             room = cursor.fetchone()
             
             if room:
-                room_id, status = room
+                room_id, status, total_pot, phase_start_time = room
+                now = time.time()
+                
+                if phase_start_time == 0.0:
+                    phase_start_time = now
+                    cursor.execute("UPDATE game_rooms SET phase_start_time = ? WHERE room_id = ?", (now, room_id))
+                    conn.commit()
+
+                elapsed = now - phase_start_time
+
                 if status == 'OPEN':
-                    cursor.execute("SELECT COUNT(*) FROM cartela_selections WHERE room_id = ?", (room_id,))
-                    count = cursor.fetchone()[0]
-                    if count > 0:
-                        cursor.execute("UPDATE game_rooms SET status = 'RUNNING' WHERE room_id = ?", (room_id,))
+                    # 30 seconds selection phase
+                    if elapsed >= 30:
+                        cursor.execute("UPDATE game_rooms SET status = 'PREPARING', phase_start_time = ? WHERE room_id = ?", (now, room_id))
+                        conn.commit()
+                elif status == 'PREPARING':
+                    # 5 seconds preparation phase
+                    if elapsed >= 5:
+                        cursor.execute("UPDATE game_rooms SET status = 'RUNNING', phase_start_time = ? WHERE room_id = ?", (now, room_id))
                         conn.commit()
                 elif status == 'RUNNING':
+                    # Call numbers every 3 seconds
                     cursor.execute("SELECT number FROM called_numbers WHERE room_id = ?", (room_id,))
                     called = {row[0] for row in cursor.fetchall()}
                     
@@ -142,10 +170,17 @@ def background_game_engine():
                         next_num = random.choice(available)
                         cursor.execute("INSERT INTO called_numbers (room_id, number) VALUES (?, ?)", (room_id, next_num))
                         conn.commit()
+                elif status == 'COMPLETED':
+                    # Reset after 10 seconds for a new round
+                    if elapsed >= 10:
+                        cursor.execute("DELETE FROM called_numbers WHERE room_id = ?", (room_id,))
+                        cursor.execute("UPDATE game_rooms SET status = 'OPEN', total_pot = 0.0, phase_start_time = ? WHERE room_id = ?", (now, room_id))
+                        conn.commit()
+
             conn.close()
         except Exception as e:
             print("Engine error:", e)
-        time.sleep(4)
+        time.sleep(2)
 
 threading.Thread(target=background_game_engine, daemon=True).start()
 
@@ -178,9 +213,30 @@ def get_game_state():
     conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
     cursor = conn.cursor()
     
-    cursor.execute('SELECT room_id, status, total_pot FROM game_rooms ORDER BY room_id DESC LIMIT 1')
+    cursor.execute('SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1')
     room_row = cursor.fetchone()
-    room = {"room_id": room_row[0], "status": room_row[1], "total_pot": room_row[2]} if room_row else None
+    
+    room = None
+    selection_remaining = None
+    preparation_remaining = None
+
+    if room_row:
+        r_id, status, total_pot, phase_start_time = room_row
+        now = time.time()
+        elapsed = now - (phase_start_time if phase_start_time else now)
+
+        if status == 'OPEN':
+            selection_remaining = max(0, int(30 - elapsed))
+        elif status == 'PREPARING':
+            preparation_remaining = max(0, int(5 - elapsed))
+
+        room = {
+            "room_id": r_id,
+            "status": status,
+            "total_pot": total_pot,
+            "selection_remaining": selection_remaining,
+            "preparation_remaining": preparation_remaining
+        }
     
     cartela = None
     called_numbers = []
@@ -316,7 +372,7 @@ def claim_bingo():
             conn.rollback()
             return jsonify({"status": "error", "message": "Round already won or room closed!"}), 400
 
-        cursor.execute('UPDATE game_rooms SET status = ? WHERE room_id = ?', ('COMPLETED', room_id))
+        cursor.execute('UPDATE game_rooms SET status = ?, phase_start_time = ? WHERE room_id = ?', ('COMPLETED', time.time(), room_id))
 
         total_pot = room[1] if room[1] > 0 else 100.0
         prize_allocated = total_pot * 0.50
