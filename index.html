@@ -299,7 +299,7 @@ footer {
 </section>
 
 <nav class="menu">
-  <button onclick="showSection('gameSection')">🎮 Play / ጫወት</button>
+  <button onclick="showSection('gameSection')">🎮 <<መጫወት>> / Play</button>
   <button onclick="showSection('depositSection')">➕ Deposit / አስገባ</button>
   <button onclick="showSection('walletSection')">👛 Wallet / ቦርሳ</button>
   <button onclick="showSection('historySection')">📜 History / ታሪክ</button>
@@ -534,7 +534,7 @@ window.submitDeposit = async function(e) {
       body: JSON.stringify({
         payment_method: $("paymentMethod").value,
         amount: Number($("depositAmount").value),
-        payer_reference: receiptTextVal.substring(0, 50), // Auto-derive reference from receipt text
+        payer_reference: receiptTextVal.substring(0, 50),
         receipt_text: receiptTextVal
       })
     });
@@ -549,7 +549,6 @@ window.submitDeposit = async function(e) {
   } finally { if (btn) btn.disabled = false; }
 };
 
-// Render full 1-800 touch selection grid for visible spectator/playing room
 function renderAllCartelas() {
   const grid = $("cartelaTouchGrid");
   if (!grid || grid.hasChildNodes()) return;
@@ -589,7 +588,6 @@ async function refreshGame() {
     if (roomStatusText) roomStatusText.textContent = currentRoom.status;
     if (roomPotText) roomPotText.textContent = Number(currentRoom.total_pot || 0).toFixed(2) + " ETB";
 
-    // Live 30s selection countdown & 5s preparation countdown sync from server state
     if (currentRoom.status === "OPEN" && currentRoom.selection_remaining !== null) {
       if (timerLabel) timerLabel.textContent = "Selection Phase (30s) / የምርጫ ጊዜ";
       if (countdownDisplay) countdownDisplay.textContent = currentRoom.selection_remaining;
@@ -622,7 +620,6 @@ async function refreshGame() {
   }
 }
 
-// Generate B-I-N-G-O card with strict ranges: B:1-15, I:16-30, N:31-45, G:46-60, O:61-75
 function makeCard() {
   const cols = [
     randomUnique(1, 15, 5),
@@ -726,7 +723,6 @@ function letterFor(n) {
   return "O";
 }
 
-// Amharic number calling sound synthesis
 function speakAmharicNumber(n) {
   try {
     if ('speechSynthesis' in window) {
@@ -739,7 +735,6 @@ function speakAmharicNumber(n) {
   } catch(e) {}
 }
 
-// Winner claiming Amharic sound staying for around 5 seconds
 function speakWinnerAnnouncement() {
   try {
     if ('speechSynthesis' in window) {
