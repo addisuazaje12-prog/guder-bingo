@@ -321,8 +321,17 @@ footer {
     ⏳ <span id="timerLabel">Selection Phase / የምርጫ ጊዜ</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
 
-  <!-- TOP ACTIVE BOLD PLAYING CARD & LIVE CALLING FEED -->
-  <div id="topLivePlayingArea" class="hidden" style="margin-bottom: 12px; border: 2px solid var(--green); padding: 10px; border-radius: 10px; background: #142235;">
+  <!-- NUMBER CALLING FEED (1-75) AT THE TOP -->
+  <div id="callingSection" style="margin-top: 10px;">
+    <p class="muted"><b>📢 Calling Number Feed (1–75) / የቁጥር ጥሪ ማሳያ</b></p>
+    <div class="call-number" id="latestCall">
+      Waiting for round to start... / ዙሩ እስኪጀምር በመጠበቅ ላይ...
+    </div>
+    <div class="recent" id="recentCalls"></div>
+  </div>
+
+  <!-- ACTIVE PLAYING CARD (B:1-15, I:16-30, N:31-45, G:46-60, O:61-75) LOCATED BELOW NUMBER CALLING -->
+  <div id="topLivePlayingArea" class="hidden" style="margin-top: 15px; border: 2px solid var(--green); padding: 10px; border-radius: 10px; background: #142235;">
     <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d; text-align: center; margin-bottom: 6px;"></p>
     <div class="board-wrap" style="margin: 4px auto;">
       <div class="bingo-head">
@@ -337,15 +346,6 @@ footer {
     <button id="bingoBtn" onclick="claimBingo()" style="width:100%; margin-top:10px; background: var(--green); color: #062d20; font-size:16px;">
       🎉 CLAIM BINGO! / ቢንጎ አሸነፍኩ!
     </button>
-  </div>
-
-  <!-- NUMBER CALLING FEED (1-75) -->
-  <div id="callingSection" style="margin-top: 10px;">
-    <p class="muted"><b>📢 Calling Number Feed (1–75) / የቁጥር ጥሪ ማሳያ</b></p>
-    <div class="call-number" id="latestCall">
-      Waiting for round to start... / ዙሩ እስኪጀምር በመጠበቅ ላይ...
-    </div>
-    <div class="recent" id="recentCalls"></div>
   </div>
 
   <!-- CARTELA SELECTION GRID (1-800) -->
@@ -578,7 +578,6 @@ async function refreshGame() {
 
     const roomStatusText = $("roomStatusText");
     const roomPotText = $("roomPotText");
-    const selectionArea = $("selectionArea");
     const topLivePlayingArea = $("topLivePlayingArea");
     const timerLabel = $("timerLabel");
     const countdownDisplay = $("countdownDisplay");
