@@ -179,7 +179,6 @@ textarea {
   font-size: 12px;
 }
 
-/* Scrollable grid showing all 1-800 cartelas */
 .cartela-grid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
@@ -315,26 +314,26 @@ footer {
     Room #1 · Status: <b id="roomStatusText">OPEN</b> · Pot: <b id="roomPotText">0 ETB</b>
   </div>
 
-  <!-- LIVE COUNTDOWN BANNER -->
+  <!-- COUNTDOWN TIMERS BANNER -->
   <div id="timerBanner" style="background: #2b3c54; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; font-weight: bold; color: #ffd77b;">
     ⏳ <span id="timerLabel">Selection Phase</span>: <span id="countdownDisplay">30</span>s remaining
   </div>
 
-  <!-- TOP: NUMBER CALLING FEED -->
+  <!-- TOP: NUMBER CALLING FEED (1-75) -->
   <div id="callingSection" style="margin-top: 10px;">
-    <p class="muted"><b>📢 Calling Number Feed (Top)</b></p>
+    <p class="muted"><b>📢 Calling Number Feed (1–75)</b></p>
     <div class="call-number" id="latestCall">
       Waiting for round to start...
     </div>
     <div class="recent" id="recentCalls"></div>
   </div>
 
-  <!-- BOTTOM: PLAYING CARTELA POSITION -->
+  <!-- BOTTOM: SPECTATOR & PLAYING SECTIONS -->
   <div id="playingSection" style="margin-top: 15px; border-top: 1px solid #46566d; padding-top: 12px;">
     
-    <!-- Cartela Selection Area (Full 1-800 scrollable grid) -->
+    <!-- Cartela Selection Area (1-800 visible to everyone) -->
     <div id="selectionArea">
-      <p class="muted">Select any cartela number (1–800) from the grid below or enter manually:</p>
+      <p class="muted">Select any cartela number (1–800) from the grid below to play:</p>
       
       <div class="cartela-grid" id="cartelaTouchGrid"></div>
 
@@ -345,13 +344,17 @@ footer {
       </button>
     </div>
 
-    <!-- Active Player Card Grid (Bottom Position - Appears smoothly upon selection) -->
+    <!-- Active Player Card Grid (Configured B:1-15, I:16-30, N:31-45, G:46-60, O:61-75) -->
     <div id="cardArea" class="hidden" style="margin-top: 10px;">
       <p id="myCardLabel" class="muted" style="font-weight: bold; color: #ffd36d;"></p>
 
       <div class="board-wrap">
         <div class="bingo-head">
-          <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+          <div>B<br><small style="font-size:9px">1-15</small></div>
+          <div>I<br><small style="font-size:9px">16-30</small></div>
+          <div>N<br><small style="font-size:9px">31-45</small></div>
+          <div>G<br><small style="font-size:9px">46-60</small></div>
+          <div>O<br><small style="font-size:9px">61-75</small></div>
         </div>
         <div class="bingo-grid" id="bingoBoard"></div>
       </div>
@@ -366,7 +369,7 @@ footer {
 <section class="panel hidden" id="depositSection">
   <h2>➕ Deposit</h2>
   <div class="note">
-    Send money using the payment details below, then submit your receipt reference. Your wallet is credited instantly.
+    Send money using the payment details below, then submit your receipt reference. Deposit at least 10 ETB to play.
   </div>
   <div id="paymentDetails" class="muted" style="margin-top:10px">
     Loading payment details...
@@ -401,10 +404,11 @@ footer {
 <section class="panel hidden" id="helpSection">
   <h2>❔ Help & Rules</h2>
   <ol class="muted">
-    <li>Deposit at least 10 ETB via Telebirr or CBE.</li>
-    <li>Select any Cartela (1–800) during the 30-second selection phase.</li>
-    <li>Wait through the 5-second preparation time.</li>
-    <li>Watch called numbers at the top feed with Amharic audio while your playing card stays positioned at the bottom!</li>
+    <li>Spectators can watch all game moments, number calling feeds, and player cards live.</li>
+    <li>To participate and select a cartela, deposit at least 10 ETB.</li>
+    <li>Cartela selection lasts for a 30-second countdown.</li>
+    <li>Followed by a 5-second preparation phase before 1–75 number calling begins.</li>
+    <li>Listen to Amharic voice number announcements and winner celebrations!</li>
   </ol>
   <button onclick="openSupport()" style="width:100%; margin-top:10px;">Contact Support</button>
 </section>
@@ -415,6 +419,7 @@ footer {
 
 </div>
 
+<!-- Winner Modal stays for around 5 seconds with Amharic voice -->
 <div id="bingoModal" class="hidden">
   <div class="modal-card">
     <h2>🎉 BINGO VERIFIED!</h2>
@@ -445,6 +450,7 @@ let audioUnlocked = false;
 
 const $ = id => document.getElementById(id);
 
+// Unlock browser audio synthesis on first user interaction
 document.addEventListener('click', () => {
   if (!audioUnlocked && 'speechSynthesis' in window) {
     audioUnlocked = true;
@@ -511,7 +517,7 @@ async function loadConfig() {
   try {
     const cfg = await api("/api/config");
     if ($("paymentDetails")) {
-      $("paymentDetails").innerHTML = `<b>Telebirr:</b> ${escapeHtml(cfg.telebirr_phone || "0913706670")}<br><span class="muted">Min deposit: 10.00 ETB</span>`;
+      $("paymentDetails").innerHTML = `<b>Telebirr:</b> ${escapeHtml(cfg.telebirr_phone || "0913706670")}<br><span class="muted">Min deposit: 10.00 ETB to play. Spectators can watch freely!</span>`;
     }
   } catch(e) {}
 }
@@ -542,7 +548,7 @@ window.submitDeposit = async function(e) {
   } finally { if (btn) btn.disabled = false; }
 };
 
-// Render all 1 to 800 cartelas in the selection grid
+// Render full 1-800 touch selection grid for visible spectator/playing room
 function renderAllCartelas() {
   const grid = $("cartelaTouchGrid");
   if (!grid || grid.hasChildNodes()) return;
@@ -582,15 +588,16 @@ async function refreshGame() {
     if (roomStatusText) roomStatusText.textContent = currentRoom.status;
     if (roomPotText) roomPotText.textContent = Number(currentRoom.total_pot || 0).toFixed(2) + " ETB";
 
+    // Live 30s selection countdown & 5s preparation countdown sync from server state
     if (currentRoom.status === "OPEN" && currentRoom.selection_remaining !== null) {
-      if (timerLabel) timerLabel.textContent = "Selection Phase";
+      if (timerLabel) timerLabel.textContent = "Selection Phase (30s)";
       if (countdownDisplay) countdownDisplay.textContent = currentRoom.selection_remaining;
     } else if (currentRoom.status === "PREPARING" && currentRoom.preparation_remaining !== null) {
-      if (timerLabel) timerLabel.textContent = "Preparation Time";
+      if (timerLabel) timerLabel.textContent = "Preparation Time (5s)";
       if (countdownDisplay) countdownDisplay.textContent = currentRoom.preparation_remaining;
     } else if (currentRoom.status === "RUNNING") {
       if (timerLabel) timerLabel.textContent = "Game Status";
-      if (countdownDisplay) countdownDisplay.textContent = "LIVE";
+      if (countdownDisplay) countdownDisplay.textContent = "LIVE (1-75)";
     }
 
     renderLiveFeed(data.called_numbers || []);
@@ -602,7 +609,7 @@ async function refreshGame() {
       
       if (selectionArea) selectionArea.classList.add("hidden");
       if (cardArea) cardArea.classList.remove("hidden");
-      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Playing Cartela Position: #" + currentCartela.cartela_no;
+      if ($("myCardLabel")) $("myCardLabel").textContent = "Your Active Playing Cartela: #" + currentCartela.cartela_no;
       renderPlayerCard(data.called_numbers || []);
     } else {
       if (cardArea) cardArea.classList.add("hidden");
@@ -614,6 +621,7 @@ async function refreshGame() {
   }
 }
 
+// Generate B-I-N-G-O card with strict ranges: B:1-15, I:16-30, N:31-45, G:46-60, O:61-75
 function makeCard() {
   const cols = [
     randomUnique(1, 15, 5),
@@ -640,7 +648,7 @@ window.selectCartela = async function() {
     const userBalance = parseFloat(balanceText) || 0;
 
     if (userBalance < 10) {
-      toast("Insufficient balance! Please deposit at least 10 ETB to play.");
+      toast("Restricted: Please deposit at least 10 ETB to select a cartela and play! You can still view all live moments.");
       return;
     }
 
@@ -649,7 +657,7 @@ window.selectCartela = async function() {
     
     const cartelaNo = Number($("cartelaNo") ? $("cartelaNo").value : 1);
     if (!cartelaNo || cartelaNo < 1 || cartelaNo > 800) {
-      throw new Error("Enter cartela 1-800.");
+      throw new Error("Enter cartela number between 1 and 800.");
     }
     
     const matrix = makeCard();
@@ -717,6 +725,7 @@ function letterFor(n) {
   return "O";
 }
 
+// Amharic number calling sound synthesis
 function speakAmharicNumber(n) {
   try {
     if ('speechSynthesis' in window) {
@@ -729,6 +738,7 @@ function speakAmharicNumber(n) {
   } catch(e) {}
 }
 
+// Winner claiming Amharic sound staying for around 5 seconds
 function speakWinnerAnnouncement() {
   try {
     if ('speechSynthesis' in window) {
