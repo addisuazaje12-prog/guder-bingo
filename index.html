@@ -698,7 +698,7 @@
             stopRegistrationMusic();
             playAudio("snd-classical-victory");
 
-            fetch('http://192.168.1.151:5000/api/claim-bingo', {
+            fetch('/api/claim-bingo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -738,6 +738,10 @@
     <audio id="snd-prep" src="bingo_amharic_audio/preparing.mp3"></audio>
     <audio id="snd-start" src="bingo_amharic_audio/game_started.mp3"></audio>
     <audio id="snd-classical-victory" src="bingo_amharic_audio/classical_victory.mp3"></audio>
+
+    <!-- Eruda Mobile Debug Console -->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
 
 </body>
 </html>
