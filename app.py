@@ -36,13 +36,11 @@ def init_db():
         )
     ''')
     
-    # Ensure columns exist if table was already created previously
     try:
         cursor.execute("ALTER TABLE game_rooms ADD COLUMN phase_start_time REAL DEFAULT 0.0")
     except sqlite3.OperationalError:
         pass
 
-    # Initialize room 1 if missing
     cursor.execute("SELECT room_id FROM game_rooms WHERE room_id = 1")
     if not cursor.fetchone():
         cursor.execute("INSERT INTO game_rooms (room_id, status, total_pot, phase_start_time) VALUES (1, 'OPEN', 0.0, ?)", (time.time(),))
@@ -89,6 +87,10 @@ init_db()
 def serve_frontend():
     return send_from_directory('.', 'index.html')
 
+@app.route('/audio/<path:filename>')
+def serve_audio(filename):
+    return send_from_directory('bingo_amharic_audio', filename)
+
 def get_user_balance(user_id):
     conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
     cursor = conn.cursor()
@@ -132,10 +134,6 @@ def background_game_engine():
             conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
             cursor = conn.cursor()
             
-            cursor.execute("SELECT room_id, status, phase_total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1")
-            room = cursor.fetchone()
-            
-            # Fallback query if column name varies
             cursor.execute("SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1")
             room = cursor.fetchone()
             
@@ -203,6 +201,22 @@ def get_wallet():
 @app.route('/api/config', methods=['GET'])
 def get_config():
     return jsonify({"status": "success", "telebirr_phone": "0913706670", "cbe_account": CBE_ACCOUNT})
+
+@app.route('/api/rooms', methods=['GET'])
+def get_rooms_list():
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC')
+    rooms = []
+    for row in cursor.fetchall():
+        rooms.append({
+            "room_id": row[0],
+            "status": row[1],
+            "total_pot": row[2],
+            "phase_start_time": row[3]
+        })
+    conn.close()
+    return jsonify({"status": "success", "rooms": rooms})
 
 @app.route('/api/game/state', methods=['GET'])
 def get_game_state():
