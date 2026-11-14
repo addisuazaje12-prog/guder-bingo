@@ -36,13 +36,11 @@ def init_db():
         )
     ''')
     
-    # Ensure columns exist if table was already created previously
     try:
         cursor.execute("ALTER TABLE game_rooms ADD COLUMN phase_start_time REAL DEFAULT 0.0")
     except sqlite3.OperationalError:
         pass
 
-    # Initialize room 1 if missing
     cursor.execute("SELECT room_id FROM game_rooms WHERE room_id = 1")
     if not cursor.fetchone():
         cursor.execute("INSERT INTO game_rooms (room_id, status, total_pot, phase_start_time) VALUES (1, 'OPEN', 0.0, ?)", (time.time(),))
@@ -88,6 +86,10 @@ init_db()
 @app.route('/')
 def serve_frontend():
     return send_from_directory('.', 'index.html')
+
+@app.route('/audio/<path:filename>')
+def serve_audio(filename):
+    return send_from_directory('bingo_amharic_audio', filename)
 
 def get_user_balance(user_id):
     conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
