@@ -437,7 +437,7 @@ if (tg) {
   try { tg.ready(); tg.expand(); } catch(e) {}
 }
 
-const API = ""; 
+const API = ""; // Uses relative paths matching Flask server backend
 const initData = tg && tg.initData ? tg.initData : "";
 
 let currentRoom = { room_id: 1, status: 'OPEN', total_pot: 0.0 };
@@ -554,7 +554,7 @@ function renderAllCartelas() {
     html += `<button type="button" class="cartela-btn" onclick="selectTouchCartela(${i})">#${i}</button>`;
   }
   grid.innerHTML = html;
-}
+};
 
 window.selectTouchCartela = function(num) {
   if ($("cartelaNo")) $("cartelaNo").value = num;
