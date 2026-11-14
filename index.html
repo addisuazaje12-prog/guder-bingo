@@ -554,7 +554,7 @@ function renderAllCartelas() {
     html += `<button type="button" class="cartela-btn" onclick="selectTouchCartela(${i})">#${i}</button>`;
   }
   grid.innerHTML = html;
-}
+};
 
 window.selectTouchCartela = function(num) {
   if ($("cartelaNo")) $("cartelaNo").value = num;
