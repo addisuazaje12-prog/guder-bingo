@@ -132,10 +132,6 @@ def background_game_engine():
             conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
             cursor = conn.cursor()
             
-            cursor.execute("SELECT room_id, status, phase_total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1")
-            room = cursor.fetchone()
-            
-            # Fallback query if column name varies
             cursor.execute("SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1")
             room = cursor.fetchone()
             
@@ -203,6 +199,22 @@ def get_wallet():
 @app.route('/api/config', methods=['GET'])
 def get_config():
     return jsonify({"status": "success", "telebirr_phone": "0913706670", "cbe_account": CBE_ACCOUNT})
+
+@app.route('/api/rooms', methods=['GET'])
+def get_rooms_list():
+    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
+    cursor = conn.cursor()
+    cursor.execute('SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC')
+    rooms = []
+    for row in cursor.fetchall():
+        rooms.append({
+            "room_id": row[0],
+            "status": row[1],
+            "total_pot": row[2],
+            "phase_start_time": row[3]
+        })
+    conn.close()
+    return jsonify({"status": "success", "rooms": rooms})
 
 @app.route('/api/game/state', methods=['GET'])
 def get_game_state():
