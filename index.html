@@ -301,7 +301,7 @@ footer {
 </section>
 
 <nav class="menu">
-  <button onclick="showSection('gameSection')">🎮 <<መጫወት>> / Play</button>
+  <button onclick="showSection('gameSection')">🎮 Play / መጫወት</button>
   <button onclick="showSection('depositSection')">➕ Deposit / አስገባ</button>
   <button onclick="showSection('walletSection')">👛 Wallet / ቦርሳ</button>
   <button onclick="showSection('historySection')">📜 History / ታሪክ</button>
@@ -437,7 +437,7 @@ if (tg) {
   try { tg.ready(); tg.expand(); } catch(e) {}
 }
 
-const API = "https://guder-bingo-server.onrender.com";
+const API = ""; // Uses relative paths matching Flask server backend
 const initData = tg && tg.initData ? tg.initData : "";
 
 let currentRoom = { room_id: 1, status: 'OPEN', total_pot: 0.0 };
@@ -682,9 +682,20 @@ function renderLiveFeed(calls) {
 
     if (latest && latest !== lastSpokenNumber) {
       lastSpokenNumber = latest;
-      speakAmharicNumber(latest);
+      playAmharicAudio(latest);
     }
   } catch(e) {}
+}
+
+function playAmharicAudio(n) {
+  try {
+    const audio = new Audio(`/audio/${n}.mp3`);
+    audio.play().catch(() => {
+      speakAmharicNumber(n);
+    });
+  } catch(e) {
+    speakAmharicNumber(n);
+  }
 }
 
 function renderPlayerCard(calls) {
@@ -805,7 +816,7 @@ window.openSupport = function() {
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, ch => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    "&": "&", "<": "<", ">": ">", '"': """, "'": "'"
   }[ch]));
 }
 
