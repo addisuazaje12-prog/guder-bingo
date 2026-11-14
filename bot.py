@@ -236,7 +236,6 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel_conversation)]
     )
 
-    # Register ConversationHandler first so it takes priority over other handlers
     app.add_handler(deposit_handler)
 
     app.add_handler(CommandHandler("start", start))
