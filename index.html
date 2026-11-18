@@ -342,6 +342,19 @@
         .btn-leave { background-color: #d90429; color: #fff; }
         .btn-refresh { background-color: #0077b6; color: #fff; }
         .btn-bingo { background-color: #ffb703; color: #000; }
+        
+        .wallet-box {
+            background: #2b1f3d;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            width: 90%;
+            max-width: 320px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .wallet-box h3 { color: #ffb703; margin-top: 0; }
+        .wallet-balance { font-size: 1.5rem; font-weight: 900; color: #38b000; margin: 15px 0; }
+        .btn-deposit { background-color: #38b000; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -528,7 +541,7 @@
                 <div class="timer-banner" style="background:#ffb703; color:#000;" id="prepTimerBox">🎲 Preparing Game: 5s</div>
                 <div class="waiting-msg" style="font-weight:900; font-size:0.85rem; padding:15px;">
                     Cartela #${cartelaNo} Confirmed!<br><br>
-                    እስከዎይህ ጨዋታ እስከሚጨርስ ይጠብቁ
+                    እባክዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
                 </div>
             `;
             playAudio("snd-prep");
@@ -635,7 +648,7 @@
                                 <div class="recent-pill">-</div>
                             </div>
                             <div class="waiting-msg">
-                                እስከዎይህ ጨዋታ እስከሚጨርስ ይጠብቁ
+                                እባክዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
                             </div>
                         </div>
 
@@ -723,10 +736,26 @@
             if(callInterval) clearInterval(callInterval);
             if(globalCountdown) clearInterval(globalCountdown);
             stopRegistrationMusic();
-            if(tab === 'wallet') alert("Wallet: Use /deposit or /withdraw in Telegram chat.");
-            else if(tab === 'profile') alert("Guder Bingo Profile Player Account");
-            else if(tab === 'history') alert("Session history view.");
-            else renderSelectionBoard();
+            
+            const container = document.getElementById("mainContainer");
+            document.getElementById("topStats").style.display = "none";
+
+            if(tab === 'wallet') {
+                container.innerHTML = `
+                    <div class="wallet-box">
+                        <h3>💳 Guder Wallet</h3>
+                        <p>Available Balance</p>
+                        <div class="wallet-balance">${userBalance.toFixed(2)} ETB</div>
+                        <button class="btn-deposit" onclick="alert('Redirecting to Telebirr / Chapa payment gateway...')">Deposit Funds</button>
+                    </div>
+                `;
+            } else if(tab === 'profile') {
+                container.innerHTML = `<div class="wallet-box"><h3>👤 Player Profile</h3><p>Phone: 251913706670</p></div>`;
+            } else if(tab === 'history') {
+                container.innerHTML = `<div class="wallet-box"><h3>📜 Game History</h3><p>No recent matches recorded.</p></div>`;
+            } else {
+                renderSelectionBoard();
+            }
         }
 
         // Initialize Application
