@@ -10,7 +10,7 @@ from telegram.ext import (
 )
 
 # --- CONFIGURATION ---
-BOT_TOKEN = "8813599415:AAFS4USBQI4J5j0fw-wa7JZSTIY5osBxcLM"
+BOT_TOKEN = "8813599415:AAHA5_sh2IVWDyyXGEmUzu0KZc-VSanUv8E"
 MANAGER_CHAT_ID = 867366564
 WEB_APP_URL = "https://addisuazaje12-prog.github.io/guder-bingo/"
 DB_PATH = os.environ.get("GUDER_DB_PATH", "guder_bingo.db")
