@@ -68,7 +68,6 @@
             margin-bottom: 6px;
             text-align: center;
             width: 100%;
-            box-sizing: border-box;
         }
         .cartela-grid {
             display: grid;
@@ -80,7 +79,6 @@
             padding: 5px;
             background: rgba(0,0,0,0.1);
             border-radius: 8px;
-            box-sizing: border-box;
         }
         .cartela-opt {
             aspect-ratio: 1;
@@ -317,7 +315,7 @@
             background: none;
             border: none;
             color: #fff;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 900;
             display: flex;
             flex-direction: column;
@@ -351,40 +349,71 @@
             border-radius: 12px;
             text-align: center;
             width: 92%;
-            max-width: 340px;
+            max-width: 360px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            box-sizing: border-box;
         }
         .wallet-box h3 { color: #ffb703; margin-top: 0; }
-        .wallet-box p { font-size: 0.85rem; line-height: 1.45; margin: 8px 0; color: #f0e6f6; }
         .wallet-balance { font-size: 1.5rem; font-weight: 900; color: #38b000; margin: 15px 0; }
-        .btn-deposit {
-            background-color: #38b000;
+        .btn-deposit { background-color: #38b000; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+
+        .director-panel {
+            background: #241836;
+            border-radius: 12px;
+            padding: 14px;
+            width: 95%;
+            max-width: 370px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .director-back-btn {
+            background: #7b2cbf;
             color: #fff;
-            padding: 10px 16px;
             border: none;
             border-radius: 6px;
-            font-weight: bold;
+            padding: 7px 12px;
+            font-weight: 800;
             cursor: pointer;
             width: 100%;
-            margin-top: 8px;
-            font-size: 0.85rem;
         }
-        .btn-back {
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            background: #7e22ce;
+        .director-title {
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: #ffb703;
+            margin: 4px 0 0 0;
+        }
+        .director-subtitle {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #dcd6f7;
+            margin-bottom: 4px;
+        }
+        .director-row-btn {
+            background: #1d63dc;
             color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .server-status-err {
-            color: #ff6b6b;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
             font-size: 0.8rem;
-            font-weight: bold;
-            margin-top: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+        }
+        .director-detail-box {
+            background: #160e24;
+            border: 1px solid #4a356b;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            color: #f8f9fa;
+            white-space: pre-line;
+            text-align: left;
+            max-height: 160px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -415,79 +444,52 @@
     </div>
 
     <script>
-        const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
-        if (tg) {
-            tg.ready();
-            tg.expand();
-        }
-
-        const BOT_USERNAME = "YourGuderBingoBot";
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
         let userBalance = 15.0;
         let regTimer = 30;
         let prepTimer = 5;
         let callInterval = null;
         let globalCountdown = null;
-        let prepInterval = null;
         let selectedCartelaNo = null;
         let calledNumbersList = [];
         let registrationMusic = null;
 
-        function clearAllTimers() {
-            if (callInterval) { clearInterval(callInterval); callInterval = null; }
-            if (globalCountdown) { clearInterval(globalCountdown); globalCountdown = null; }
-            if (prepInterval) { clearInterval(prepInterval); prepInterval = null; }
-        }
+        const verifiedWinnersList = [
+            { name: "አሸናፊ 1", phone: "0911000000", session: "Session #1 - 2026-11-20 09:00" }
+        ];
 
         function playAudio(elementIdOrFile) {
-            const sound = document.getElementById(elementIdOrFile);
-            if (sound) {
+            let sound = document.getElementById(elementIdOrFile);
+            if(sound) {
                 sound.currentTime = 0;
                 sound.play().catch(e => console.log("Audio waiting for user tap", e));
             } else {
-                const audio = new Audio(`bingo_amharic_audio/${elementIdOrFile}`);
+                let audio = new Audio(`bingo_amharic_audio/${elementIdOrFile}`);
                 audio.play().catch(err => console.log("Audio playback wait:", err));
             }
         }
 
         function stopRegistrationMusic() {
-            if (registrationMusic) {
+            if(registrationMusic) {
                 registrationMusic.pause();
                 registrationMusic.currentTime = 0;
                 registrationMusic = null;
             }
         }
 
-        function openTelegramBotDeposit() {
-            const botUrl = `https://t.me/${BOT_USERNAME}?start=deposit`;
-            if (tg && typeof tg.openTelegramLink === "function") {
-                tg.openTelegramLink(botUrl);
-            } else {
-                window.open(botUrl, "_blank");
-            }
-        }
-
         function inviteFriends() {
+            const botUsername = "YourGuderBingoBot";
             const inviteText = encodeURIComponent("🎮 Come play Guder Bingo with me and win! Join the live game here:");
-            const shareUrl = `https://t.me/share/url?url=https://t.me/${BOT_USERNAME}&text=${inviteText}`;
+            const shareUrl = `https://t.me/share/url?url=https://t.me/${botUsername}&text=${inviteText}`;
 
-            if (tg && typeof tg.openTelegramLink === "function") {
-                tg.openTelegramLink(shareUrl);
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
+                window.Telegram.WebApp.openTelegramLink(shareUrl);
             } else {
-                window.open(shareUrl, "_blank");
+                window.open(shareUrl, '_blank');
             }
-        }
-
-        function renderDefaultBottomNav() {
-            document.getElementById("bottomNavContainer").innerHTML = `
-                <div class="bottom-nav">
-                    <button class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
-                    <button class="nav-btn" onclick="switchTab('history')">📜 History</button>
-                    <button class="nav-btn" onclick="inviteFriends()">👥 Invite</button>
-                    <button class="nav-btn" onclick="switchTab('wallet')">💳 Wallet</button>
-                    <button class="nav-btn" onclick="switchTab('director')">⚙️ Director</button>
-                </div>
-            `;
         }
 
         function initApp() {
@@ -495,7 +497,8 @@
         }
 
         function showStartScreen() {
-            clearAllTimers();
+            if(callInterval) clearInterval(callInterval);
+            if(globalCountdown) clearInterval(globalCountdown);
             stopRegistrationMusic();
 
             document.getElementById("topStats").style.display = "none";
@@ -514,11 +517,20 @@
         }
 
         function renderSelectionBoard() {
-            clearAllTimers();
+            if(callInterval) clearInterval(callInterval);
+            if(globalCountdown) clearInterval(globalCountdown);
             selectedCartelaNo = null;
 
             document.getElementById("topStats").style.display = "none";
-            renderDefaultBottomNav();
+            document.getElementById("bottomNavContainer").innerHTML = `
+                <div class="bottom-nav">
+                    <button class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
+                    <button class="nav-btn" onclick="switchTab('history')">📜 History</button>
+                    <button class="nav-btn" onclick="inviteFriends()">👥 Invite</button>
+                    <button class="nav-btn" onclick="switchTab('wallet')">💳 Wallet</button>
+                    <button class="nav-btn" onclick="switchTab('director')">⚙️ Director</button>
+                </div>
+            `;
 
             const container = document.getElementById("mainContainer");
             if (userBalance < 10.0) {
@@ -528,20 +540,20 @@
             }
 
             stopRegistrationMusic();
-            registrationMusic = new Audio("bingo_amharic_audio/thirty_sec_bg.mp3");
+            registrationMusic = new Audio('bingo_amharic_audio/thirty_sec_bg.mp3');
             registrationMusic.play().catch(e => console.log("Registration audio block:", e));
 
             regTimer = 30;
             let html = `
                 <div class="timer-banner" id="regTimerBox">⏱️ Registration Window: 30s</div>
-                <div style="margin-bottom:6px; font-size:0.75rem; font-weight:900; text-align:center; background:#2b1f3d; padding:6px; border-radius:6px; color:#ffb703; width:100%; box-sizing:border-box;">
+                <div style="margin-bottom:6px; font-size:0.75rem; font-weight:900; text-align:center; background:#2b1f3d; padding:6px; border-radius:6px; color:#ffb703;">
                     Welcome to Guder Bingo. select the cartela<br>
                     እንኳን ወደ ጉደር ቢንጎ ጨዋታ በደህና መጡ!<br>
                     በመጀመሪያ ካርቴላ ይምረጡ!
                 </div>
                 <div class="cartela-grid">
             `;
-            for (let i = 1; i <= 800; i++) {
+            for(let i=1; i<=800; i++) {
                 html += `<div class="cartela-opt" id="cart-${i}" onclick="selectCartela(${i})">${i}</div>`;
             }
             html += `</div>`;
@@ -549,24 +561,17 @@
 
             globalCountdown = setInterval(() => {
                 regTimer--;
-                const tBox = document.getElementById("regTimerBox");
-                if (tBox) tBox.innerText = `⏱️ Registration Window: ${regTimer}s`;
+                let tBox = document.getElementById("regTimerBox");
+                if(tBox) tBox.innerText = `⏱️ Registration Window: ${regTimer}s`;
 
-                if (regTimer <= 0) {
+                if(regTimer <= 0) {
                     clearInterval(globalCountdown);
-                    globalCountdown = null;
                     stopRegistrationMusic();
-
-                    if (selectedCartelaNo) {
+                    if(selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
-                        container.innerHTML = `
-                            <div class="wallet-box">
-                                <h3>⏱️ Registration Closed</h3>
-                                <p>No cartela was selected in time.</p>
-                                <button class="btn-deposit" onclick="renderSelectionBoard()">Select Cartela Again</button>
-                            </div>
-                        `;
+                        alert("Registration closed. No cartela selected!");
+                        renderSelectionBoard();
                     }
                 }
             }, 1000);
@@ -578,27 +583,25 @@
                 return;
             }
 
-            if (selectedCartelaNo) {
-                const prev = document.getElementById(`cart-${selectedCartelaNo}`);
-                if (prev) prev.classList.remove("selected");
+            if(selectedCartelaNo) {
+                let prev = document.getElementById(`cart-${selectedCartelaNo}`);
+                if(prev) prev.classList.remove("selected");
             }
 
             selectedCartelaNo = cartelaNo;
-            const el = document.getElementById(`cart-${cartelaNo}`);
-            if (el) el.classList.add("selected");
+            let el = document.getElementById(`cart-${cartelaNo}`);
+            if(el) el.classList.add("selected");
 
             playAudio("snd-selected");
 
-            if (tg && typeof tg.sendData === "function") {
+            if (tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
             }
         }
 
         function showPreparationScreen(cartelaNo) {
-            clearAllTimers();
             stopRegistrationMusic();
             prepTimer = 5;
-
             const container = document.getElementById("mainContainer");
             container.innerHTML = `
                 <div class="timer-banner" style="background:#ffb703; color:#000;" id="prepTimerBox">🎲 Preparing Game: 5s</div>
@@ -609,24 +612,21 @@
             `;
             playAudio("snd-prep");
 
-            prepInterval = setInterval(() => {
+            let prepInterval = setInterval(() => {
                 prepTimer--;
-                const pBox = document.getElementById("prepTimerBox");
-                if (pBox) pBox.innerText = `🎲 Preparing Game: ${prepTimer}s`;
+                let pBox = document.getElementById("prepTimerBox");
+                if(pBox) pBox.innerText = `🎲 Preparing Game: ${prepTimer}s`;
 
-                if (prepTimer <= 0) {
+                if(prepTimer <= 0) {
                     clearInterval(prepInterval);
-                    prepInterval = null;
                     renderCallingBoard(cartelaNo);
                 }
             }, 1000);
         }
 
         function renderCallingBoard(cartelaNo) {
-            clearAllTimers();
             stopRegistrationMusic();
             calledNumbersList = [];
-
             document.getElementById("topStats").style.display = "grid";
             document.getElementById("bottomNavContainer").innerHTML = `
                 <div class="game-footer-actions">
@@ -649,7 +649,7 @@
 
             ranges.forEach(range => {
                 gridHtml += `<div class="bingo-col-group">`;
-                for (let i = range.start; i <= range.end; i++) {
+                for(let i = range.start; i <= range.end; i++) {
                     gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
                 }
                 gridHtml += `</div>`;
@@ -659,7 +659,7 @@
             function getRandomNumber(min, max, excludeList) {
                 seed = (seed * 9301 + 49297) % 233280;
                 let r = min + Math.floor((seed / 233280) * (max - min + 1));
-                while (excludeList.includes(r)) {
+                while(excludeList.includes(r)) {
                     seed = (seed * 9301 + 49297) % 233280;
                     r = min + Math.floor((seed / 233280) * (max - min + 1));
                 }
@@ -667,23 +667,17 @@
             }
 
             let colB = [], colI = [], colN = [], colG = [], colO = [];
-            while (colB.length < 5) colB.push(getRandomNumber(1, 15, colB));
-            while (colI.length < 5) colI.push(getRandomNumber(16, 30, colI));
-            while (colN.length < 4) colN.push(getRandomNumber(31, 45, colN));
-            while (colG.length < 5) colG.push(getRandomNumber(46, 60, colG));
-            while (colO.length < 5) colO.push(getRandomNumber(61, 75, colO));
+            while(colB.length < 5) { let n = getRandomNumber(1, 15, colB); colB.push(n); }
+            while(colI.length < 5) { let n = getRandomNumber(16, 30, colI); colI.push(n); }
+            while(colN.length < 4) { let n = getRandomNumber(31, 45, colN); colN.push(n); }
+            while(colG.length < 5) { let n = getRandomNumber(46, 60, colG); colG.push(n); }
+            while(colO.length < 5) { let n = getRandomNumber(61, 75, colO); colO.push(n); }
 
             let playerCardHtml = "";
-            for (let row = 0; row < 5; row++) {
-                const rowNums = [
-                    colB[row],
-                    colI[row],
-                    (row === 2 ? "FREE" : colN[row >= 2 ? row - 1 : row]),
-                    colG[row],
-                    colO[row]
-                ];
+            for(let row = 0; row < 5; row++) {
+                let rowNums = [colB[row], colI[row], (row === 2 ? 'FREE' : colN[row >= 2 ? row - 1 : row]), colG[row], colO[row]];
                 rowNums.forEach((num) => {
-                    if (num === "FREE") {
+                    if(num === 'FREE') {
                         playerCardHtml += `<div class="player-cell free marked">FREE</div>`;
                     } else {
                         playerCardHtml += `<div class="player-cell" onclick="this.classList.toggle('marked')">${num}</div>`;
@@ -745,56 +739,47 @@
 
             let calledCount = 0;
             callInterval = setInterval(() => {
-                if (calledNumbersList.length >= 75) {
-                    clearInterval(callInterval);
-                    callInterval = null;
-                    return;
-                }
-
                 calledCount++;
                 let randNum = Math.floor(Math.random() * 75) + 1;
-                while (calledNumbersList.includes(randNum)) {
+                while(calledNumbersList.includes(randNum) && calledNumbersList.length < 75) {
                     randNum = Math.floor(Math.random() * 75) + 1;
                 }
                 calledNumbersList.push(randNum);
 
-                const letter = randNum <= 15 ? "B" : randNum <= 30 ? "I" : randNum <= 45 ? "N" : randNum <= 60 ? "G" : "O";
-                const callText = `${letter}-${randNum}`;
+                let letter = randNum <= 15 ? 'B' : randNum <= 30 ? 'I' : randNum <= 45 ? 'N' : randNum <= 60 ? 'G' : 'O';
+                let callText = `${letter}-${randNum}`;
 
-                const cell = document.getElementById(`num-${randNum}`);
-                if (cell) cell.classList.add("called");
+                let cell = document.getElementById(`num-${randNum}`);
+                if(cell) cell.classList.add("called");
 
-                const cCircle = document.getElementById("currentCallCircle");
-                if (cCircle) cCircle.innerText = callText;
+                let cCircle = document.getElementById("currentCallCircle");
+                if(cCircle) cCircle.innerText = callText;
 
-                const calledVal = document.getElementById("calledVal");
-                if (calledVal) calledVal.innerText = calledCount;
+                let calledVal = document.getElementById("calledVal");
+                if(calledVal) calledVal.innerText = calledCount;
 
-                const recentPills = document.getElementById("recentPills");
-                const lastThree = calledNumbersList.slice(-3).reverse();
-                if (recentPills) {
+                let recentPills = document.getElementById("recentPills");
+                let lastThree = calledNumbersList.slice(-3).reverse();
+                if(recentPills) {
                     recentPills.innerHTML = lastThree.map(n => {
-                        const l = n <= 15 ? "B" : n <= 30 ? "I" : n <= 45 ? "N" : n <= 60 ? "G" : "O";
+                        let l = n <= 15 ? 'B' : n <= 30 ? 'I' : n <= 45 ? 'N' : n <= 60 ? 'G' : 'O';
                         return `<div class="recent-pill">${l}${n}</div>`;
-                    }).join("");
+                    }).join('');
                 }
 
-                const prefix = letter.toLowerCase();
+                let prefix = randNum <= 15 ? 'b' : randNum <= 30 ? 'i' : randNum <= 45 ? 'n' : randNum <= 60 ? 'g' : 'o';
                 playAudio(`${prefix}${randNum}.mp3`);
             }, 4000);
         }
 
         function claimBingo() {
-            if (callInterval) {
-                clearInterval(callInterval);
-                callInterval = null;
-            }
+            if(callInterval) clearInterval(callInterval);
             stopRegistrationMusic();
             playAudio("snd-classical-victory");
 
-            fetch("/api/claim-bingo", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+            fetch('/api/claim-bingo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     cartela_no: selectedCartelaNo,
                     user_phone: "251913706670"
@@ -803,7 +788,7 @@
             .then(res => res.json())
             .then(data => {
                 alert(`🎉 Bingo claim submitted! Prize: ${data.prize_allocated} ETB`);
-                if (tg && typeof tg.sendData === "function") {
+                if (tg.sendData) {
                     tg.sendData(JSON.stringify({ action: "claim_bingo", prize: data.prize_allocated }));
                 }
             })
@@ -813,44 +798,77 @@
             });
         }
 
+        function renderDirectorPanel() {
+            const container = document.getElementById("mainContainer");
+            container.innerHTML = `
+                <div class="director-panel">
+                    <button class="director-back-btn" onclick="renderSelectionBoard()">← ወደ ዋናው ገጽ ተመለስ</button>
+                    <div class="director-title">⚙️ የዳይሬክተር መቆጣጠሪያ ፓነል</div>
+                    <div class="director-subtitle">የተረጋገጠ ፈቃድ</div>
+
+                    <button class="director-row-btn" onclick="showDirectorInfo('reports')">📊 የጨዋታ ሪፖርቶች እና ስታቲስቲክስ</button>
+                    <button class="director-row-btn" onclick="showDirectorInfo('users')">👥 የተመዘገቡ ተጫዋቾች እና ሂሳብ</button>
+                    <button class="director-row-btn" id="verifiedWinnersBtn" onclick="showVerifiedWinners()">🏆 የተረጋገጡ አሸናፊዎች — የአሸናፊዎች ስም፣ ሥልክ ቁጥር፣ የጨዋታ ጊዜ/session/</button>
+                    <button class="director-row-btn" onclick="showDirectorInfo('locked')">💰 በመጠባበቅ ላይ ያሉ ገንዘቦች</button>
+                    <button class="director-row-btn" onclick="showDirectorInfo('withdrawals')">💸 የገንዘብ ማውጣት ጥያቄዎች</button>
+
+                    <div class="director-detail-box" id="directorDetailBox">የአሸናፊዎች ስም፣ ሥልክ ቁጥር፣ የጨዋታ ጊዜ/session/</div>
+                </div>
+            `;
+            showVerifiedWinners();
+        }
+
+        function showVerifiedWinners() {
+            const box = document.getElementById("directorDetailBox");
+            if (!box) return;
+
+            let text = "🏆 የተረጋገጡ አሸናፊዎች\nየአሸናፊዎች ስም፣ ሥልክ ቁጥር፣ የጨዋታ ጊዜ/session/\n\n";
+            if (!verifiedWinnersList.length) {
+                text += "የአሸናፊዎች ስም፣ ሥልክ ቁጥር፣ የጨዋታ ጊዜ/session/ — ምንም የተረጋገጠ አሸናፊ የለም።";
+            } else {
+                verifiedWinnersList.forEach((w, idx) => {
+                    text += `${idx + 1}. የአሸናፊዎች ስም: ${w.name} | ሥልክ ቁጥር: ${w.phone} | የጨዋታ ጊዜ/session/: ${w.session}\n`;
+                });
+            }
+            box.textContent = text;
+        }
+
+        function showDirectorInfo(section) {
+            const box = document.getElementById("directorDetailBox");
+            if (!box) return;
+            if (section === "reports") {
+                box.textContent = "📊 የጨዋታ ሪፖርቶች እና ስታቲስቲክስ\nጠቅላላ የተጠሩ ቁጥሮች: " + calledNumbersList.length;
+            } else if (section === "users") {
+                box.textContent = "👥 የተመዘገቡ ተጫዋቾች እና ሂሳብ\nሂሳብ: " + userBalance.toFixed(2) + " ETB";
+            } else if (section === "locked") {
+                box.textContent = "💰 በመጠባበቅ ላይ ያሉ ገንዘቦች\n0.00 ETB";
+            } else if (section === "withdrawals") {
+                box.textContent = "💸 የገንዘብ ማውጣት ጥያቄዎች\nምንም የገንዘብ ማውጣት ጥያቄ የለም።";
+            }
+        }
+
         function switchTab(tab) {
-            clearAllTimers();
+            if(callInterval) clearInterval(callInterval);
+            if(globalCountdown) clearInterval(globalCountdown);
             stopRegistrationMusic();
-            renderDefaultBottomNav();
 
             const container = document.getElementById("mainContainer");
             document.getElementById("topStats").style.display = "none";
 
-            if (tab === "wallet" || tab === "deposit") {
+            if(tab === 'wallet') {
                 container.innerHTML = `
                     <div class="wallet-box">
-                        <button class="btn-back" onclick="switchTab('game')">← ተመለስ</button>
-                        <h3>💰 Deposit (ገንዘብ ማስገባት)</h3>
-                        <p>ቀጥታ የሞባይል ገንዘብ ዝውውር ጥያቄዎችን በ Telegram Bot በኩል ማስተናገድ ይቻላል።</p>
-                        <p><strong>በቴሌግራም ቦቱ ውስጥ በሚገኘው Deposit button ገንዘብ ያስተላልፉ!</strong></p>
-                        <p>1. በቦቱ ውስጥ /deposit ብለው ይጻፉ::</p>
-                        <p>2. የሚፈልጉትን መጠን አስገብተው የክፍያ ማረጋገጫውን (SMS) ይላኩ::</p>
+                        <h3>💳 Guder Wallet</h3>
+                        <p>Available Balance</p>
                         <div class="wallet-balance">${userBalance.toFixed(2)} ETB</div>
-                        <button class="btn-deposit" onclick="openTelegramBotDeposit()">🤖 Open Bot /deposit</button>
+                        <button class="btn-deposit" onclick="alert('Redirecting to Telebirr / Chapa payment gateway...')">Deposit Funds</button>
                     </div>
                 `;
-            } else if (tab === "director") {
-                container.innerHTML = `
-                    <div class="wallet-box">
-                        <button class="btn-back" onclick="switchTab('game')">← ወደ ዋናው ገጽ ተመለስ</button>
-                        <h3>⚙️ የዳይሬክተር መቆጣጠሪያ ፓነል</h3>
-                        <p>የተረጋገጠ ፈቃድ</p>
-                        <button class="btn-deposit" style="background:#2563eb;" onclick="alert('የጨዋታ ሪፖርቶች እና ስታቲስቲክስ')">📊 የጨዋታ ሪፖርቶች እና ስታቲስቲክስ</button>
-                        <button class="btn-deposit" style="background:#2563eb;" onclick="alert('የተመዘገቡ ተጫዋቾች እና ሂሳብ')">👥 የተመዘገቡ ተጫዋቾች እና ሂሳብ</button>
-                        <button class="btn-deposit" style="background:#2563eb;" onclick="alert('የተረጋገጡ አሸናፊዎች')">🏆 የተረጋገጡ አሸናፊዎች</button>
-                        <button class="btn-deposit" style="background:#2563eb;" onclick="alert('በመጠባበቅ ላይ ያሉ ገንዘቦች')">💰 በመጠባበቅ ላይ ያሉ ገንዘቦች</button>
-                        <button class="btn-deposit" style="background:#2563eb;" onclick="alert('የገንዘብ ማውጣት ጥያቄዎች')">💸 የገንዘብ ማውጣት ጥያቄዎች</button>
-                        <div class="server-status-err">ሰርቨር ማግኘት አልተቻለም።</div>
-                    </div>
-                `;
-            } else if (tab === "profile") {
+            } else if(tab === 'director') {
+                renderDirectorPanel();
+            } else if(tab === 'profile') {
                 container.innerHTML = `<div class="wallet-box"><h3>👤 Player Profile</h3><p>Phone: 251913706670</p></div>`;
-            } else if (tab === "history") {
+            } else if(tab === 'history') {
                 container.innerHTML = `<div class="wallet-box"><h3>📜 Game History</h3><p>No recent matches recorded.</p></div>`;
             } else {
                 renderSelectionBoard();
