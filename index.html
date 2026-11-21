@@ -354,7 +354,19 @@
         }
         .wallet-box h3 { color: #ffb703; margin-top: 0; }
         .wallet-balance { font-size: 1.5rem; font-weight: 900; color: #38b000; margin: 15px 0; }
-        .btn-deposit { background-color: #38b000; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-deposit {
+            background-color: #38b000;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            animation: none !important;
+            opacity: 1 !important;
+        }
 
         .director-panel {
             background: #241836;
@@ -444,10 +456,13 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
 
+        const API_BASE_URL = "https://guder-bingo-server.onrender.com"; //
         let userBalance = 15.0;
         let regTimer = 30;
         let prepTimer = 5;
@@ -463,7 +478,7 @@
 
         function playAudio(elementIdOrFile) {
             let sound = document.getElementById(elementIdOrFile);
-            if(sound) {
+            if (sound) {
                 sound.currentTime = 0;
                 sound.play().catch(e => console.log("Audio waiting for user tap", e));
             } else {
@@ -473,7 +488,7 @@
         }
 
         function stopRegistrationMusic() {
-            if(registrationMusic) {
+            if (registrationMusic) {
                 registrationMusic.pause();
                 registrationMusic.currentTime = 0;
                 registrationMusic = null;
@@ -485,10 +500,10 @@
             const inviteText = encodeURIComponent("🎮 Come play Guder Bingo with me and win! Join the live game here:");
             const shareUrl = `https://t.me/share/url?url=https://t.me/${botUsername}&text=${inviteText}`;
 
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
-                window.Telegram.WebApp.openTelegramLink(shareUrl);
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(shareUrl);
             } else {
-                window.open(shareUrl, '_blank');
+                window.open(shareUrl, "_blank");
             }
         }
 
@@ -497,8 +512,8 @@
         }
 
         function showStartScreen() {
-            if(callInterval) clearInterval(callInterval);
-            if(globalCountdown) clearInterval(globalCountdown);
+            if (callInterval) clearInterval(callInterval);
+            if (globalCountdown) clearInterval(globalCountdown);
             stopRegistrationMusic();
 
             document.getElementById("topStats").style.display = "none";
@@ -517,8 +532,8 @@
         }
 
         function renderSelectionBoard() {
-            if(callInterval) clearInterval(callInterval);
-            if(globalCountdown) clearInterval(globalCountdown);
+            if (callInterval) clearInterval(callInterval);
+            if (globalCountdown) clearInterval(globalCountdown);
             selectedCartelaNo = null;
 
             document.getElementById("topStats").style.display = "none";
@@ -540,7 +555,7 @@
             }
 
             stopRegistrationMusic();
-            registrationMusic = new Audio('bingo_amharic_audio/thirty_sec_bg.mp3');
+            registrationMusic = new Audio("bingo_amharic_audio/thirty_sec_bg.mp3");
             registrationMusic.play().catch(e => console.log("Registration audio block:", e));
 
             regTimer = 30;
@@ -553,7 +568,7 @@
                 </div>
                 <div class="cartela-grid">
             `;
-            for(let i=1; i<=800; i++) {
+            for (let i = 1; i <= 800; i++) {
                 html += `<div class="cartela-opt" id="cart-${i}" onclick="selectCartela(${i})">${i}</div>`;
             }
             html += `</div>`;
@@ -562,12 +577,12 @@
             globalCountdown = setInterval(() => {
                 regTimer--;
                 let tBox = document.getElementById("regTimerBox");
-                if(tBox) tBox.innerText = `⏱️ Registration Window: ${regTimer}s`;
+                if (tBox) tBox.innerText = `⏱️ Registration Window: ${regTimer}s`;
 
-                if(regTimer <= 0) {
+                if (regTimer <= 0) {
                     clearInterval(globalCountdown);
                     stopRegistrationMusic();
-                    if(selectedCartelaNo) {
+                    if (selectedCartelaNo) {
                         showPreparationScreen(selectedCartelaNo);
                     } else {
                         alert("Registration closed. No cartela selected!");
@@ -583,18 +598,18 @@
                 return;
             }
 
-            if(selectedCartelaNo) {
+            if (selectedCartelaNo) {
                 let prev = document.getElementById(`cart-${selectedCartelaNo}`);
-                if(prev) prev.classList.remove("selected");
+                if (prev) prev.classList.remove("selected");
             }
 
             selectedCartelaNo = cartelaNo;
             let el = document.getElementById(`cart-${cartelaNo}`);
-            if(el) el.classList.add("selected");
+            if (el) el.classList.add("selected");
 
             playAudio("snd-selected");
 
-            if (tg.sendData) {
+            if (tg && tg.sendData) {
                 tg.sendData(JSON.stringify({ action: "join_round", cartela_no: cartelaNo }));
             }
         }
@@ -615,9 +630,9 @@
             let prepInterval = setInterval(() => {
                 prepTimer--;
                 let pBox = document.getElementById("prepTimerBox");
-                if(pBox) pBox.innerText = `🎲 Preparing Game: ${prepTimer}s`;
+                if (pBox) pBox.innerText = `🎲 Preparing Game: ${prepTimer}s`;
 
-                if(prepTimer <= 0) {
+                if (prepTimer <= 0) {
                     clearInterval(prepInterval);
                     renderCallingBoard(cartelaNo);
                 }
@@ -649,7 +664,7 @@
 
             ranges.forEach(range => {
                 gridHtml += `<div class="bingo-col-group">`;
-                for(let i = range.start; i <= range.end; i++) {
+                for (let i = range.start; i <= range.end; i++) {
                     gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
                 }
                 gridHtml += `</div>`;
@@ -659,7 +674,7 @@
             function getRandomNumber(min, max, excludeList) {
                 seed = (seed * 9301 + 49297) % 233280;
                 let r = min + Math.floor((seed / 233280) * (max - min + 1));
-                while(excludeList.includes(r)) {
+                while (excludeList.includes(r)) {
                     seed = (seed * 9301 + 49297) % 233280;
                     r = min + Math.floor((seed / 233280) * (max - min + 1));
                 }
@@ -667,17 +682,17 @@
             }
 
             let colB = [], colI = [], colN = [], colG = [], colO = [];
-            while(colB.length < 5) { let n = getRandomNumber(1, 15, colB); colB.push(n); }
-            while(colI.length < 5) { let n = getRandomNumber(16, 30, colI); colI.push(n); }
-            while(colN.length < 4) { let n = getRandomNumber(31, 45, colN); colN.push(n); }
-            while(colG.length < 5) { let n = getRandomNumber(46, 60, colG); colG.push(n); }
-            while(colO.length < 5) { let n = getRandomNumber(61, 75, colO); colO.push(n); }
+            while (colB.length < 5) { let n = getRandomNumber(1, 15, colB); colB.push(n); }
+            while (colI.length < 5) { let n = getRandomNumber(16, 30, colI); colI.push(n); }
+            while (colN.length < 4) { let n = getRandomNumber(31, 45, colN); colN.push(n); }
+            while (colG.length < 5) { let n = getRandomNumber(46, 60, colG); colG.push(n); }
+            while (colO.length < 5) { let n = getRandomNumber(61, 75, colO); colO.push(n); }
 
             let playerCardHtml = "";
-            for(let row = 0; row < 5; row++) {
-                let rowNums = [colB[row], colI[row], (row === 2 ? 'FREE' : colN[row >= 2 ? row - 1 : row]), colG[row], colO[row]];
+            for (let row = 0; row < 5; row++) {
+                let rowNums = [colB[row], colI[row], (row === 2 ? "FREE" : colN[row >= 2 ? row - 1 : row]), colG[row], colO[row]];
                 rowNums.forEach((num) => {
-                    if(num === 'FREE') {
+                    if (num === "FREE") {
                         playerCardHtml += `<div class="player-cell free marked">FREE</div>`;
                     } else {
                         playerCardHtml += `<div class="player-cell" onclick="this.classList.toggle('marked')">${num}</div>`;
@@ -741,54 +756,57 @@
             callInterval = setInterval(() => {
                 calledCount++;
                 let randNum = Math.floor(Math.random() * 75) + 1;
-                while(calledNumbersList.includes(randNum) && calledNumbersList.length < 75) {
+                while (calledNumbersList.includes(randNum) && calledNumbersList.length < 75) {
                     randNum = Math.floor(Math.random() * 75) + 1;
                 }
                 calledNumbersList.push(randNum);
 
-                let letter = randNum <= 15 ? 'B' : randNum <= 30 ? 'I' : randNum <= 45 ? 'N' : randNum <= 60 ? 'G' : 'O';
+                let letter = randNum <= 15 ? "B" : randNum <= 30 ? "I" : randNum <= 45 ? "N" : randNum <= 60 ? "G" : "O";
                 let callText = `${letter}-${randNum}`;
 
                 let cell = document.getElementById(`num-${randNum}`);
-                if(cell) cell.classList.add("called");
+                if (cell) cell.classList.add("called");
 
                 let cCircle = document.getElementById("currentCallCircle");
-                if(cCircle) cCircle.innerText = callText;
+                if (cCircle) cCircle.innerText = callText;
 
                 let calledVal = document.getElementById("calledVal");
-                if(calledVal) calledVal.innerText = calledCount;
+                if (calledVal) calledVal.innerText = calledCount;
 
                 let recentPills = document.getElementById("recentPills");
                 let lastThree = calledNumbersList.slice(-3).reverse();
-                if(recentPills) {
+                if (recentPills) {
                     recentPills.innerHTML = lastThree.map(n => {
-                        let l = n <= 15 ? 'B' : n <= 30 ? 'I' : n <= 45 ? 'N' : n <= 60 ? 'G' : 'O';
+                        let l = n <= 15 ? "B" : n <= 30 ? "I" : n <= 45 ? "N" : n <= 60 ? "G" : "O";
                         return `<div class="recent-pill">${l}${n}</div>`;
-                    }).join('');
+                    }).join("");
                 }
 
-                let prefix = randNum <= 15 ? 'b' : randNum <= 30 ? 'i' : randNum <= 45 ? 'n' : randNum <= 60 ? 'g' : 'o';
+                let prefix = randNum <= 15 ? "b" : randNum <= 30 ? "i" : randNum <= 45 ? "n" : randNum <= 60 ? "g" : "o";
                 playAudio(`${prefix}${randNum}.mp3`);
             }, 4000);
         }
 
         function claimBingo() {
-            if(callInterval) clearInterval(callInterval);
+            if (callInterval) clearInterval(callInterval);
             stopRegistrationMusic();
             playAudio("snd-classical-victory");
 
-            fetch('/api/claim-bingo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            fetch(`${API_BASE_URL}/api/claim-bingo`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     cartela_no: selectedCartelaNo,
                     user_phone: "251913706670"
                 })
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
             .then(data => {
                 alert(`🎉 Bingo claim submitted! Prize: ${data.prize_allocated} ETB`);
-                if (tg.sendData) {
+                if (tg && tg.sendData) {
                     tg.sendData(JSON.stringify({ action: "claim_bingo", prize: data.prize_allocated }));
                 }
             })
@@ -848,46 +866,51 @@
         }
 
         function switchTab(tab) {
-            if(callInterval) clearInterval(callInterval);
-            if(globalCountdown) clearInterval(globalCountdown);
+            if (callInterval) clearInterval(callInterval);
+            if (globalCountdown) clearInterval(globalCountdown);
             stopRegistrationMusic();
 
             const container = document.getElementById("mainContainer");
             document.getElementById("topStats").style.display = "none";
 
-            if(tab === 'wallet') {
+            if (tab === "wallet") {
                 container.innerHTML = `
                     <div class="wallet-box">
                         <h3>💳 Guder Wallet</h3>
                         <p>Available Balance</p>
-                        <div class="wallet-balance">${userBalance.toFixed(2)} ETB</div>
-                        <button class="btn-deposit" onclick="alert('Redirecting to Telebirr / Chapa payment gateway...')">Deposit Funds</button>
+                        <div class="wallet-balance" id="walletBalanceDisplay">${userBalance.toFixed(2)} ETB</div>
+                        <button type="button" id="depositBtn" class="btn-deposit" onclick="openDepositPrompt()">💰 Deposit Funds</button>
                     </div>
                 `;
-            } else if(tab === 'director') {
+            } else if (tab === "history") {
+                container.innerHTML = `
+                    <div class="wallet-box">
+                        <h3>📜 Game & Transaction History</h3>
+                        <p>Verified Winners: ${verifiedWinnersList.length}</p>
+                        <p>Called Numbers in Last Round: ${calledNumbersList.length}</p>
+                    </div>
+                `;
+            } else if (tab === "director") {
                 renderDirectorPanel();
-            } else if(tab === 'profile') {
-                container.innerHTML = `<div class="wallet-box"><h3>👤 Player Profile</h3><p>Phone: 251913706670</p></div>`;
-            } else if(tab === 'history') {
-                container.innerHTML = `<div class="wallet-box"><h3>📜 Game History</h3><p>No recent matches recorded.</p></div>`;
             } else {
                 renderSelectionBoard();
             }
         }
 
-        // Initialize Application
+        function openDepositPrompt() {
+            const msg = "💰 በቴሌግራም ቦቱ ውስጥ Deposit በመጫን ከ10 ብር ጀምሮ ማስገባት ይችላሉ (Use Deposit in the Telegram bot to deposit from 10 ETB).";
+            if (tg && tg.showPopup) {
+                tg.showPopup({
+                    title: "Guder Bingo Deposit",
+                    message: msg,
+                    buttons: [{ type: "ok" }]
+                });
+            } else {
+                alert(msg);
+            }
+        }
+
         initApp();
     </script>
-
-    <!-- Audio Elements for UI/Short FX -->
-    <audio id="snd-selected" src="bingo_amharic_audio/card_selected.mp3"></audio>
-    <audio id="snd-prep" src="bingo_amharic_audio/preparing.mp3"></audio>
-    <audio id="snd-start" src="bingo_amharic_audio/game_started.mp3"></audio>
-    <audio id="snd-classical-victory" src="bingo_amharic_audio/classical_victory.mp3"></audio>
-
-    <!-- Eruda Mobile Debug Console -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
-
 </body>
 </html>
