@@ -2,7 +2,9 @@ import asyncio
 import logging
 import os
 import sqlite3
+import threading
 import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MenuButtonWebApp, Update, WebAppInfo
 from telegram.ext import (
@@ -31,6 +33,23 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
+
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, format, *args):
+        return
+
+
+def start_health_server():
+    port = int(os.environ.get("PORT", "10000"))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    logging.info(f"Health server listening on port {port}")
 
 
 def init_db():
@@ -417,6 +436,7 @@ def main():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
+    start_health_server()
     print("🤖 Guder Bingo Bot Active with Ledger Integration...")
     app.run_polling()
 
