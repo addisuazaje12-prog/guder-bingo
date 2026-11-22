@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import json
 import os
 import random
@@ -99,6 +100,17 @@ def init_db():
                 called_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS room_winners (
+                room_id INTEGER PRIMARY KEY,
+                user_id INTEGER,
+                cartela_no INTEGER,
+                winner_name TEXT,
+                prize_allocated REAL DEFAULT 0.0,
+                claimed_at TEXT
+            )
+        """)
     finally:
         conn.close()
 
@@ -153,7 +165,10 @@ def get_or_create_telegram_user(init_data):
         conn.execute("COMMIT;")
         return user_id
     except Exception:
-        conn.execute("ROLLBACK;")
+        try:
+            conn.execute("ROLLBACK;")
+        except Exception:
+            pass
         raise
     finally:
         conn.close()
@@ -228,6 +243,7 @@ def background_game_engine():
                 elif status == "COMPLETED" and elapsed >= 10:
                     conn.execute("DELETE FROM called_numbers WHERE room_id = ?", (room_id,))
                     conn.execute("DELETE FROM cartela_selections WHERE room_id = ?", (room_id,))
+                    conn.execute("DELETE FROM room_winners WHERE room_id = ?", (room_id,))
                     conn.execute(
                         "UPDATE game_rooms SET status = 'OPEN', total_pot = 0.0, phase_start_time = ? WHERE room_id = ?",
                         (now, room_id),
@@ -423,6 +439,14 @@ def select_cartela_endpoint():
             conn.execute("ROLLBACK;")
             return jsonify({"status": "error", "message": "Cartela selection is not open for this room."}), 400
 
+        current_bal = get_user_balance_with_conn(conn, user_id)
+        if current_bal < MIN_STAKE_ETB:
+            conn.execute("ROLLBACK;")
+            return jsonify({
+                "status": "error",
+                "message": f"Insufficient balance ({current_bal:.2f} ETB). Minimum {MIN_STAKE_ETB:.0f} ETB required to select a cartela.",
+            }), 400
+
         taken = conn.execute(
             "SELECT user_id FROM cartela_selections WHERE room_id = ? AND cartela_no = ?",
             (room_id, cartela_no),
@@ -438,14 +462,6 @@ def select_cartela_endpoint():
         if existing_user_cartela:
             conn.execute("ROLLBACK;")
             return jsonify({"status": "error", "message": "You have already selected a cartela for this round."}), 400
-
-        current_bal = get_user_balance_with_conn(conn, user_id)
-        if current_bal < MIN_STAKE_ETB:
-            conn.execute("ROLLBACK;")
-            return jsonify({
-                "status": "error",
-                "message": f"Spectator mode: Minimum {MIN_STAKE_ETB:.0f} ETB confirmed balance required to select a cartela.",
-            }), 400
 
         txn_id = f"stake_{room_id}_{user_id}_{int(time.time() * 1000)}"
         conn.execute(
@@ -487,6 +503,7 @@ def select_cartela_endpoint():
 
 
 @app.route("/api/deposit", methods=["POST"])
+@app.route("/api/wallet/deposit", methods=["POST"])
 def deposit_funds():
     data = request.get_json(silent=True) or {}
     init_data = request.headers.get("X-Telegram-Init-Data", "")
@@ -505,7 +522,6 @@ def deposit_funds():
     conn = get_db_connection()
     try:
         conn.execute("BEGIN IMMEDIATE;")
-        # Stored as PENDING until verified by manager/receipt check
         conn.execute(
             """
             INSERT OR IGNORE INTO ledger_transactions (txn_id, user_id, amount, type, status, reference_id)
@@ -533,7 +549,39 @@ def deposit_funds():
         conn.close()
 
 
+@app.route("/api/room/<int:room_id>/winner", methods=["GET"])
+def get_room_winner(room_id):
+    since = request.args.get("since", "")
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            """
+            SELECT room_id, cartela_no, winner_name, prize_allocated, claimed_at
+            FROM room_winners
+            WHERE room_id = ?
+            """,
+            (room_id,),
+        ).fetchone()
+        if not row:
+            return jsonify({"status": "success", "winner": None})
+
+        winner = {
+            "room_id": row["room_id"],
+            "cartela_no": row["cartela_no"],
+            "winner_name": row["winner_name"],
+            "prize_allocated": row["prize_allocated"],
+            "claimed_at": row["claimed_at"],
+        }
+        if since and winner["claimed_at"] == since:
+            return jsonify({"status": "success", "winner": None})
+
+        return jsonify({"status": "success", "winner": winner})
+    finally:
+        conn.close()
+
+
 @app.route("/api/claim-bingo", methods=["POST"])
+@app.route("/api/bingo/claim", methods=["POST"])
 def claim_bingo():
     data = request.get_json(silent=True) or {}
     init_data = request.headers.get("X-Telegram-Init-Data", "")
@@ -568,7 +616,6 @@ def claim_bingo():
         ).fetchall()
         called_set = {r["number"] for r in called_rows}
 
-        # Basic 5x5 line check if numbers_json is provided
         is_valid_bingo = False
         try:
             grid = json.loads(selection["numbers_json"]) if selection["numbers_json"] else None
@@ -595,10 +642,20 @@ def claim_bingo():
 
         total_pot = float(room["total_pot"] or 0.0)
         prize_allocated = round(total_pot * 0.50, 2)
+        claimed_at = datetime.now(timezone.utc).isoformat()
+        winner_name = str(data.get("winner_name") or f"Player (Cartela #{cartela_no})").strip()
 
         conn.execute(
             "UPDATE game_rooms SET status = 'COMPLETED', phase_start_time = ? WHERE room_id = ?",
             (time.time(), room_id),
+        )
+
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO room_winners (room_id, user_id, cartela_no, winner_name, prize_allocated, claimed_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (room_id, user_id, cartela_no, winner_name, prize_allocated, claimed_at),
         )
 
         if prize_allocated > 0:
@@ -620,6 +677,13 @@ def claim_bingo():
             "cartela_no": cartela_no,
             "prize_allocated": prize_allocated,
             "user_balance": current_balance,
+            "winner": {
+                "room_id": room_id,
+                "cartela_no": cartela_no,
+                "winner_name": winner_name,
+                "prize_allocated": prize_allocated,
+                "claimed_at": claimed_at,
+            },
         })
     except Exception as e:
         try:
