@@ -375,6 +375,11 @@
         .btn-refresh { background-color: #0077b6; color: #fff; }
         .btn-bingo { background-color: #ffb703; color: #000; }
 
+        .wallet-box,
+        .wallet-box * {
+            animation: none !important;
+            transition: none !important;
+        }
         .wallet-box {
             background: #2b1f3d;
             padding: 18px;
@@ -397,8 +402,8 @@
             font-size: 0.85rem;
         }
         .btn-deposit {
-            background-color: #38b000;
-            color: #fff;
+            background-color: #38b000 !important;
+            color: #fff !important;
             padding: 10px 20px;
             border: none;
             border-radius: 6px;
@@ -408,6 +413,17 @@
             margin-top: 10px;
             animation: none !important;
             transition: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+            will-change: auto !important;
+            backface-visibility: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-deposit:hover,
+        .btn-deposit:active,
+        .btn-deposit:focus {
+            background-color: #38b000 !important;
+            color: #fff !important;
             opacity: 1 !important;
             transform: none !important;
         }
@@ -656,7 +672,10 @@
                 if (data.status === "success") {
                     userBalance = Number(data.balance || 0.0);
                     const walletBalEl = document.getElementById("walletBalanceVal");
-                    if (walletBalEl) walletBalEl.innerText = `${userBalance.toFixed(2)} ETB`;
+                    const formattedBal = `${userBalance.toFixed(2)} ETB`;
+                    if (walletBalEl && walletBalEl.textContent !== formattedBal) {
+                        walletBalEl.textContent = formattedBal;
+                    }
                     return data;
                 }
             } catch (_) {}
@@ -787,7 +806,10 @@
                     if (typeof data.balance === "number") userBalance = data.balance;
                     else if (typeof data.confirmed_balance === "number") userBalance = data.confirmed_balance;
                     const balEl = document.getElementById("walletBalanceVal");
-                    if (balEl) balEl.innerText = `${userBalance.toFixed(2)} ETB`;
+                    const formattedBal = `${userBalance.toFixed(2)} ETB`;
+                    if (balEl && balEl.textContent !== formattedBal) {
+                        balEl.textContent = formattedBal;
+                    }
                     if (txListEl) {
                         txListEl.innerHTML = `<div>• Deposit logged: ${amount.toFixed(2)} ETB (${data.status})</div>` + txListEl.innerHTML;
                     }
@@ -1090,4 +1112,48 @@
 
         async function refreshCallingGame() {
             await syncWalletFromServer();
-            render
+            renderCallingBoard(selectedCartelaNo || 1);
+        }
+
+        function leaveGame() {
+            clearAllTimers();
+            stopRegistrationMusic();
+            renderSelectionBoard();
+        }
+
+        async function claimBingo() {
+            if (!selectedCartelaNo) {
+                alert("Spectator mode: select a cartela in an open round to claim Bingo.");
+                return;
+            }
+
+            const tgUser = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+            const winnerName = tgUser
+                ? (tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `Cartela #${selectedCartelaNo}`))
+                : `Cartela #${selectedCartelaNo}`;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/claim-bingo`, {
+                    method: "POST",
+                    headers: getInitHeaders({ "Content-Type": "application/json" }),
+                    body: JSON.stringify({
+                        room_id: currentRoomId,
+                        cartela_no: selectedCartelaNo,
+                        winner_name: winnerName
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.winner) {
+                    displayRoomWinnerBanner(data.winner);
+                }
+                if (typeof data.user_balance === "number") {
+                    userBalance = data.user_balance;
+                }
+                alert(data.message || "Bingo claim processed.");
+            } catch (_) {
+                alert("Network error while claiming Bingo.");
+            }
+        }
+    </script>
+</body>
+</html>
