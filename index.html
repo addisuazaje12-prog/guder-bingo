@@ -70,6 +70,20 @@
             width: 100%;
             box-sizing: border-box;
         }
+        .local-notice-banner {
+            display: none;
+            width: 100%;
+            box-sizing: border-box;
+            background: #2b1f3d;
+            border: 1px solid #ffb703;
+            color: #ffb703;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            text-align: center;
+        }
         .cartela-grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
@@ -494,6 +508,7 @@
             ? window.location.origin
             : RENDER_BACKEND_URL;
 
+        const MIN_STAKE_ETB = 10.0;
         let userBalance = 0.0;
         let currentRoomId = 1;
         let currentPot = 0.0;
@@ -506,7 +521,7 @@
         let selectedCartelaMatrix = null;
         let calledNumbersList = [];
         let registrationMusic = null;
-        let lastRenderedBalanceState = null;
+        let localNoticeTimeout = null;
 
         const verifiedWinnersList = [
             { name: "አሸናፊ 1", phone: "0911000000", session: "Session #1 - 2026-11-20 09:00" }
@@ -543,6 +558,28 @@
             if (callInterval) { clearInterval(callInterval); callInterval = null; }
             if (globalCountdown) { clearInterval(globalCountdown); globalCountdown = null; }
             if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
+        }
+
+        function showLocalInsufficientBalanceNotice() {
+            const noticeEl = document.getElementById("localBalanceNotice");
+            if (noticeEl) {
+                noticeEl.style.display = "block";
+                noticeEl.innerHTML = `
+                    ⚠️ Insufficient balance (${userBalance.toFixed(2)} ETB < ${MIN_STAKE_ETB.toFixed(2)} ETB). You can still watch the game, or <a href="#" onclick="switchTab('wallet'); return false;" style="color:#38b000; text-decoration:underline;">Deposit</a>.
+                `;
+                if (localNoticeTimeout) clearTimeout(localNoticeTimeout);
+                localNoticeTimeout = setTimeout(() => {
+                    if (noticeEl) noticeEl.style.display = "none";
+                }, 4000);
+            } else if (tg && tg.showPopup) {
+                tg.showPopup({
+                    title: "Insufficient Balance",
+                    message: `Balance: ${userBalance.toFixed(2)} ETB. You can still watch the game or deposit in Wallet.`,
+                    buttons: [{ type: "ok" }]
+                });
+            } else {
+                alert(`Insufficient balance (${userBalance.toFixed(2)} ETB). You can still watch the game.`);
+            }
         }
 
         function inviteFriends() {
@@ -595,21 +632,16 @@
                 if (!res.ok) return null;
                 const data = await res.json();
                 if (data.status === "success") {
-                    const nextBalance = Number(data.balance || 0.0);
-                    const balanceChanged = nextBalance !== userBalance;
-                    userBalance = nextBalance;
-                    const balEl = document.getElementById("confirmedBalanceText");
-                    if (balEl) balEl.innerText = `${userBalance.toFixed(2)} ETB`;
+                    userBalance = Number(data.balance || 0.0);
                     const walletBalEl = document.getElementById("walletBalanceVal");
                     if (walletBalEl) walletBalEl.innerText = `${userBalance.toFixed(2)} ETB`;
-                    return { ...data, balanceChanged };
+                    return data;
                 }
             } catch (_) {}
             return null;
         }
 
         function initApp() {
-            lastRenderedBalanceState = null;
             syncWalletFromServer();
             showStartScreen();
         }
@@ -617,7 +649,6 @@
         function showStartScreen() {
             clearAllTimers();
             stopRegistrationMusic();
-            lastRenderedBalanceState = null;
 
             document.getElementById("topStats").style.display = "none";
             renderDefaultBottomNav();
@@ -632,7 +663,6 @@
         }
 
         async function startAppSession() {
-            lastRenderedBalanceState = null;
             await syncWalletFromServer();
             renderSelectionBoard();
         }
@@ -652,7 +682,6 @@
         function switchTab(tabName) {
             clearAllTimers();
             stopRegistrationMusic();
-            lastRenderedBalanceState = null;
             document.getElementById("topStats").style.display = "none";
             renderDefaultBottomNav();
 
@@ -720,7 +749,7 @@
             const txListEl = document.getElementById("txHistoryList");
             const amount = Number(inputEl ? inputEl.value : 0);
 
-            if (!amount || amount < 10) {
+            if (!amount || amount < MIN_STAKE_ETB) {
                 alert("Please enter at least 10 ETB.");
                 return;
             }
@@ -757,23 +786,7 @@
             renderDefaultBottomNav();
 
             const container = document.getElementById("mainContainer");
-            if (userBalance < 10.0) {
-                stopRegistrationMusic();
-                const stateKey = "insufficient:" + userBalance.toFixed(2);
-                if (lastRenderedBalanceState !== stateKey || !document.getElementById("openWalletDepositBtn")) {
-                    lastRenderedBalanceState = stateKey;
-                    container.innerHTML = `
-                        <div class="wallet-box" id="insufficientBalanceBox">
-                            <h3>Insufficient Balance</h3>
-                            <p>Confirmed balance: <b id="confirmedBalanceText">${userBalance.toFixed(2)} ETB</b> (Minimum 10.00 ETB required to select a cartela).</p>
-                            <button type="button" class="btn-deposit" id="openWalletDepositBtn" onclick="switchTab('wallet')">💳 Open Wallet / Deposit</button>
-                        </div>
-                    `;
-                }
-                return;
-            }
 
-            lastRenderedBalanceState = "ready:" + userBalance.toFixed(2);
             stopRegistrationMusic();
             registrationMusic = new Audio("audio/thirty_sec_bg.mp3");
             registrationMusic.play().catch(() => {});
@@ -781,6 +794,7 @@
             regTimer = 30;
             let html = `
                 <div class="timer-banner" id="regTimerBox">⏱️ Registration Window: 30s</div>
+                <div class="local-notice-banner" id="localBalanceNotice"></div>
                 <div style="margin-bottom:6px; font-size:0.75rem; font-weight:900; text-align:center; background:#2b1f3d; padding:6px; border-radius:6px; color:#ffb703; width:100%; box-sizing:border-box;">
                     Welcome to Guder Bingo. select the cartela<br>
                     እንኳን ወደ ጉደር ቢንጎ ጨዋታ በደህና መጡ!<br>
@@ -802,13 +816,8 @@
                 if (regTimer <= 0) {
                     clearInterval(globalCountdown);
                     stopRegistrationMusic();
-                    if (selectedCartelaNo) {
-                        showPreparationScreen(selectedCartelaNo);
-                    } else {
-                        alert("Registration closed. No cartela selected!");
-                        lastRenderedBalanceState = null;
-                        renderSelectionBoard();
-                    }
+                    // Open game flow to everyone so spectators can follow the round
+                    showPreparationScreen(selectedCartelaNo || 1);
                 }
             }, 1000);
         }
@@ -816,6 +825,11 @@
         async function selectCartela(cartelaNo) {
             if (regTimer <= 0) {
                 alert("Registration window has closed!");
+                return;
+            }
+
+            if (userBalance < MIN_STAKE_ETB) {
+                showLocalInsufficientBalanceNotice();
                 return;
             }
 
@@ -832,7 +846,11 @@
                 });
                 const data = await res.json();
                 if (!res.ok || data.status === "error") {
-                    alert(data.message || "Could not select cartela.");
+                    if ((data.message || "").toLowerCase().includes("balance")) {
+                        showLocalInsufficientBalanceNotice();
+                    } else {
+                        alert(data.message || "Could not select cartela.");
+                    }
                     return;
                 }
                 if (typeof data.balance === "number") {
@@ -858,11 +876,14 @@
         function showPreparationScreen(cartelaNo) {
             stopRegistrationMusic();
             prepTimer = 5;
+            const statusText = selectedCartelaNo
+                ? `Cartela #${selectedCartelaNo} Confirmed!`
+                : `Spectating Live Game (Cartela #${cartelaNo} preview)`;
             const container = document.getElementById("mainContainer");
             container.innerHTML = `
                 <div class="timer-banner" style="background:#ffb703; color:#000;" id="prepTimerBox">🎲 Preparing Game: 5s</div>
                 <div class="waiting-msg" style="font-weight:900; font-size:0.85rem; padding:15px;">
-                    Cartela #${cartelaNo} Confirmed!<br><br>
+                    ${statusText}<br><br>
                     እባክዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
                 </div>
             `;
@@ -911,7 +932,12 @@
             stopRegistrationMusic();
             calledNumbersList = [];
 
-            const matrix = selectedCartelaMatrix || generateCartelaMatrix(cartelaNo);
+            const activeCartela = selectedCartelaNo || cartelaNo || 1;
+            const matrix = selectedCartelaMatrix || generateCartelaMatrix(activeCartela);
+            const titleLabel = selectedCartelaNo
+                ? `Cartela #${activeCartela}`
+                : `Spectator View (Cartela #${activeCartela})`;
+
             document.getElementById("topStats").style.display = "grid";
             document.getElementById("gameIdVal").innerText = `#${currentRoomId}`;
             document.getElementById("derashVal").innerText = `${currentPot.toFixed(0)}`;
@@ -987,7 +1013,7 @@
                         </div>
 
                         <div class="player-cartela-box">
-                            <div class="player-cartela-title">Cartela #${cartelaNo}</div>
+                            <div class="player-cartela-title">${titleLabel}</div>
                             <div class="bingo-header-row" style="margin-bottom:2px;">
                                 <div class="bingo-letter" style="font-size:0.65rem;">B</div>
                                 <div class="bingo-letter" style="font-size:0.65rem;">I</div>
@@ -1019,7 +1045,7 @@
 
         async function claimBingo() {
             if (!selectedCartelaNo) {
-                alert("No cartela selected.");
+                alert("No active cartela selected for this round.");
                 return;
             }
             if (callInterval) clearInterval(callInterval);
