@@ -57,6 +57,8 @@
             flex-grow: 1;
             overflow-y: auto;
             padding: 4px;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
         }
         .timer-banner {
             background: #d90429;
@@ -402,6 +404,8 @@
             font-size: 0.85rem;
         }
         .btn-deposit {
+            position: relative !important;
+            z-index: 1 !important;
             background-color: #38b000 !important;
             color: #fff !important;
             padding: 10px 20px;
@@ -414,7 +418,7 @@
             animation: none !important;
             transition: none !important;
             opacity: 1 !important;
-            transform: none !important;
+            transform: translateZ(0) !important;
             will-change: auto !important;
             backface-visibility: hidden;
             -webkit-tap-highlight-color: transparent;
@@ -425,7 +429,7 @@
             background-color: #38b000 !important;
             color: #fff !important;
             opacity: 1 !important;
-            transform: none !important;
+            transform: translateZ(0) !important;
         }
         .tx-list {
             margin-top: 12px;
@@ -555,6 +559,7 @@
         let calledNumbersList = [];
         let registrationMusic = null;
         let localNoticeTimeout = null;
+        let isSubmittingDeposit = false;
 
         const verifiedWinnersList = [
             { name: "አሸናፊ 1", phone: "0911000000", session: "Session #1 - 2026-11-20 09:00" }
@@ -786,6 +791,8 @@
         }
 
         async function submitDepositRequest() {
+            if (isSubmittingDeposit) return;
+
             const inputEl = document.getElementById("depositAmountInput");
             const txListEl = document.getElementById("txHistoryList");
             const amount = Number(inputEl ? inputEl.value : 0);
@@ -795,6 +802,7 @@
                 return;
             }
 
+            isSubmittingDeposit = true;
             try {
                 const res = await fetch(`${API_BASE_URL}/api/wallet/deposit`, {
                     method: "POST",
@@ -819,6 +827,8 @@
                 }
             } catch (_) {
                 alert("Network error while contacting backend.");
+            } finally {
+                isSubmittingDeposit = false;
             }
         }
 
