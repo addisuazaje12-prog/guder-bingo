@@ -451,15 +451,16 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.35);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 7px;
             box-sizing: border-box;
         }
         .director-back-btn {
-            background: #7b2cbf;
+            background: #5b189a;
             color: #fff;
             border: none;
             border-radius: 6px;
-            padding: 7px 12px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
             font-weight: 800;
             cursor: pointer;
             width: 100%;
@@ -469,37 +470,46 @@
             font-size: 1.05rem;
             font-weight: 900;
             color: #ffb703;
-            margin: 4px 0 0 0;
+            margin: 2px 0 0 0;
         }
         .director-subtitle {
             text-align: center;
             font-size: 0.75rem;
             color: #dcd6f7;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .director-row-btn {
-            background: #1d63dc;
+            background: #2563eb;
             color: #fff;
             border: none;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 0.8rem;
+            border-radius: 7px;
+            padding: 9px 10px;
+            font-size: 0.78rem;
             font-weight: 800;
             cursor: pointer;
             text-align: center;
             width: 100%;
         }
+        .director-error-status {
+            text-align: center;
+            font-size: 0.74rem;
+            font-weight: 800;
+            color: #ff4d4d;
+            padding: 2px 4px;
+            min-height: 18px;
+        }
         .director-detail-box {
+            display: none;
             background: #160e24;
             border: 1px solid #4a356b;
             border-radius: 8px;
-            padding: 10px;
-            font-size: 0.78rem;
+            padding: 9px;
+            font-size: 0.76rem;
             line-height: 1.45;
             color: #f8f9fa;
             white-space: pre-line;
             text-align: left;
-            max-height: 160px;
+            max-height: 120px;
             overflow-y: auto;
         }
     </style>
@@ -765,7 +775,7 @@
                     <div class="wallet-box">
                         <h3>📜 Recent Winners</h3>
                         <div class="tx-list" style="max-height:180px;">${winnersHtml}</div>
-                        <button type="button" class="director-back-btn" style="margin-top:10px;" onclick="switchTab('game')">Back to Game</button>
+                        <button type="button" class="director-back-btn" style="margin-top:10px;" onclick="switchTab('game')">← ወደ ጨዋታው ገጽ ተመለስ</button>
                     </div>
                 `;
                 return;
@@ -774,20 +784,93 @@
             if (tabName === "director") {
                 container.innerHTML = `
                     <div class="director-panel">
-                        <div class="director-title">⚙️ Director Controls</div>
-                        <div class="director-subtitle">Room #${currentRoomId} • Balance ${userBalance.toFixed(2)} ETB</div>
-                        <button type="button" class="director-row-btn" onclick="showDirectorInfo('Room Status: Active\\nBackend: ${API_BASE_URL}')">Check Backend & Room</button>
-                        <button type="button" class="director-row-btn" onclick="syncWalletFromServer().then(() => showDirectorInfo('Synced Wallet: ' + userBalance.toFixed(2) + ' ETB'))">Refresh Wallet Balance</button>
-                        <div class="director-detail-box" id="directorDetailBox">Select an action above to inspect status.</div>
-                        <button type="button" class="director-back-btn" onclick="switchTab('game')">Back to Game</button>
+                        <button type="button" class="director-back-btn" onclick="switchTab('game')">← ወደ ጨዋታው ገጽ ተመለስ</button>
+                        <div class="director-title">⚙️ የዳይሬክተር መቆጣጠሪያ ፓነል</div>
+                        <div class="director-subtitle">የተረጋገጠ ዳይሬክተር</div>
+                        <button type="button" class="director-row-btn" onclick="directorActionStats()">📊 የጨዋታ መረጃዎች እና ስታቲስቲክስ</button>
+                        <button type="button" class="director-row-btn" onclick="directorActionPlayers()">👥 የተመዘገቡ ተጫዋቾች እና ገቢ</button>
+                        <button type="button" class="director-row-btn" onclick="directorActionWinners()">🏆 የተረጋገጡ አሸናፊዎች</button>
+                        <button type="button" class="director-row-btn" onclick="directorActionPending()">💰 በመጠባበቅ ላይ ያሉ ገቢዎች</button>
+                        <button type="button" class="director-row-btn" onclick="directorActionWithdrawals()">❓ የገንዘብ ማውጣት ጥያቄዎች</button>
+                        <div class="director-error-status" id="directorErrorStatus"></div>
+                        <div class="director-detail-box" id="directorDetailBox"></div>
                     </div>
                 `;
             }
         }
 
-        function showDirectorInfo(text) {
-            const box = document.getElementById("directorDetailBox");
-            if (box) box.innerText = text;
+        function setDirectorFeedback(errorText, detailText = "") {
+            const errEl = document.getElementById("directorErrorStatus");
+            const boxEl = document.getElementById("directorDetailBox");
+            if (errEl) errEl.innerText = errorText || "";
+            if (boxEl) {
+                boxEl.innerText = detailText || "";
+                boxEl.style.display = detailText ? "block" : "none";
+            }
+        }
+
+        async function directorActionStats() {
+            setDirectorFeedback("", "");
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/game/state`, {
+                    headers: getInitHeaders()
+                });
+                const data = await res.json();
+                if (!res.ok || data.status !== "success") {
+                    setDirectorFeedback("አስርር ማግኘት አልተቻለም…", "");
+                    return;
+                }
+                const room = data.room || {};
+                const calledCount = Array.isArray(data.called_numbers) ? data.called_numbers.length : 0;
+                setDirectorFeedback(
+                    "",
+                    `ሩም #: ${room.room_id || currentRoomId}\nጠቅላላ ደራሽ (Pot): ${Number(room.total_pot || 0).toFixed(2)} ETB\nየተጠሩ ቁጥሮች: ${calledCount}`
+                );
+            } catch (_) {
+                setDirectorFeedback("አስርር ማግኘት አልተቻለም…", "");
+            }
+        }
+
+        async function directorActionPlayers() {
+            setDirectorFeedback("", "");
+            const walletData = await syncWalletFromServer();
+            if (!walletData) {
+                setDirectorFeedback("አስርር ማግኘት አልተቻለም…", "");
+                return;
+            }
+            setDirectorFeedback(
+                "",
+                `የአሁኑ ቀሪ ሂሳብ: ${userBalance.toFixed(2)} ETB\nዝቅተኛ ካርቴላ መጠን: ${MIN_STAKE_ETB.toFixed(2)} ETB`
+            );
+        }
+
+        function directorActionWinners() {
+            setDirectorFeedback("", "");
+            const lines = verifiedWinnersList
+                .map(w => `${w.name} (${w.phone}) - ${w.session}`)
+                .join("\n");
+            setDirectorFeedback("", lines || "የተረጋገጠ አሸናፊ የለም።");
+        }
+
+        async function directorActionPending() {
+            setDirectorFeedback("", "");
+            const walletData = await syncWalletFromServer();
+            if (!walletData) {
+                setDirectorFeedback("አስርር ማግኘት አልተቻለም…", "");
+                return;
+            }
+            const pending = Number(walletData.pending_balance || 0).toFixed(2);
+            setDirectorFeedback(
+                "",
+                `በመጠባበቅ ላይ ያለ ገቢ: ${pending} ETB\nየተረጋገጠ ሂሳብ: ${userBalance.toFixed(2)} ETB`
+            );
+        }
+
+        function directorActionWithdrawals() {
+            setDirectorFeedback(
+                "",
+                "የገንዘብ ማውጣት ጥያቄዎችን በቴሌግራም ቦቱ (@guderbingo_bot) በኩል ያስተዳድሩ።"
+            );
         }
 
         async function submitDepositRequest() {
