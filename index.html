@@ -84,6 +84,20 @@
             margin-bottom: 6px;
             text-align: center;
         }
+        .winner-banner {
+            display: none;
+            width: 100%;
+            box-sizing: border-box;
+            background: #1b4332;
+            border: 2px solid #ffb703;
+            color: #fff;
+            padding: 7px 8px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: 900;
+            margin-bottom: 4px;
+            text-align: center;
+        }
         .cartela-grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
@@ -509,6 +523,7 @@
             : RENDER_BACKEND_URL;
 
         const MIN_STAKE_ETB = 10.0;
+        const AVAILABLE_AUDIO_FILES = new Set(["bingo.mp3"]);
         let userBalance = 0.0;
         let currentRoomId = 1;
         let currentPot = 0.0;
@@ -517,6 +532,8 @@
         let callInterval = null;
         let globalCountdown = null;
         let syncInterval = null;
+        let winnerPollInterval = null;
+        let lastSeenWinnerTimestamp = "";
         let selectedCartelaNo = null;
         let selectedCartelaMatrix = null;
         let calledNumbersList = [];
@@ -536,14 +553,18 @@
         }
 
         function playAudio(elementIdOrFile) {
-            let sound = document.getElementById(elementIdOrFile);
+            const sound = document.getElementById(elementIdOrFile);
             if (sound) {
                 sound.currentTime = 0;
                 sound.play().catch(() => {});
-            } else {
-                let audio = new Audio(`audio/${elementIdOrFile}`);
-                audio.play().catch(() => {});
+                return;
             }
+            const isNumberCall = /^[bingo]\d+\.mp3$/i.test(elementIdOrFile);
+            if (!isNumberCall && !AVAILABLE_AUDIO_FILES.has(elementIdOrFile)) {
+                return;
+            }
+            const audio = new Audio(`audio/${elementIdOrFile}`);
+            audio.play().catch(() => {});
         }
 
         function stopRegistrationMusic() {
@@ -558,6 +579,7 @@
             if (callInterval) { clearInterval(callInterval); callInterval = null; }
             if (globalCountdown) { clearInterval(globalCountdown); globalCountdown = null; }
             if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
+            if (winnerPollInterval) { clearInterval(winnerPollInterval); winnerPollInterval = null; }
         }
 
         function showLocalInsufficientBalanceNotice() {
@@ -609,7 +631,7 @@
                 return r;
             }
 
-            let colB = [], colI = [], colN = [], colG = [], colO = [];
+            const colB = [], colI = [], colN = [], colG = [], colO = [];
             while (colB.length < 5) colB.push(nextRand(1, 15, colB));
             while (colI.length < 5) colI.push(nextRand(16, 30, colI));
             while (colN.length < 4) colN.push(nextRand(31, 45, colN));
@@ -761,12 +783,13 @@
                     body: JSON.stringify({ amount })
                 });
                 const data = await res.json();
-                if (res.ok && data.status === "success") {
+                if (res.ok && (data.status === "success" || data.status === "pending_verification")) {
                     if (typeof data.balance === "number") userBalance = data.balance;
+                    else if (typeof data.confirmed_balance === "number") userBalance = data.confirmed_balance;
                     const balEl = document.getElementById("walletBalanceVal");
                     if (balEl) balEl.innerText = `${userBalance.toFixed(2)} ETB`;
                     if (txListEl) {
-                        txListEl.innerHTML = `<div>• Deposit request recorded: ${amount.toFixed(2)} ETB</div>` + txListEl.innerHTML;
+                        txListEl.innerHTML = `<div>• Deposit logged: ${amount.toFixed(2)} ETB (${data.status})</div>` + txListEl.innerHTML;
                     }
                     alert(data.message || "Deposit request submitted.");
                 } else {
@@ -779,6 +802,7 @@
 
         function renderSelectionBoard() {
             clearAllTimers();
+            stopRegistrationMusic();
             selectedCartelaNo = null;
             selectedCartelaMatrix = null;
 
@@ -786,10 +810,6 @@
             renderDefaultBottomNav();
 
             const container = document.getElementById("mainContainer");
-
-            stopRegistrationMusic();
-            registrationMusic = new Audio("audio/thirty_sec_bg.mp3");
-            registrationMusic.play().catch(() => {});
 
             regTimer = 30;
             let html = `
@@ -816,7 +836,6 @@
                 if (regTimer <= 0) {
                     clearInterval(globalCountdown);
                     stopRegistrationMusic();
-                    // Open game flow to everyone so spectators can follow the round
                     showPreparationScreen(selectedCartelaNo || 1);
                 }
             }, 1000);
@@ -857,7 +876,7 @@
                     userBalance = data.balance;
                 }
             } catch (_) {
-                // Allow local preview if backend is not yet connected
+                // Allow local preview if backend is temporarily unreachable
             }
 
             if (selectedCartelaNo) {
@@ -869,8 +888,6 @@
             selectedCartelaMatrix = matrix;
             const el = document.getElementById(`cart-${cartelaNo}`);
             if (el) el.classList.add("selected");
-
-            playAudio("snd-selected");
         }
 
         function showPreparationScreen(cartelaNo) {
@@ -887,13 +904,11 @@
                     እባክዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
                 </div>
             `;
-            playAudio("snd-prep");
 
             const prepInterval = setInterval(() => {
                 prepTimer--;
                 const pBox = document.getElementById("prepTimerBox");
                 if (pBox) pBox.innerText = `🎲 Preparing Game: ${Math.max(0, prepTimer)}s`;
-
                 if (prepTimer <= 0) {
                     clearInterval(prepInterval);
                     renderCallingBoard(cartelaNo);
@@ -901,84 +916,113 @@
             }, 1000);
         }
 
-        function applyCalledNumberToBoard(randNum) {
-            const letter = randNum <= 15 ? "B" : randNum <= 30 ? "I" : randNum <= 45 ? "N" : randNum <= 60 ? "G" : "O";
-            const callText = `${letter}-${randNum}`;
+        function getBingoLetter(num) {
+            if (num <= 15) return "B";
+            if (num <= 30) return "I";
+            if (num <= 45) return "N";
+            if (num <= 60) return "G";
+            return "O";
+        }
 
-            const cell = document.getElementById(`num-${randNum}`);
-            if (cell) cell.classList.add("called");
+        function displayRoomWinnerBanner(winner) {
+            if (!winner || !winner.claimed_at) return;
+            if (winner.claimed_at === lastSeenWinnerTimestamp) return;
+            lastSeenWinnerTimestamp = winner.claimed_at;
 
-            const cCircle = document.getElementById("currentCallCircle");
-            if (cCircle) cCircle.innerText = callText;
-
-            const calledVal = document.getElementById("calledVal");
-            if (calledVal) calledVal.innerText = String(calledNumbersList.length);
-
-            const recentPills = document.getElementById("recentPills");
-            const lastThree = calledNumbersList.slice(-3).reverse();
-            if (recentPills) {
-                recentPills.innerHTML = lastThree.map(n => {
-                    const l = n <= 15 ? "B" : n <= 30 ? "I" : n <= 45 ? "N" : n <= 60 ? "G" : "O";
-                    return `<div class="recent-pill">${l}${n}</div>`;
-                }).join("");
+            const banner = document.getElementById("roomWinnerBanner");
+            if (banner) {
+                banner.style.display = "block";
+                banner.innerHTML = `🏆 BINGO WINNER: ${winner.winner_name} (Cartela #${winner.cartela_no}) in Room #${winner.room_id}!`;
             }
+            playAudio("bingo.mp3");
+        }
 
-            const prefix = randNum <= 15 ? "b" : randNum <= 30 ? "i" : randNum <= 45 ? "n" : randNum <= 60 ? "g" : "o";
-            playAudio(`${prefix}${randNum}.mp3`);
+        async function pollRoomWinner() {
+            try {
+                const sinceParam = lastSeenWinnerTimestamp
+                    ? `?since=${encodeURIComponent(lastSeenWinnerTimestamp)}`
+                    : "";
+                const res = await fetch(`${API_BASE_URL}/api/room/${currentRoomId}/winner${sinceParam}`, {
+                    headers: getInitHeaders()
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status === "success" && data.winner) {
+                    displayRoomWinnerBanner(data.winner);
+                }
+            } catch (_) {}
+        }
+
+        function updateCallerDisplay(numbers) {
+            calledNumbersList = numbers.slice();
+            const calledCountEl = document.getElementById("calledVal");
+            if (calledCountEl) calledCountEl.innerText = String(calledNumbersList.length);
+
+            document.querySelectorAll(".num-cell").forEach(cell => cell.classList.remove("called"));
+            calledNumbersList.forEach(n => {
+                const cell = document.getElementById(`board-num-${n}`);
+                if (cell) cell.classList.add("called");
+            });
+
+            const circleEl = document.getElementById("currentCallCircle");
+            const recentEl = document.getElementById("recentCallsRow");
+            if (calledNumbersList.length > 0) {
+                const lastNum = calledNumbersList[calledNumbersList.length - 1];
+                if (circleEl) circleEl.innerText = `${getBingoLetter(lastNum)}${lastNum}`;
+                playAudio(`${getBingoLetter(lastNum).toLowerCase()}${lastNum}.mp3`);
+            }
+            if (recentEl) {
+                const lastFive = calledNumbersList.slice(-5).reverse();
+                recentEl.innerHTML = lastFive
+                    .map(n => `<span class="recent-pill">${getBingoLetter(n)}${n}</span>`)
+                    .join("");
+            }
         }
 
         function renderCallingBoard(cartelaNo) {
             clearAllTimers();
             stopRegistrationMusic();
             calledNumbersList = [];
+            lastSeenWinnerTimestamp = "";
 
             const activeCartela = selectedCartelaNo || cartelaNo || 1;
             const matrix = selectedCartelaMatrix || generateCartelaMatrix(activeCartela);
-            const titleLabel = selectedCartelaNo
-                ? `Cartela #${activeCartela}`
-                : `Spectator View (Cartela #${activeCartela})`;
 
             document.getElementById("topStats").style.display = "grid";
-            document.getElementById("gameIdVal").innerText = `#${currentRoomId}`;
+            document.getElementById("gameIdVal").innerText = String(currentRoomId);
             document.getElementById("derashVal").innerText = `${currentPot.toFixed(0)}`;
-            document.getElementById("bottomNavContainer").innerHTML = `
-                <div class="game-footer-actions">
-                    <button type="button" class="btn-leave" onclick="renderSelectionBoard()">Leave</button>
-                    <button type="button" class="btn-refresh" onclick="window.location.reload()">Refresh</button>
-                    <button type="button" class="btn-bingo" onclick="claimBingo()">Bingo!</button>
-                </div>
-            `;
+            document.getElementById("playerVal").innerText = "1+";
+            document.getElementById("stakeVal").innerText = `${MIN_STAKE_ETB.toFixed(0)}`;
+            document.getElementById("calledVal").innerText = "0";
 
-            const container = document.getElementById("mainContainer");
-
-            let gridHtml = "";
             const ranges = [
-                { start: 1, end: 15 },
-                { start: 16, end: 30 },
-                { start: 31, end: 45 },
-                { start: 46, end: 60 },
-                { start: 61, end: 75 }
+                { letter: "B", start: 1, end: 15 },
+                { letter: "I", start: 16, end: 30 },
+                { letter: "N", start: 31, end: 45 },
+                { letter: "G", start: 46, end: 60 },
+                { letter: "O", start: 61, end: 75 }
             ];
 
-            ranges.forEach(range => {
-                gridHtml += `<div class="bingo-col-group">`;
-                for (let i = range.start; i <= range.end; i++) {
-                    gridHtml += `<div class="num-cell" id="num-${i}">${i}</div>`;
+            let colsHtml = "";
+            ranges.forEach(r => {
+                let cells = "";
+                for (let n = r.start; n <= r.end; n++) {
+                    cells += `<div class="num-cell" id="board-num-${n}">${n}</div>`;
                 }
-                gridHtml += `</div>`;
+                colsHtml += `<div class="bingo-col-group">${cells}</div>`;
             });
 
-            let playerCardHtml = "";
-            for (let row = 0; row < 5; row++) {
-                matrix[row].forEach((num) => {
-                    if (num === "FREE") {
-                        playerCardHtml += `<div class="player-cell free marked">FREE</div>`;
-                    } else {
-                        playerCardHtml += `<div class="player-cell" onclick="this.classList.toggle('marked')">${num}</div>`;
-                    }
-                });
+            let playerCellsHtml = "";
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    const val = matrix[r][c];
+                    const isFree = val === "FREE";
+                    const cls = isFree ? "player-cell free marked" : "player-cell";
+                    playerCellsHtml += `<div class="${cls}" onclick="this.classList.toggle('marked')">${val}</div>`;
+                }
             }
 
+            const container = document.getElementById("mainContainer");
             container.innerHTML = `
                 <div class="calling-layout">
                     <div class="left-column">
@@ -990,84 +1034,60 @@
                                 <div class="bingo-letter">G</div>
                                 <div class="bingo-letter">O</div>
                             </div>
-                            <div class="num-grid-75">
-                                ${gridHtml}
-                            </div>
+                            <div class="num-grid-75">${colsHtml}</div>
                         </div>
                     </div>
-
                     <div class="right-column">
                         <div class="caller-panel">
+                            <div class="winner-banner" id="roomWinnerBanner"></div>
                             <div class="current-call-box">
-                                <span>Current Call</span>
-                                <div class="call-circle" id="currentCallCircle">-</div>
+                                <span>CALL</span>
+                                <div class="call-circle" id="currentCallCircle">--</div>
                             </div>
-                            <div class="recent-calls" id="recentPills">
-                                <div class="recent-pill">-</div>
-                                <div class="recent-pill">-</div>
-                                <div class="recent-pill">-</div>
-                            </div>
-                            <div class="waiting-msg">
-                                እባክዎ ይህ ጨዋታ እስከሚጨርስ ይጠብቁ
-                            </div>
+                            <div class="recent-calls" id="recentCallsRow"></div>
                         </div>
-
                         <div class="player-cartela-box">
-                            <div class="player-cartela-title">${titleLabel}</div>
-                            <div class="bingo-header-row" style="margin-bottom:2px;">
-                                <div class="bingo-letter" style="font-size:0.65rem;">B</div>
-                                <div class="bingo-letter" style="font-size:0.65rem;">I</div>
-                                <div class="bingo-letter" style="font-size:0.65rem;">N</div>
-                                <div class="bingo-letter" style="font-size:0.65rem;">G</div>
-                                <div class="bingo-letter" style="font-size:0.65rem;">O</div>
-                            </div>
-                            <div class="player-card-grid">
-                                ${playerCardHtml}
-                            </div>
+                            <div class="player-cartela-title">Cartela #${activeCartela}</div>
+                            <div class="player-card-grid">${playerCellsHtml}</div>
                         </div>
                     </div>
                 </div>
             `;
 
-            playAudio("snd-start");
+            document.getElementById("bottomNavContainer").innerHTML = `
+                <div class="game-footer-actions">
+                    <button type="button" class="btn-leave" onclick="leaveGame()">Leave</button>
+                    <button type="button" class="btn-refresh" onclick="refreshCallingGame()">Refresh</button>
+                    <button type="button" class="btn-bingo" onclick="claimBingo()">Bingo!</button>
+                </div>
+            `;
 
-            callInterval = setInterval(() => {
-                let randNum = Math.floor(Math.random() * 75) + 1;
-                while (calledNumbersList.includes(randNum) && calledNumbersList.length < 75) {
-                    randNum = Math.floor(Math.random() * 75) + 1;
-                }
-                if (calledNumbersList.length < 75) {
-                    calledNumbersList.push(randNum);
-                    applyCalledNumberToBoard(randNum);
-                }
-            }, 4000);
+            async function syncGameState() {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/game/state`, {
+                        headers: getInitHeaders()
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (data.status === "success" && data.room) {
+                        currentRoomId = data.room.room_id || currentRoomId;
+                        currentPot = Number(data.room.total_pot || 0);
+                        document.getElementById("gameIdVal").innerText = String(currentRoomId);
+                        document.getElementById("derashVal").innerText = `${currentPot.toFixed(0)}`;
+                        if (Array.isArray(data.called_numbers)) {
+                            const nums = data.called_numbers.map(x => Number(x.number)).filter(Boolean);
+                            updateCallerDisplay(nums);
+                        }
+                    }
+                } catch (_) {}
+            }
+
+            syncGameState();
+            syncInterval = setInterval(syncGameState, 2500);
+            winnerPollInterval = setInterval(pollRoomWinner, 3000);
+            pollRoomWinner();
         }
 
-        async function claimBingo() {
-            if (!selectedCartelaNo) {
-                alert("No active cartela selected for this round.");
-                return;
-            }
-            if (callInterval) clearInterval(callInterval);
-            stopRegistrationMusic();
-            playAudio("snd-classical-victory");
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/bingo/claim`, {
-                    method: "POST",
-                    headers: getInitHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({
-                        room_id: currentRoomId,
-                        cartela_no: selectedCartelaNo,
-                        called_numbers: calledNumbersList
-                    })
-                });
-                const data = await res.json();
-                alert(data.message || "Bingo claim sent!");
-            } catch (_) {
-                alert("Bingo claim submitted locally.");
-            }
-        }
-    </script>
-</body>
-</html>
+        async function refreshCallingGame() {
+            await syncWalletFromServer();
+            render
