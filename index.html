@@ -579,7 +579,7 @@
             if (!isNumberCall && !AVAILABLE_AUDIO_FILES.has(elementIdOrFile)) {
                 return;
             }
-            const audio = new Audio(`audio/${elementIdOrFile}`);
+            const audio = new Audio(`${API_BASE_URL}/audio/${elementIdOrFile}`);
             audio.play().catch(() => {});
         }
 
