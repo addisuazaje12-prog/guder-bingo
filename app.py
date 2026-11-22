@@ -1,403 +1,617 @@
+import json
 import os
-import time
 import random
 import sqlite3
 import threading
-from flask import Flask, request, jsonify, send_from_directory
+import time
+import urllib.parse
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
+DB_PATH = os.environ.get("DATABASE_PATH", "guder_bingo.db")
+MIN_STAKE_ETB = 10.0
+MAX_CARTELA_NO = 800
+
 # Manual Deposit & Verification Configuration
 TELEBIRR_SHORT_CODE = "800001"
+TELEBIRR_PHONE = "0913706670"
 CBE_ACCOUNT = "1000000000000"
 
+
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH, timeout=15.0, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=15000;")
+    return conn
+
+
 def init_db():
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            telegram_id TEXT UNIQUE,
-            phone_number TEXT UNIQUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS game_rooms (
-            room_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            status TEXT DEFAULT 'OPEN',
-            total_pot REAL DEFAULT 0.0,
-            phase_start_time REAL DEFAULT 0.0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
+    conn = get_db_connection()
     try:
-        cursor.execute("ALTER TABLE game_rooms ADD COLUMN phase_start_time REAL DEFAULT 0.0")
-    except sqlite3.OperationalError:
-        pass
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telegram_id TEXT UNIQUE,
+                phone_number TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
-    cursor.execute("SELECT room_id FROM game_rooms WHERE room_id = 1")
-    if not cursor.fetchone():
-        cursor.execute("INSERT INTO game_rooms (room_id, status, total_pot, phase_start_time) VALUES (1, 'OPEN', 0.0, ?)", (time.time(),))
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS game_rooms (
+                room_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                status TEXT DEFAULT 'OPEN',
+                total_pot REAL DEFAULT 0.0,
+                phase_start_time REAL DEFAULT 0.0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ledger_transactions (
-            txn_id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            amount REAL,
-            type TEXT,
-            reference_id TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(user_id)
-        )
-    ''')
+        cols = [r["name"] for r in conn.execute("PRAGMA table_info(game_rooms)").fetchall()]
+        if "phase_start_time" not in cols:
+            conn.execute("ALTER TABLE game_rooms ADD COLUMN phase_start_time REAL DEFAULT 0.0")
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS cartela_selections (
-            selection_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            room_id INTEGER,
-            user_id INTEGER,
-            cartela_no INTEGER,
-            numbers_json TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(room_id, cartela_no)
-        )
-    ''')
+        room = conn.execute("SELECT room_id FROM game_rooms WHERE room_id = 1").fetchone()
+        if not room:
+            conn.execute(
+                "INSERT INTO game_rooms (room_id, status, total_pot, phase_start_time) VALUES (1, 'OPEN', 0.0, ?)",
+                (time.time(),),
+            )
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS called_numbers (
-            call_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            room_id INTEGER,
-            number INTEGER,
-            called_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ledger_transactions (
+                txn_id TEXT PRIMARY KEY,
+                user_id INTEGER,
+                amount REAL,
+                type TEXT,
+                status TEXT DEFAULT 'CONFIRMED',
+                reference_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(user_id)
+            )
+        """)
+
+        ledger_cols = [r["name"] for r in conn.execute("PRAGMA table_info(ledger_transactions)").fetchall()]
+        if "status" not in ledger_cols:
+            conn.execute("ALTER TABLE ledger_transactions ADD COLUMN status TEXT DEFAULT 'CONFIRMED'")
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS cartela_selections (
+                selection_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                room_id INTEGER,
+                user_id INTEGER,
+                cartela_no INTEGER,
+                numbers_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(room_id, cartela_no)
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS called_numbers (
+                call_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                room_id INTEGER,
+                number INTEGER,
+                called_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+    finally:
+        conn.close()
+
 
 init_db()
 
-@app.route('/')
-def serve_frontend():
-    return send_from_directory('.', 'index.html')
 
-@app.route('/audio/<path:filename>')
-def serve_audio(filename):
-    return send_from_directory('bingo_amharic_audio', filename)
+def get_user_balance_with_conn(conn, user_id):
+    row = conn.execute(
+        """
+        SELECT COALESCE(SUM(amount), 0.0) AS bal
+        FROM ledger_transactions
+        WHERE user_id = ? AND status = 'CONFIRMED'
+        """,
+        (user_id,),
+    ).fetchone()
+    return float(row["bal"]) if row else 0.0
+
 
 def get_user_balance(user_id):
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
-    cursor.execute('SELECT SUM(amount) FROM ledger_transactions WHERE user_id = ?', (user_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result[0] is not None else 0.0
+    conn = get_db_connection()
+    try:
+        return get_user_balance_with_conn(conn, user_id)
+    finally:
+        conn.close()
+
 
 def get_or_create_telegram_user(init_data):
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
-    
     telegram_id = "test_user_tg"
-    if init_data and "id=" in init_data:
+    if init_data:
         try:
-            import urllib.parse
             parsed = urllib.parse.parse_qs(init_data)
-            if 'user' in parsed:
-                import json
-                user_json = json.loads(parsed['user'][0])
-                telegram_id = str(user_json.get('id', 'test_user_tg'))
+            if "user" in parsed:
+                user_obj = json.loads(parsed["user"][0])
+                if user_obj.get("id") is not None:
+                    telegram_id = str(user_obj["id"])
         except Exception:
             pass
 
-    cursor.execute('SELECT user_id FROM users WHERE telegram_id = ?', (telegram_id,))
-    row = cursor.fetchone()
-    if row:
-        user_id = row[0]
-    else:
-        cursor.execute('INSERT INTO users (telegram_id, phone_number) VALUES (?, ?)', (telegram_id, '251913706670'))
-        user_id = cursor.lastrowid
-        conn.commit()
-    
-    conn.close()
-    return user_id
+    conn = get_db_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE;")
+        row = conn.execute("SELECT user_id FROM users WHERE telegram_id = ?", (telegram_id,)).fetchone()
+        if row:
+            user_id = row["user_id"]
+        else:
+            cur = conn.execute(
+                "INSERT INTO users (telegram_id, phone_number) VALUES (?, ?)",
+                (telegram_id, "251913706670"),
+            )
+            user_id = cur.lastrowid
+        conn.execute("COMMIT;")
+        return user_id
+    except Exception:
+        conn.execute("ROLLBACK;")
+        raise
+    finally:
+        conn.close()
 
-# Background Game Engine Thread for automated phases and number calling
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({"status": "ok", "db": DB_PATH})
+
+
+@app.route("/")
+def serve_frontend():
+    if os.path.exists("index.html"):
+        return send_from_directory(".", "index.html")
+    return jsonify({"status": "ok", "service": "Guder Bingo API"})
+
+
+@app.route("/audio/<path:filename>")
+def serve_audio(filename):
+    audio_dir = "bingo_amharic_audio"
+    if not os.path.isdir(audio_dir):
+        return jsonify({"status": "error", "message": "Audio directory not found"}), 404
+    return send_from_directory(audio_dir, filename)
+
+
 def background_game_engine():
     while True:
+        conn = None
         try:
-            conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-            cursor = conn.cursor()
-            
-            cursor.execute("SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1")
-            room = cursor.fetchone()
-            
+            conn = get_db_connection()
+            room = conn.execute(
+                "SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1"
+            ).fetchone()
+
             if room:
-                room_id, status, total_pot, phase_start_time = room
+                room_id = room["room_id"]
+                status = room["status"]
+                phase_start_time = float(room["phase_start_time"] or 0.0)
                 now = time.time()
-                
+
                 if phase_start_time == 0.0:
                     phase_start_time = now
-                    cursor.execute("UPDATE game_rooms SET phase_start_time = ? WHERE room_id = ?", (now, room_id))
-                    conn.commit()
+                    conn.execute(
+                        "UPDATE game_rooms SET phase_start_time = ? WHERE room_id = ?",
+                        (now, room_id),
+                    )
 
                 elapsed = now - phase_start_time
 
-                if status == 'OPEN':
-                    # 30 seconds selection phase
-                    if elapsed >= 30:
-                        cursor.execute("UPDATE game_rooms SET status = 'PREPARING', phase_start_time = ? WHERE room_id = ?", (now, room_id))
-                        conn.commit()
-                elif status == 'PREPARING':
-                    # 5 seconds preparation phase
-                    if elapsed >= 5:
-                        cursor.execute("UPDATE game_rooms SET status = 'RUNNING', phase_start_time = ? WHERE room_id = ?", (now, room_id))
-                        conn.commit()
-                elif status == 'RUNNING':
-                    # Call numbers every 3 seconds
-                    cursor.execute("SELECT number FROM called_numbers WHERE room_id = ?", (room_id,))
-                    called = {row[0] for row in cursor.fetchall()}
-                    
+                if status == "OPEN" and elapsed >= 30:
+                    conn.execute(
+                        "UPDATE game_rooms SET status = 'PREPARING', phase_start_time = ? WHERE room_id = ?",
+                        (now, room_id),
+                    )
+                elif status == "PREPARING" and elapsed >= 5:
+                    conn.execute(
+                        "UPDATE game_rooms SET status = 'RUNNING', phase_start_time = ? WHERE room_id = ?",
+                        (now, room_id),
+                    )
+                elif status == "RUNNING":
+                    rows = conn.execute(
+                        "SELECT number FROM called_numbers WHERE room_id = ?", (room_id,)
+                    ).fetchall()
+                    called = {r["number"] for r in rows}
                     available = [n for n in range(1, 76) if n not in called]
                     if available:
                         next_num = random.choice(available)
-                        cursor.execute("INSERT INTO called_numbers (room_id, number) VALUES (?, ?)", (room_id, next_num))
-                        conn.commit()
-                elif status == 'COMPLETED':
-                    # Reset after 10 seconds for a new round
-                    if elapsed >= 10:
-                        cursor.execute("DELETE FROM called_numbers WHERE room_id = ?", (room_id,))
-                        cursor.execute("UPDATE game_rooms SET status = 'OPEN', total_pot = 0.0, phase_start_time = ? WHERE room_id = ?", (now, room_id))
-                        conn.commit()
-
-            conn.close()
+                        conn.execute(
+                            "INSERT INTO called_numbers (room_id, number) VALUES (?, ?)",
+                            (room_id, next_num),
+                        )
+                elif status == "COMPLETED" and elapsed >= 10:
+                    conn.execute("DELETE FROM called_numbers WHERE room_id = ?", (room_id,))
+                    conn.execute("DELETE FROM cartela_selections WHERE room_id = ?", (room_id,))
+                    conn.execute(
+                        "UPDATE game_rooms SET status = 'OPEN', total_pot = 0.0, phase_start_time = ? WHERE room_id = ?",
+                        (now, room_id),
+                    )
         except Exception as e:
             print("Engine error:", e)
+        finally:
+            if conn:
+                conn.close()
         time.sleep(2)
+
 
 threading.Thread(target=background_game_engine, daemon=True).start()
 
-@app.route('/api/wallet', methods=['GET'])
+
+@app.route("/api/wallet", methods=["GET"])
 def get_wallet():
-    init_data = request.headers.get('X-Telegram-Init-Data', '')
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
     user_id = get_or_create_telegram_user(init_data)
-    balance = get_user_balance(user_id)
-    
-    transactions = []
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
-    cursor.execute('SELECT txn_id, amount, type, created_at FROM ledger_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', (user_id,))
-    for tx in cursor.fetchall():
-        transactions.append({"txn_type": tx[2], "amount": tx[1], "created_at": tx[3]})
-    conn.close()
-    
-    return jsonify({"status": "success", "balance": balance, "transactions": transactions})
 
-@app.route('/api/config', methods=['GET'])
+    conn = get_db_connection()
+    try:
+        balance = get_user_balance_with_conn(conn, user_id)
+        tx_rows = conn.execute(
+            """
+            SELECT txn_id, amount, type, status, created_at
+            FROM ledger_transactions
+            WHERE user_id = ?
+            ORDER BY created_at DESC LIMIT 20
+            """,
+            (user_id,),
+        ).fetchall()
+        transactions = [
+            {
+                "txn_id": tx["txn_id"],
+                "txn_type": tx["type"],
+                "amount": tx["amount"],
+                "status": tx["status"],
+                "created_at": tx["created_at"],
+            }
+            for tx in tx_rows
+        ]
+        return jsonify({"status": "success", "balance": balance, "transactions": transactions})
+    finally:
+        conn.close()
+
+
+@app.route("/api/config", methods=["GET"])
 def get_config():
-    return jsonify({"status": "success", "telebirr_phone": "0913706670", "cbe_account": CBE_ACCOUNT})
-
-@app.route('/api/rooms', methods=['GET'])
-def get_rooms_list():
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
-    cursor.execute('SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC')
-    rooms = []
-    for row in cursor.fetchall():
-        rooms.append({
-            "room_id": row[0],
-            "status": row[1],
-            "total_pot": row[2],
-            "phase_start_time": row[3]
-        })
-    conn.close()
-    return jsonify({"status": "success", "rooms": rooms})
-
-@app.route('/api/game/state', methods=['GET'])
-def get_game_state():
-    init_data = request.headers.get('X-Telegram-Init-Data', '')
-    user_id = get_or_create_telegram_user(init_data)
-    balance = get_user_balance(user_id)
-
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1')
-    room_row = cursor.fetchone()
-    
-    room = None
-    selection_remaining = None
-    preparation_remaining = None
-
-    if room_row:
-        r_id, status, total_pot, phase_start_time = room_row
-        now = time.time()
-        elapsed = now - (phase_start_time if phase_start_time else now)
-
-        if status == 'OPEN':
-            selection_remaining = max(0, int(30 - elapsed))
-        elif status == 'PREPARING':
-            preparation_remaining = max(0, int(5 - elapsed))
-
-        room = {
-            "room_id": r_id,
-            "status": status,
-            "total_pot": total_pot,
-            "selection_remaining": selection_remaining,
-            "preparation_remaining": preparation_remaining
-        }
-    
-    cartela = None
-    called_numbers = []
-    
-    if room:
-        r_id = room['room_id']
-        cursor.execute('SELECT cartela_no, numbers_json FROM cartela_selections WHERE room_id = ? AND user_id = ?', (r_id, user_id))
-        c_row = cursor.fetchone()
-        if c_row:
-            cartela = {"cartela_no": c_row[0], "numbers_json": c_row[1]}
-            
-        cursor.execute('SELECT number, called_at FROM called_numbers WHERE room_id = ? ORDER BY call_id ASC', (r_id,))
-        called_numbers = [{"number": row[0], "called_at": row[1]} for row in cursor.fetchall()]
-        
-    conn.close()
-
     return jsonify({
         "status": "success",
-        "balance": balance,
-        "room": room,
-        "cartela": cartela,
-        "called_numbers": called_numbers
+        "telebirr_short_code": TELEBIRR_SHORT_CODE,
+        "telebirr_phone": TELEBIRR_PHONE,
+        "cbe_account": CBE_ACCOUNT,
+        "min_stake_etb": MIN_STAKE_ETB,
+        "max_cartela_no": MAX_CARTELA_NO,
     })
 
-@app.route('/api/game/history', methods=['GET'])
-def get_game_history():
-    init_data = request.headers.get('X-Telegram-Init-Data', '')
-    user_id = get_or_create_telegram_user(init_data)
-    
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT room_id, cartela_no, created_at FROM cartela_selections 
-        WHERE user_id = ? ORDER BY selection_id DESC LIMIT 20
-    ''', (user_id,))
-    history = [{"room_id": row[0], "cartela_no": row[1], "created_at": row[2]} for row in cursor.fetchall()]
-    conn.close()
-    
-    return jsonify({"status": "success", "history": history})
 
-@app.route('/api/cartela/select', methods=['POST'])
-def select_cartela_endpoint():
-    data = request.json
-    init_data = request.headers.get('X-Telegram-Init-Data', '')
-    user_id = get_or_create_telegram_user(init_data)
-    
-    room_id = data.get('room_id', 1)
-    cartela_no = data.get('cartela_no')
-    import json
-    numbers_matrix = json.dumps(data.get('numbers'))
-    
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
+@app.route("/api/rooms", methods=["GET"])
+def get_rooms_list():
+    conn = get_db_connection()
     try:
-        cursor.execute("BEGIN EXCLUSIVE TRANSACTION;")
-        
-        stake = 10.0
-        current_bal = get_user_balance(user_id)
-        if current_bal < stake:
-            conn.rollback()
-            return jsonify({"status": "error", "message": "Spectator mode: Minimum 10 ETB deposit required to join and select a cartela."}), 400
-            
-        txn_id = f"stake_{room_id}_{user_id}_{int(time.time())}"
-        cursor.execute('''
-            INSERT INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (txn_id, user_id, -stake, 'CARTELA_STAKE', f"room_{room_id}"))
-        
-        cursor.execute('''
-            INSERT OR REPLACE INTO cartela_selections (room_id, user_id, cartela_no, numbers_json)
-            VALUES (?, ?, ?, ?)
-        ''', (room_id, user_id, cartela_no, numbers_matrix))
-        
-        cursor.execute('UPDATE game_rooms SET total_pot = total_pot + ? WHERE room_id = ?', (stake, room_id))
-        
-        conn.commit()
-        return jsonify({"status": "success", "message": f"Cartela #{cartela_no} selected successfully!"})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"status": "error", "message": str(e)}), 400
+        rows = conn.execute(
+            "SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC"
+        ).fetchall()
+        rooms = [
+            {
+                "room_id": r["room_id"],
+                "status": r["status"],
+                "total_pot": r["total_pot"],
+                "phase_start_time": r["phase_start_time"],
+            }
+            for r in rows
+        ]
+        return jsonify({"status": "success", "rooms": rooms})
     finally:
         conn.close()
 
-@app.route('/api/deposit', methods=['POST'])
-def deposit_funds():
-    data = request.json
-    init_data = request.headers.get('X-Telegram-Init-Data', '')
+
+@app.route("/api/game/state", methods=["GET"])
+def get_game_state():
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
     user_id = get_or_create_telegram_user(init_data)
-    
-    amount = float(data.get('amount', 10.0))
-    tx_ref = data.get('payer_reference', f"manual_tx_{user_id}_{int(time.time())}")
-    
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
+
+    conn = get_db_connection()
     try:
-        cursor.execute("BEGIN EXCLUSIVE TRANSACTION;")
-        cursor.execute('''
-            INSERT OR IGNORE INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (tx_ref, user_id, amount, 'MANUAL_DEPOSIT', tx_ref))
-        conn.commit()
-        
-        current_balance = get_user_balance(user_id)
+        balance = get_user_balance_with_conn(conn, user_id)
+        room_row = conn.execute(
+            "SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1"
+        ).fetchone()
+
+        room = None
+        cartela = None
+        called_numbers = []
+
+        if room_row:
+            r_id = room_row["room_id"]
+            status = room_row["status"]
+            total_pot = room_row["total_pot"]
+            phase_start_time = float(room_row["phase_start_time"] or 0.0)
+            now = time.time()
+            elapsed = now - (phase_start_time if phase_start_time else now)
+
+            selection_remaining = max(0, int(30 - elapsed)) if status == "OPEN" else None
+            preparation_remaining = max(0, int(5 - elapsed)) if status == "PREPARING" else None
+
+            room = {
+                "room_id": r_id,
+                "status": status,
+                "total_pot": total_pot,
+                "selection_remaining": selection_remaining,
+                "preparation_remaining": preparation_remaining,
+            }
+
+            c_row = conn.execute(
+                "SELECT cartela_no, numbers_json FROM cartela_selections WHERE room_id = ? AND user_id = ?",
+                (r_id, user_id),
+            ).fetchone()
+            if c_row:
+                cartela = {"cartela_no": c_row["cartela_no"], "numbers_json": c_row["numbers_json"]}
+
+            n_rows = conn.execute(
+                "SELECT number, called_at FROM called_numbers WHERE room_id = ? ORDER BY call_id ASC",
+                (r_id,),
+            ).fetchall()
+            called_numbers = [{"number": r["number"], "called_at": r["called_at"]} for r in n_rows]
+
         return jsonify({
             "status": "success",
-            "message": "Manual deposit submitted successfully.",
-            "deposit_id": tx_ref,
-            "amount": amount,
-            "user_balance": current_balance
+            "balance": balance,
+            "room": room,
+            "cartela": cartela,
+            "called_numbers": called_numbers,
+        })
+    finally:
+        conn.close()
+
+
+@app.route("/api/game/history", methods=["GET"])
+def get_game_history():
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
+    user_id = get_or_create_telegram_user(init_data)
+
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT room_id, cartela_no, created_at
+            FROM cartela_selections
+            WHERE user_id = ?
+            ORDER BY selection_id DESC LIMIT 20
+            """,
+            (user_id,),
+        ).fetchall()
+        history = [
+            {"room_id": r["room_id"], "cartela_no": r["cartela_no"], "created_at": r["created_at"]}
+            for r in rows
+        ]
+        return jsonify({"status": "success", "history": history})
+    finally:
+        conn.close()
+
+
+@app.route("/api/cartela/select", methods=["POST"])
+def select_cartela_endpoint():
+    data = request.get_json(silent=True) or {}
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
+    user_id = get_or_create_telegram_user(init_data)
+
+    try:
+        room_id = int(data.get("room_id", 1))
+        cartela_no = int(data.get("cartela_no"))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "Invalid room_id or cartela_no."}), 400
+
+    if not (1 <= cartela_no <= MAX_CARTELA_NO):
+        return jsonify({
+            "status": "error",
+            "message": f"Cartela number must be between 1 and {MAX_CARTELA_NO}.",
+        }), 400
+
+    numbers_matrix = json.dumps(data.get("numbers"))
+
+    conn = get_db_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE;")
+
+        room = conn.execute(
+            "SELECT room_id, status FROM game_rooms WHERE room_id = ?", (room_id,)
+        ).fetchone()
+        if not room or room["status"] != "OPEN":
+            conn.execute("ROLLBACK;")
+            return jsonify({"status": "error", "message": "Cartela selection is not open for this room."}), 400
+
+        taken = conn.execute(
+            "SELECT user_id FROM cartela_selections WHERE room_id = ? AND cartela_no = ?",
+            (room_id, cartela_no),
+        ).fetchone()
+        if taken and taken["user_id"] != user_id:
+            conn.execute("ROLLBACK;")
+            return jsonify({"status": "error", "message": f"Cartela #{cartela_no} is already taken."}), 409
+
+        existing_user_cartela = conn.execute(
+            "SELECT cartela_no FROM cartela_selections WHERE room_id = ? AND user_id = ?",
+            (room_id, user_id),
+        ).fetchone()
+        if existing_user_cartela:
+            conn.execute("ROLLBACK;")
+            return jsonify({"status": "error", "message": "You have already selected a cartela for this round."}), 400
+
+        current_bal = get_user_balance_with_conn(conn, user_id)
+        if current_bal < MIN_STAKE_ETB:
+            conn.execute("ROLLBACK;")
+            return jsonify({
+                "status": "error",
+                "message": f"Spectator mode: Minimum {MIN_STAKE_ETB:.0f} ETB confirmed balance required to select a cartela.",
+            }), 400
+
+        txn_id = f"stake_{room_id}_{user_id}_{int(time.time() * 1000)}"
+        conn.execute(
+            """
+            INSERT INTO ledger_transactions (txn_id, user_id, amount, type, status, reference_id)
+            VALUES (?, ?, ?, 'CARTELA_STAKE', 'CONFIRMED', ?)
+            """,
+            (txn_id, user_id, -MIN_STAKE_ETB, f"room_{room_id}"),
+        )
+
+        conn.execute(
+            """
+            INSERT INTO cartela_selections (room_id, user_id, cartela_no, numbers_json)
+            VALUES (?, ?, ?, ?)
+            """,
+            (room_id, user_id, cartela_no, numbers_matrix),
+        )
+
+        conn.execute(
+            "UPDATE game_rooms SET total_pot = total_pot + ? WHERE room_id = ?",
+            (MIN_STAKE_ETB, room_id),
+        )
+
+        conn.execute("COMMIT;")
+        new_bal = get_user_balance(user_id)
+        return jsonify({
+            "status": "success",
+            "message": f"Cartela #{cartela_no} selected successfully!",
+            "balance": new_bal,
         })
     except Exception as e:
-        conn.rollback()
+        try:
+            conn.execute("ROLLBACK;")
+        except Exception:
+            pass
         return jsonify({"status": "error", "message": str(e)}), 400
     finally:
         conn.close()
 
-@app.route('/api/claim-bingo', methods=['POST'])
-def claim_bingo():
-    data = request.json
-    cartela_no = data.get('cartela_no')
-    room_id = data.get('room_id', 1)
-    init_data = request.headers.get('X-Telegram-Init-Data', '')
+
+@app.route("/api/deposit", methods=["POST"])
+def deposit_funds():
+    data = request.get_json(silent=True) or {}
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
     user_id = get_or_create_telegram_user(init_data)
 
-    conn = sqlite3.connect('guder_bingo.db', timeout=10.0)
-    cursor = conn.cursor()
+    try:
+        amount = float(data.get("amount", MIN_STAKE_ETB))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "Invalid deposit amount."}), 400
+
+    if amount <= 0:
+        return jsonify({"status": "error", "message": "Deposit amount must be positive."}), 400
+
+    tx_ref = str(data.get("payer_reference") or f"manual_tx_{user_id}_{int(time.time() * 1000)}").strip()
+
+    conn = get_db_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE;")
+        # Stored as PENDING until verified by manager/receipt check
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO ledger_transactions (txn_id, user_id, amount, type, status, reference_id)
+            VALUES (?, ?, ?, 'MANUAL_DEPOSIT', 'PENDING', ?)
+            """,
+            (tx_ref, user_id, amount, tx_ref),
+        )
+        conn.execute("COMMIT;")
+        confirmed_balance = get_user_balance(user_id)
+
+        return jsonify({
+            "status": "pending_verification",
+            "message": "Deposit receipt logged as provisional/pending verification.",
+            "deposit_id": tx_ref,
+            "amount": amount,
+            "confirmed_balance": confirmed_balance,
+        })
+    except Exception as e:
+        try:
+            conn.execute("ROLLBACK;")
+        except Exception:
+            pass
+        return jsonify({"status": "error", "message": str(e)}), 400
+    finally:
+        conn.close()
+
+
+@app.route("/api/claim-bingo", methods=["POST"])
+def claim_bingo():
+    data = request.get_json(silent=True) or {}
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
+    user_id = get_or_create_telegram_user(init_data)
 
     try:
-        cursor.execute("BEGIN EXCLUSIVE TRANSACTION;")
-        cursor.execute('SELECT status, total_pot FROM game_rooms WHERE room_id = ?', (room_id,))
-        room = cursor.fetchone()
-        if not room or room[0] == 'COMPLETED':
-            conn.rollback()
-            return jsonify({"status": "error", "message": "Round already won or room closed!"}), 400
+        room_id = int(data.get("room_id", 1))
+        cartela_no = int(data.get("cartela_no"))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "Invalid room_id or cartela_no."}), 400
 
-        cursor.execute('UPDATE game_rooms SET status = ?, phase_start_time = ? WHERE room_id = ?', ('COMPLETED', time.time(), room_id))
+    conn = get_db_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE;")
+        room = conn.execute(
+            "SELECT status, total_pot FROM game_rooms WHERE room_id = ?", (room_id,)
+        ).fetchone()
+        if not room or room["status"] != "RUNNING":
+            conn.execute("ROLLBACK;")
+            return jsonify({"status": "error", "message": "Bingo can only be claimed while round is RUNNING."}), 400
 
-        total_pot = room[1] if room[1] > 0 else 100.0
-        prize_allocated = total_pot * 0.50
+        selection = conn.execute(
+            "SELECT numbers_json FROM cartela_selections WHERE room_id = ? AND user_id = ? AND cartela_no = ?",
+            (room_id, user_id, cartela_no),
+        ).fetchone()
+        if not selection:
+            conn.execute("ROLLBACK;")
+            return jsonify({"status": "error", "message": "You do not own this cartela in the active round."}), 403
 
-        txn_id = f"txn_win_{room_id}_{user_id}_{int(time.time() * 1000)}"
-        cursor.execute('''
-            INSERT INTO ledger_transactions (txn_id, user_id, amount, type, reference_id)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (txn_id, user_id, prize_allocated, 'BINGO_WIN_PAYOUT', f"room_{room_id}_cartela_{cartela_no}"))
+        called_rows = conn.execute(
+            "SELECT number FROM called_numbers WHERE room_id = ?", (room_id,)
+        ).fetchall()
+        called_set = {r["number"] for r in called_rows}
 
-        conn.commit()
+        # Basic 5x5 line check if numbers_json is provided
+        is_valid_bingo = False
+        try:
+            grid = json.loads(selection["numbers_json"]) if selection["numbers_json"] else None
+            if isinstance(grid, list) and len(grid) == 5 and all(isinstance(r, list) and len(r) == 5 for r in grid):
+                marked = [
+                    [
+                        True if (r_i == 2 and c_i == 2 and grid[r_i][c_i] in (0, None, "FREE")) or (grid[r_i][c_i] in called_set)
+                        else False
+                        for c_i in range(5)
+                    ]
+                    for r_i in range(5)
+                ]
+                row_win = any(all(marked[r]) for r in range(5))
+                col_win = any(all(marked[r][c] for r in range(5)) for c in range(5))
+                diag1_win = all(marked[i][i] for i in range(5))
+                diag2_win = all(marked[i][4 - i] for i in range(5))
+                is_valid_bingo = row_win or col_win or diag1_win or diag2_win
+        except Exception:
+            is_valid_bingo = False
+
+        if not is_valid_bingo:
+            conn.execute("ROLLBACK;")
+            return jsonify({"status": "error", "message": "Bingo claim not verified against called numbers yet."}), 400
+
+        total_pot = float(room["total_pot"] or 0.0)
+        prize_allocated = round(total_pot * 0.50, 2)
+
+        conn.execute(
+            "UPDATE game_rooms SET status = 'COMPLETED', phase_start_time = ? WHERE room_id = ?",
+            (time.time(), room_id),
+        )
+
+        if prize_allocated > 0:
+            txn_id = f"txn_win_{room_id}_{user_id}_{int(time.time() * 1000)}"
+            conn.execute(
+                """
+                INSERT INTO ledger_transactions (txn_id, user_id, amount, type, status, reference_id)
+                VALUES (?, ?, ?, 'BINGO_WIN_PAYOUT', 'CONFIRMED', ?)
+                """,
+                (txn_id, user_id, prize_allocated, f"room_{room_id}_cartela_{cartela_no}"),
+            )
+
+        conn.execute("COMMIT;")
         current_balance = get_user_balance(user_id)
 
         return jsonify({
@@ -405,15 +619,18 @@ def claim_bingo():
             "message": "Bingo verified successfully!",
             "cartela_no": cartela_no,
             "prize_allocated": prize_allocated,
-            "user_balance": current_balance
+            "user_balance": current_balance,
         })
-
     except Exception as e:
-        conn.rollback()
+        try:
+            conn.execute("ROLLBACK;")
+        except Exception:
+            pass
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         conn.close()
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
