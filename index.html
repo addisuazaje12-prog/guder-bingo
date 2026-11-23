@@ -378,9 +378,17 @@
         .btn-bingo { background-color: #ffb703; color: #000; }
 
         .wallet-box,
-        .wallet-box * {
+        .wallet-box *,
+        .btn-deposit,
+        .btn-deposit:hover,
+        .btn-deposit:active,
+        .btn-deposit:focus,
+        .btn-deposit:focus-visible,
+        .btn-deposit:disabled {
             animation: none !important;
             transition: none !important;
+            filter: none !important;
+            box-shadow: none !important;
         }
         .wallet-box {
             background: #2b1f3d;
@@ -389,7 +397,6 @@
             text-align: center;
             width: 92%;
             max-width: 360px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             box-sizing: border-box;
         }
         .wallet-box h3 { color: #ffb703; margin-top: 0; }
@@ -407,29 +414,23 @@
             position: relative !important;
             z-index: 1 !important;
             background-color: #38b000 !important;
-            color: #fff !important;
+            color: #ffffff !important;
             padding: 10px 20px;
+            min-height: 40px;
             border: none;
             border-radius: 6px;
-            font-weight: bold;
+            font-weight: 800;
             cursor: pointer;
             width: 100%;
             margin-top: 10px;
-            animation: none !important;
-            transition: none !important;
             opacity: 1 !important;
-            transform: translateZ(0) !important;
-            will-change: auto !important;
-            backface-visibility: hidden;
+            transform: none !important;
             -webkit-tap-highlight-color: transparent;
         }
-        .btn-deposit:hover,
-        .btn-deposit:active,
-        .btn-deposit:focus {
-            background-color: #38b000 !important;
-            color: #fff !important;
-            opacity: 1 !important;
-            transform: translateZ(0) !important;
+        .btn-deposit:disabled {
+            background-color: #2d8a00 !important;
+            color: #e8f5e9 !important;
+            cursor: wait;
         }
         .wallet-status-msg {
             margin-top: 8px;
@@ -1014,6 +1015,7 @@
             if (isSubmittingDeposit) return;
 
             const inputEl = document.getElementById("depositAmountInput");
+            const btnEl = document.getElementById("submitDepositBtn");
             const txListEl = document.getElementById("txHistoryList");
             const amount = Number(inputEl ? inputEl.value : 0);
 
@@ -1024,7 +1026,12 @@
             }
 
             isSubmittingDeposit = true;
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.textContent = "Submitting...";
+            }
             setWalletStatus("Submitting deposit...");
+
             try {
                 const tgUser = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
                 const parsed = await postWithEndpointFallback(
@@ -1048,7 +1055,9 @@
                     }
                     if (txListEl) {
                         const statusLabel = data.status || "submitted";
-                        txListEl.innerHTML = `<div>• Deposit logged: ${amount.toFixed(2)} ETB (${statusLabel})</div>` + txListEl.innerHTML;
+                        const entry = document.createElement("div");
+                        entry.textContent = `• Deposit logged: ${amount.toFixed(2)} ETB (${statusLabel})`;
+                        txListEl.prepend(entry);
                     }
                     const successMsg = data.message || `Deposit of ${amount.toFixed(2)} ETB submitted.`;
                     setWalletStatus(successMsg);
@@ -1064,6 +1073,10 @@
                 alert("Network error while contacting backend.");
             } finally {
                 isSubmittingDeposit = false;
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.textContent = "Deposit Now";
+                }
             }
         }
 
