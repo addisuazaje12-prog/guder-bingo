@@ -68,25 +68,11 @@
             padding: 5px 10px;
             border-radius: 6px;
             font-weight: 900;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             margin-bottom: 6px;
             text-align: center;
             width: 100%;
             box-sizing: border-box;
-        }
-        .local-notice-banner {
-            display: none;
-            width: 100%;
-            box-sizing: border-box;
-            background: #2b1f3d;
-            border: 1px solid #ffb703;
-            color: #ffb703;
-            padding: 6px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            margin-bottom: 6px;
-            text-align: center;
         }
         .cartela-grid {
             display: grid;
@@ -96,7 +82,7 @@
             overflow-y: auto;
             width: 100%;
             padding: 5px;
-            background: rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.12);
             border-radius: 8px;
             box-sizing: border-box;
         }
@@ -535,7 +521,7 @@
         let activeCallAudio = null;
         let isSubmittingDeposit = false;
         let audioUnlocked = false;
-        let lastAudioStatusText = "Tap screen or Test Audio to enable Amharic voice";
+        let lastAudioStatusText = "Tap screen or Test Sound for Amharic voice";
 
         const verifiedWinnersList = [
             { name: "አሸናፊ 1", phone: "0911000000", session: "Session #1 - 2026-11-20 09:00" }
@@ -565,7 +551,6 @@
 
         function unlockAudioOnce() {
             audioUnlocked = true;
-            // Unlock Web Audio + HTMLAudio with a short silent buffer
             try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (AudioCtx) {
@@ -616,7 +601,6 @@
             const nextFile = callAudioQueue[0];
             isDrainingAudioQueue = true;
 
-            // Only probe audio endpoints on the live Flask backend first
             const primaryBase = BACKEND_CANDIDATES[0];
             const audioUrls = [
                 `${primaryBase}/audio/${nextFile}`,
@@ -662,7 +646,6 @@
                     }).catch((err) => {
                         activeCallAudio = null;
                         if (!audioUnlocked && err && err.name === "NotAllowedError") {
-                            // Keep queued until user taps; release lock so tap can trigger drainAudioQueue()
                             isDrainingAudioQueue = false;
                             setAudioStatus(`👆 Tap anywhere to play ${nextFile}`);
                         } else {
@@ -686,7 +669,7 @@
         function testAmharicAudio(sampleNum = 1) {
             unlockAudioOnce();
             const file = getAudioFilenameForNumber(sampleNum) || "b1.mp3";
-            setAudioStatus(`Testing ${file} from ${BACKEND_CANDIDATES[0]}...`);
+            setAudioStatus(`Testing ${file}...`);
             enqueueCallAudio(file);
         }
 
@@ -808,10 +791,52 @@
         async function startAppSession() {
             unlockAudioOnce();
             await syncWalletFromServer();
-            renderCallingBoard();
+            renderSelectionBoard();
             await pollGameState();
             clearPolling();
             pollTimer = setInterval(pollGameState, 2000);
+        }
+
+        function renderSelectionBoard() {
+            document.getElementById("topStats").style.display = "grid";
+            const container = document.getElementById("mainContainer");
+            const gridHtml = Array.from({ length: 100 }, (_, i) => i + 1)
+                .map(n => `<div class="cartela-opt${selectedCartelaNo === n ? " selected" : ""}" onclick="pickCartela(${n})">${n}</div>`)
+                .join("");
+
+            container.innerHTML = `
+                <div class="timer-banner">
+                    Select Cartela (1–100) • ${currentRoomStatus} • ${userBalance.toFixed(2)} ETB
+                </div>
+                <div class="cartela-grid">${gridHtml}</div>
+                <div style="display:flex; gap:6px; width:100%; margin-top:8px;">
+                    <button type="button" class="btn-test-audio" style="background:#38b000;" onclick="confirmAndOpenCallingBoard()">
+                        ▶ Enter Board (${selectedCartelaNo ? "Cartela #" + selectedCartelaNo : "Cartela #1"})
+                    </button>
+                    <button type="button" class="btn-test-audio" onclick="testAmharicAudio(${calledNumbersList[calledNumbersList.length - 1] || 1})">
+                        🔊 Test Sound
+                    </button>
+                </div>
+                <div class="audio-status-bar" id="audioStatusBar" style="margin-top:6px; width:100%; box-sizing:border-box;">${lastAudioStatusText}</div>
+            `;
+        }
+
+        function pickCartela(num) {
+            unlockAudioOnce();
+            selectedCartelaNo = num;
+            selectedCartelaMatrix = generateCartelaMatrix(num);
+            markedCells = new Set(["FREE"]);
+            renderSelectionBoard();
+        }
+
+        function confirmAndOpenCallingBoard() {
+            unlockAudioOnce();
+            if (!selectedCartelaNo) {
+                selectedCartelaNo = 1;
+                selectedCartelaMatrix = generateCartelaMatrix(1);
+            }
+            renderCallingBoard();
+            updateCallerUI();
         }
 
         function renderCallingBoard() {
@@ -871,6 +896,7 @@
                         <div class="recent-calls" id="recentCallsBox">${recentNums}</div>
                         <div class="audio-status-bar" id="audioStatusBar">${lastAudioStatusText}</div>
                         <button type="button" class="btn-test-audio" onclick="testAmharicAudio(${latestNum || 1})">🔊 Test Amharic Sound</button>
+                        <button type="button" class="btn-test-audio" style="background:#7b2cbf;" onclick="renderSelectionBoard()">🔢 Cartelas</button>
                     </div>
                 </div>
             `;
@@ -939,7 +965,6 @@
                 .map(item => (typeof item === "object" && item !== null ? Number(item.number) : Number(item)))
                 .filter(n => Number.isInteger(n) && n >= 1 && n <= 75);
 
-            // Reset announced numbers if server cleared called_numbers on a new round
             if (nums.length === 0 && calledNumbersList.length > 0) {
                 announcedNumbersSet.clear();
             }
@@ -1012,7 +1037,7 @@
             const container = document.getElementById("mainContainer");
 
             if (tabName === "game") {
-                renderCallingBoard();
+                renderSelectionBoard();
                 pollGameState();
                 clearPolling();
                 pollTimer = setInterval(pollGameState, 2000);
