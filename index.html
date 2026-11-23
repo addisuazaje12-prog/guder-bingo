@@ -555,6 +555,7 @@
         }
 
         const BACKEND_CANDIDATES = [
+            "https://guder-bingo.onrender.com",
             "https://guder-bingo-server.onrender.com",
             "https://guder-bingo-phase1.onrender.com"
         ];
@@ -624,20 +625,46 @@
 
             isDrainingAudioQueue = true;
             const bases = [API_BASE_URL, ...BACKEND_CANDIDATES.filter(b => b !== API_BASE_URL)];
-            const audio = new Audio(`${bases[0]}/audio/${nextFile}`);
-            activeCallAudio = audio;
+            const candidates = [];
+            for (const base of bases) {
+                candidates.push(`${base}/audio/${nextFile}`);
+                candidates.push(`${base}/static/audio/${nextFile}`);
+                candidates.push(`${base}/${nextFile}`);
+            }
 
-            const finishItem = () => {
-                if (activeCallAudio === audio) {
+            let idx = 0;
+            const tryNextUrl = () => {
+                if (idx >= candidates.length) {
                     activeCallAudio = null;
+                    isDrainingAudioQueue = false;
+                    drainAudioQueue();
+                    return;
                 }
-                isDrainingAudioQueue = false;
-                drainAudioQueue();
+                const url = candidates[idx++];
+                const audio = new Audio(url);
+                activeCallAudio = audio;
+
+                const onDone = () => {
+                    if (activeCallAudio === audio) {
+                        activeCallAudio = null;
+                    }
+                    isDrainingAudioQueue = false;
+                    drainAudioQueue();
+                };
+
+                audio.onended = onDone;
+                audio.onerror = () => {
+                    if (activeCallAudio === audio) {
+                        activeCallAudio = null;
+                    }
+                    tryNextUrl();
+                };
+                audio.play().catch(() => {
+                    tryNextUrl();
+                });
             };
 
-            audio.onended = finishItem;
-            audio.onerror = finishItem;
-            audio.play().catch(finishItem);
+            tryNextUrl();
         }
 
         function enqueueCallAudio(fileName) {
