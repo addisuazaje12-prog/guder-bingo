@@ -10,7 +10,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 DB_PATH = os.environ.get("DATABASE_PATH", "guder_bingo.db")
 MIN_STAKE_ETB = 10.0
@@ -21,12 +21,29 @@ TELEBIRR_SHORT_CODE = "800001"
 TELEBIRR_PHONE = "0913706670"
 CBE_ACCOUNT = "1000000000000"
 
+AUDIO_DIRS = ["bingo_amharic_audio", "audio", "static/audio"]
+engine_lock = threading.Lock()
+
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Telegram-Init-Data, X-Telegram-User-Id"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    return response
+
+
+@app.route("/<path:any_path>", methods=["OPTIONS"])
+def handle_options(any_path):
+    return ("", 204)
+
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH, timeout=15.0, isolation_level=None)
+    conn = sqlite3.connect(DB_PATH, timeout=20.0, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA busy_timeout=15000;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA busy_timeout=20000;")
     return conn
 
 
@@ -174,6 +191,21 @@ def get_or_create_telegram_user(init_data):
         conn.close()
 
 
+def resolve_audio_file(filename):
+    safe_name = os.path.basename(filename)
+    for audio_dir in AUDIO_DIRS:
+        if not os.path.isdir(audio_dir):
+            continue
+        direct_path = os.path.join(audio_dir, safe_name)
+        if os.path.isfile(direct_path):
+            return audio_dir, safe_name
+        target_lower = safe_name.lower()
+        for entry in os.listdir(audio_dir):
+            if entry.lower() == target_lower and os.path.isfile(os.path.join(audio_dir, entry)):
+                return audio_dir, entry
+    return None, None
+
+
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "ok", "db": DB_PATH})
@@ -188,71 +220,88 @@ def serve_frontend():
 
 @app.route("/audio/<path:filename>")
 def serve_audio(filename):
-    audio_dir = "bingo_amharic_audio"
-    if not os.path.isdir(audio_dir):
-        return jsonify({"status": "error", "message": "Audio directory not found"}), 404
-    return send_from_directory(audio_dir, filename)
+    audio_dir, matched_name = resolve_audio_file(filename)
+    if not audio_dir or not matched_name:
+        return jsonify({"status": "error", "message": f"Audio file not found: {filename}"}), 404
+    return send_from_directory(audio_dir, matched_name)
 
 
 def background_game_engine():
     while True:
-        conn = None
-        try:
-            conn = get_db_connection()
-            room = conn.execute(
-                "SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1"
-            ).fetchone()
+        if engine_lock.acquire(blocking=False):
+            conn = None
+            try:
+                conn = get_db_connection()
+                room = conn.execute(
+                    "SELECT room_id, status, total_pot, phase_start_time FROM game_rooms ORDER BY room_id DESC LIMIT 1"
+                ).fetchone()
 
-            if room:
-                room_id = room["room_id"]
-                status = room["status"]
-                phase_start_time = float(room["phase_start_time"] or 0.0)
-                now = time.time()
+                if room:
+                    room_id = room["room_id"]
+                    status = room["status"]
+                    phase_start_time = float(room["phase_start_time"] or 0.0)
+                    now = time.time()
 
-                if phase_start_time == 0.0:
-                    phase_start_time = now
-                    conn.execute(
-                        "UPDATE game_rooms SET phase_start_time = ? WHERE room_id = ?",
-                        (now, room_id),
-                    )
-
-                elapsed = now - phase_start_time
-
-                if status == "OPEN" and elapsed >= 30:
-                    conn.execute(
-                        "UPDATE game_rooms SET status = 'PREPARING', phase_start_time = ? WHERE room_id = ?",
-                        (now, room_id),
-                    )
-                elif status == "PREPARING" and elapsed >= 5:
-                    conn.execute(
-                        "UPDATE game_rooms SET status = 'RUNNING', phase_start_time = ? WHERE room_id = ?",
-                        (now, room_id),
-                    )
-                elif status == "RUNNING":
-                    rows = conn.execute(
-                        "SELECT number FROM called_numbers WHERE room_id = ?", (room_id,)
-                    ).fetchall()
-                    called = {r["number"] for r in rows}
-                    available = [n for n in range(1, 76) if n not in called]
-                    if available:
-                        next_num = random.choice(available)
+                    if phase_start_time == 0.0:
+                        phase_start_time = now
+                        conn.execute("BEGIN IMMEDIATE;")
                         conn.execute(
-                            "INSERT INTO called_numbers (room_id, number) VALUES (?, ?)",
-                            (room_id, next_num),
+                            "UPDATE game_rooms SET phase_start_time = ? WHERE room_id = ?",
+                            (now, room_id),
                         )
-                elif status == "COMPLETED" and elapsed >= 10:
-                    conn.execute("DELETE FROM called_numbers WHERE room_id = ?", (room_id,))
-                    conn.execute("DELETE FROM cartela_selections WHERE room_id = ?", (room_id,))
-                    conn.execute("DELETE FROM room_winners WHERE room_id = ?", (room_id,))
-                    conn.execute(
-                        "UPDATE game_rooms SET status = 'OPEN', total_pot = 0.0, phase_start_time = ? WHERE room_id = ?",
-                        (now, room_id),
-                    )
-        except Exception as e:
-            print("Engine error:", e)
-        finally:
-            if conn:
-                conn.close()
+                        conn.execute("COMMIT;")
+
+                    elapsed = now - phase_start_time
+
+                    if status == "OPEN" and elapsed >= 30:
+                        conn.execute("BEGIN IMMEDIATE;")
+                        conn.execute(
+                            "UPDATE game_rooms SET status = 'PREPARING', phase_start_time = ? WHERE room_id = ?",
+                            (now, room_id),
+                        )
+                        conn.execute("COMMIT;")
+                    elif status == "PREPARING" and elapsed >= 5:
+                        conn.execute("BEGIN IMMEDIATE;")
+                        conn.execute(
+                            "UPDATE game_rooms SET status = 'RUNNING', phase_start_time = ? WHERE room_id = ?",
+                            (now, room_id),
+                        )
+                        conn.execute("COMMIT;")
+                    elif status == "RUNNING":
+                        rows = conn.execute(
+                            "SELECT number FROM called_numbers WHERE room_id = ?", (room_id,)
+                        ).fetchall()
+                        called = {r["number"] for r in rows}
+                        available = [n for n in range(1, 76) if n not in called]
+                        if available:
+                            next_num = random.choice(available)
+                            conn.execute("BEGIN IMMEDIATE;")
+                            conn.execute(
+                                "INSERT INTO called_numbers (room_id, number) VALUES (?, ?)",
+                                (room_id, next_num),
+                            )
+                            conn.execute("COMMIT;")
+                    elif status == "COMPLETED" and elapsed >= 10:
+                        conn.execute("BEGIN IMMEDIATE;")
+                        conn.execute("DELETE FROM called_numbers WHERE room_id = ?", (room_id,))
+                        conn.execute("DELETE FROM cartela_selections WHERE room_id = ?", (room_id,))
+                        conn.execute("DELETE FROM room_winners WHERE room_id = ?", (room_id,))
+                        conn.execute(
+                            "UPDATE game_rooms SET status = 'OPEN', total_pot = 0.0, phase_start_time = ? WHERE room_id = ?",
+                            (now, room_id),
+                        )
+                        conn.execute("COMMIT;")
+            except Exception as e:
+                if conn:
+                    try:
+                        conn.execute("ROLLBACK;")
+                    except Exception:
+                        pass
+                print("Engine error:", e)
+            finally:
+                if conn:
+                    conn.close()
+                engine_lock.release()
         time.sleep(2)
 
 
