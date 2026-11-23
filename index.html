@@ -586,6 +586,7 @@
         let registrationMusic = null;
         let localNoticeTimeout = null;
         let isSubmittingDeposit = false;
+        let audioUnlocked = false;
 
         const verifiedWinnersList = [
             {
@@ -594,6 +595,18 @@
                 session: "Session #1 - 2026-11-20 09:00"
             }
         ];
+
+        function unlockAudioOnce() {
+            if (audioUnlocked) return;
+            audioUnlocked = true;
+            const silent = new Audio();
+            silent.play().catch(() => {});
+            if (callAudioQueue.length > 0 && !isDrainingAudioQueue) {
+                drainAudioQueue();
+            }
+        }
+        document.addEventListener("pointerdown", unlockAudioOnce, { passive: true });
+        document.addEventListener("touchstart", unlockAudioOnce, { passive: true });
 
         function getInitHeaders(extra = {}) {
             const initData = tg && tg.initData ? tg.initData : "";
@@ -661,7 +674,15 @@
                     tryNextUrl();
                 };
                 audio.play().catch(() => {
-                    tryNextUrl();
+                    if (audioUnlocked) {
+                        tryNextUrl();
+                    } else {
+                        if (!callAudioQueue.includes(nextFile)) {
+                            callAudioQueue.unshift(nextFile);
+                        }
+                        activeCallAudio = null;
+                        isDrainingAudioQueue = false;
+                    }
                 });
             };
 
@@ -855,6 +876,7 @@
         }
 
         async function startAppSession() {
+            unlockAudioOnce();
             await syncWalletFromServer();
             renderSelectionBoard();
         }
@@ -1122,6 +1144,7 @@
         }
 
         async function selectCartela(cartelaNo) {
+            unlockAudioOnce();
             if (regTimer <= 0) {
                 alert("Registration window has closed!");
                 return;
