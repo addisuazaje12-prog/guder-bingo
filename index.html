@@ -431,8 +431,15 @@
             opacity: 1 !important;
             transform: translateZ(0) !important;
         }
+        .wallet-status-msg {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #ffb703;
+            min-height: 18px;
+        }
         .tx-list {
-            margin-top: 12px;
+            margin-top: 10px;
             max-height: 120px;
             overflow-y: auto;
             text-align: left;
@@ -451,15 +458,16 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.35);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 7px;
             box-sizing: border-box;
         }
         .director-back-btn {
-            background: #7b2cbf;
+            background: #5b189a;
             color: #fff;
             border: none;
             border-radius: 6px;
-            padding: 7px 12px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
             font-weight: 800;
             cursor: pointer;
             width: 100%;
@@ -469,37 +477,46 @@
             font-size: 1.05rem;
             font-weight: 900;
             color: #ffb703;
-            margin: 4px 0 0 0;
+            margin: 2px 0 0 0;
         }
         .director-subtitle {
             text-align: center;
             font-size: 0.75rem;
             color: #dcd6f7;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .director-row-btn {
-            background: #1d63dc;
+            background: #2563eb;
             color: #fff;
             border: none;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 0.8rem;
+            border-radius: 7px;
+            padding: 9px 10px;
+            font-size: 0.78rem;
             font-weight: 800;
             cursor: pointer;
             text-align: center;
             width: 100%;
         }
+        .director-error-status {
+            text-align: center;
+            font-size: 0.74rem;
+            font-weight: 800;
+            color: #ff4d4d;
+            padding: 2px 4px;
+            min-height: 18px;
+        }
         .director-detail-box {
+            display: none;
             background: #160e24;
             border: 1px solid #4a356b;
             border-radius: 8px;
-            padding: 10px;
-            font-size: 0.78rem;
+            padding: 9px;
+            font-size: 0.76rem;
             line-height: 1.45;
             color: #f8f9fa;
             white-space: pre-line;
             text-align: left;
-            max-height: 160px;
+            max-height: 140px;
             overflow-y: auto;
         }
     </style>
@@ -537,10 +554,13 @@
             tg.expand();
         }
 
-        const RENDER_BACKEND_URL = "https://guder-bingo-phase1.onrender.com";
+        const BACKEND_CANDIDATES = [
+            "https://guder-bingo-server.onrender.com",
+            "https://guder-bingo-phase1.onrender.com"
+        ];
         const API_BASE_URL = window.location.origin.startsWith("http")
             ? window.location.origin
-            : RENDER_BACKEND_URL;
+            : BACKEND_CANDIDATES[0];
 
         const MIN_STAKE_ETB = 10.0;
         const AVAILABLE_AUDIO_FILES = new Set(["bingo.mp3"]);
@@ -557,20 +577,75 @@
         let selectedCartelaNo = null;
         let selectedCartelaMatrix = null;
         let calledNumbersList = [];
+        let announcedNumbersSet = new Set();
+        let callAudioQueue = [];
+        let isDrainingAudioQueue = false;
+        let activeCallAudio = null;
         let registrationMusic = null;
         let localNoticeTimeout = null;
         let isSubmittingDeposit = false;
 
         const verifiedWinnersList = [
-            { name: "አሸናፊ 1", phone: "0911000000", session: "Session #1 - 2026-11-20 09:00" }
+            {
+                name: "አሸናፊ 1",
+                phone: "0911000000",
+                session: "Session #1 - 2026-11-20 09:00"
+            }
         ];
 
         function getInitHeaders(extra = {}) {
             const initData = tg && tg.initData ? tg.initData : "";
-            return {
+            const headers = {
                 "X-Telegram-Init-Data": initData,
                 ...extra
             };
+            if (!initData && tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+                headers["X-Telegram-User-Id"] = String(tg.initDataUnsafe.user.id);
+            }
+            return headers;
+        }
+
+        function stopActiveCallAudio() {
+            callAudioQueue = [];
+            isDrainingAudioQueue = false;
+            if (activeCallAudio) {
+                activeCallAudio.onended = null;
+                activeCallAudio.onerror = null;
+                activeCallAudio.pause();
+                activeCallAudio.currentTime = 0;
+                activeCallAudio = null;
+            }
+        }
+
+        function drainAudioQueue() {
+            if (isDrainingAudioQueue) return;
+            const nextFile = callAudioQueue.shift();
+            if (!nextFile) return;
+
+            isDrainingAudioQueue = true;
+            const bases = [API_BASE_URL, ...BACKEND_CANDIDATES.filter(b => b !== API_BASE_URL)];
+            const audio = new Audio(`${bases[0]}/audio/${nextFile}`);
+            activeCallAudio = audio;
+
+            const finishItem = () => {
+                if (activeCallAudio === audio) {
+                    activeCallAudio = null;
+                }
+                isDrainingAudioQueue = false;
+                drainAudioQueue();
+            };
+
+            audio.onended = finishItem;
+            audio.onerror = finishItem;
+            audio.play().catch(finishItem);
+        }
+
+        function enqueueCallAudio(fileName) {
+            if (!fileName) return;
+            if (!callAudioQueue.includes(fileName)) {
+                callAudioQueue.push(fileName);
+            }
+            drainAudioQueue();
         }
 
         function playAudio(elementIdOrFile) {
@@ -584,8 +659,7 @@
             if (!isNumberCall && !AVAILABLE_AUDIO_FILES.has(elementIdOrFile)) {
                 return;
             }
-            const audio = new Audio(`${API_BASE_URL}/audio/${elementIdOrFile}`);
-            audio.play().catch(() => {});
+            enqueueCallAudio(elementIdOrFile);
         }
 
         function stopRegistrationMusic() {
@@ -601,6 +675,53 @@
             if (globalCountdown) { clearInterval(globalCountdown); globalCountdown = null; }
             if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
             if (winnerPollInterval) { clearInterval(winnerPollInterval); winnerPollInterval = null; }
+            stopActiveCallAudio();
+        }
+
+        async function parseJsonSafe(res) {
+            const text = await res.text();
+            try {
+                return { ok: res.ok, status: res.status, data: JSON.parse(text), raw: text };
+            } catch (_) {
+                return { ok: false, status: res.status, data: null, raw: text };
+            }
+        }
+
+        async function fetchWithBackendFallback(path, options = {}) {
+            const bases = [API_BASE_URL, ...BACKEND_CANDIDATES.filter(b => b !== API_BASE_URL)];
+            let lastResult = null;
+            for (const base of bases) {
+                try {
+                    const res = await fetch(`${base}${path}`, options);
+                    const parsed = await parseJsonSafe(res);
+                    if (parsed.data !== null) {
+                        return parsed;
+                    }
+                    lastResult = parsed;
+                } catch (err) {
+                    lastResult = { ok: false, status: 0, data: null, raw: err.message || "Network error" };
+                }
+            }
+            return lastResult || { ok: false, status: 0, data: null, raw: "Network error" };
+        }
+
+        async function postWithEndpointFallback(paths, payload) {
+            let lastResult = null;
+            for (const path of paths) {
+                const parsed = await fetchWithBackendFallback(path, {
+                    method: "POST",
+                    headers: getInitHeaders({ "Content-Type": "application/json" }),
+                    body: JSON.stringify(payload)
+                });
+                lastResult = parsed;
+                if (parsed.ok && parsed.data) {
+                    return parsed;
+                }
+                if (parsed.status !== 404 && parsed.status !== 405 && parsed.data) {
+                    return parsed;
+                }
+            }
+            return lastResult || { ok: false, status: 0, data: null, raw: "Network error" };
         }
 
         function showLocalInsufficientBalanceNotice() {
@@ -668,22 +789,19 @@
         }
 
         async function syncWalletFromServer() {
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/wallet`, {
-                    headers: getInitHeaders()
-                });
-                if (!res.ok) return null;
-                const data = await res.json();
-                if (data.status === "success") {
-                    userBalance = Number(data.balance || 0.0);
-                    const walletBalEl = document.getElementById("walletBalanceVal");
-                    const formattedBal = `${userBalance.toFixed(2)} ETB`;
-                    if (walletBalEl && walletBalEl.textContent !== formattedBal) {
-                        walletBalEl.textContent = formattedBal;
-                    }
-                    return data;
+            const parsed = await fetchWithBackendFallback("/api/wallet", {
+                headers: getInitHeaders()
+            });
+            const data = parsed.data;
+            if (parsed.ok && data && data.status === "success") {
+                userBalance = Number(data.balance ?? data.confirmed_balance ?? 0.0);
+                const walletBalEl = document.getElementById("walletBalanceVal");
+                const formattedBal = `${userBalance.toFixed(2)} ETB`;
+                if (walletBalEl && walletBalEl.textContent !== formattedBal) {
+                    walletBalEl.textContent = formattedBal;
                 }
-            } catch (_) {}
+                return data;
+            }
             return null;
         }
 
@@ -747,6 +865,7 @@
                         </p>
                         <input type="number" id="depositAmountInput" class="wallet-input" placeholder="Amount (ETB), e.g. 50" min="10" step="1">
                         <button type="button" class="btn-deposit" id="submitDepositBtn" onclick="submitDepositRequest()">Deposit Now</button>
+                        <div class="wallet-status-msg" id="walletStatusMsg"></div>
                         <div class="tx-list" id="txHistoryList">
                             <div>• Minimum cartela stake: 10.00 ETB</div>
                             <div>• Current confirmed balance: ${userBalance.toFixed(2)} ETB</div>
@@ -759,13 +878,13 @@
 
             if (tabName === "history") {
                 const winnersHtml = verifiedWinnersList
-                    .map(w => `<div>• <b>${w.name}</b> (${w.phone}) — ${w.session}</div>`)
+                    .map(w => `<div>• <b>${w.name}</b> — ስልክ: ${w.phone} — የጨዋታ ጊዜ / session: ${w.session}</div>`)
                     .join("");
                 container.innerHTML = `
                     <div class="wallet-box">
                         <h3>📜 Recent Winners</h3>
                         <div class="tx-list" style="max-height:180px;">${winnersHtml}</div>
-                        <button type="button" class="director-back-btn" style="margin-top:10px;" onclick="switchTab('game')">Back to Game</button>
+                        <button type="button" class="director-back-btn" style="margin-top:10px;" onclick="switchTab('game')">← ወደ ጨዋታው ገጽ ተመለስ</button>
                     </div>
                 `;
                 return;
@@ -774,20 +893,94 @@
             if (tabName === "director") {
                 container.innerHTML = `
                     <div class="director-panel">
-                        <div class="director-title">⚙️ Director Controls</div>
-                        <div class="director-subtitle">Room #${currentRoomId} • Balance ${userBalance.toFixed(2)} ETB</div>
-                        <button type="button" class="director-row-btn" onclick="showDirectorInfo('Room Status: Active\\nBackend: ${API_BASE_URL}')">Check Backend & Room</button>
-                        <button type="button" class="director-row-btn" onclick="syncWalletFromServer().then(() => showDirectorInfo('Synced Wallet: ' + userBalance.toFixed(2) + ' ETB'))">Refresh Wallet Balance</button>
-                        <div class="director-detail-box" id="directorDetailBox">Select an action above to inspect status.</div>
-                        <button type="button" class="director-back-btn" onclick="switchTab('game')">Back to Game</button>
+                        <button type="button" class="director-back-btn" onclick="switchTab('game')">← ወደ ጨዋታው ገጽ ተመለስ</button>
+                        <div class="director-title">⚙️ የዳይሬክተር መቆጣጠሪያ ፓነል</div>
+                        <div class="director-subtitle">የተረጋገጠ ዳይሬክተር</div>
+                        <button type="button" class="director-row-btn" onclick="directorActionStats()">📊 የጨዋታ መረጃዎች እና ስታቲስቲክስ</button>
+                        <button type="button" class="director-row-btn" onclick="directorActionPlayers()">👥 የተመዘገቡ ተጫዋቾች እና ገቢ</button>
+                        <button type="button" class="director-row-btn" onclick="directorActionWinners()">🏆 የተረጋገጡ አሸናፊዎች</button>
+                        <button type="button" class="director-row-btn" onclick="directorActionPending()">💰 በመጠባበቅ ላይ ያሉ ገቢዎች</button>
+                        <button type="button" class="director-row-btn" onclick="directorActionWithdrawals()">❓ የገንዘብ ማውጣት ጥያቄዎች</button>
+                        <div class="director-error-status" id="directorErrorStatus"></div>
+                        <div class="director-detail-box" id="directorDetailBox"></div>
                     </div>
                 `;
             }
         }
 
-        function showDirectorInfo(text) {
-            const box = document.getElementById("directorDetailBox");
-            if (box) box.innerText = text;
+        function setDirectorFeedback(errorText, detailText = "") {
+            const errEl = document.getElementById("directorErrorStatus");
+            const boxEl = document.getElementById("directorDetailBox");
+            if (errEl) errEl.innerText = errorText || "";
+            if (boxEl) {
+                boxEl.innerText = detailText || "";
+                boxEl.style.display = detailText ? "block" : "none";
+            }
+        }
+
+        async function directorActionStats() {
+            setDirectorFeedback("", "");
+            const parsed = await fetchWithBackendFallback("/api/game/state", {
+                headers: getInitHeaders()
+            });
+            const data = parsed.data;
+            if (!parsed.ok || !data || data.status !== "success") {
+                setDirectorFeedback("አስርር ማግኘት አልተቻለም…", "");
+                return;
+            }
+            const room = data.room || {};
+            const calledCount = Array.isArray(data.called_numbers) ? data.called_numbers.length : 0;
+            setDirectorFeedback(
+                "",
+                `ሩም #: ${room.room_id || currentRoomId}\nጠቅላላ ደራሽ (Pot): ${Number(room.total_pot || 0).toFixed(2)} ETB\nየተጠሩ ቁጥሮች: ${calledCount}`
+            );
+        }
+
+        async function directorActionPlayers() {
+            setDirectorFeedback("", "");
+            const walletData = await syncWalletFromServer();
+            if (!walletData) {
+                setDirectorFeedback("አስርር ማግኘት አልተቻለም…", "");
+                return;
+            }
+            setDirectorFeedback(
+                "",
+                `የአሁኑ ቀሪ ሂሳብ: ${userBalance.toFixed(2)} ETB\nዝቅተኛ ካርቴላ መጠን: ${MIN_STAKE_ETB.toFixed(2)} ETB`
+            );
+        }
+
+        function directorActionWinners() {
+            setDirectorFeedback("", "");
+            const lines = verifiedWinnersList.map((w, idx) =>
+                `${idx + 1}. የአሸናፊ ስም: ${w.name}\n   ስልክ ቁጥር: ${w.phone}\n   የጨዋታ ጊዜ / session: ${w.session}`
+            ).join("\n\n");
+            setDirectorFeedback("", lines || "የተረጋገጠ አሸናፊ የለም።");
+        }
+
+        async function directorActionPending() {
+            setDirectorFeedback("", "");
+            const walletData = await syncWalletFromServer();
+            if (!walletData) {
+                setDirectorFeedback("አስርር ማግኘት አልተቻለም…", "");
+                return;
+            }
+            const pending = Number(walletData.pending_balance || 0).toFixed(2);
+            setDirectorFeedback(
+                "",
+                `በመጠባበቅ ላይ ያለ ገቢ: ${pending} ETB\nየተረጋገጠ ሂሳብ: ${userBalance.toFixed(2)} ETB`
+            );
+        }
+
+        function directorActionWithdrawals() {
+            setDirectorFeedback(
+                "",
+                "የገንዘብ ማውጣት ጥያቄዎችን በቴሌግራም ቦቱ (@guderbingo_bot) በኩል ያስተዳድሩ።"
+            );
+        }
+
+        function setWalletStatus(msg) {
+            const el = document.getElementById("walletStatusMsg");
+            if (el) el.innerText = msg || "";
         }
 
         async function submitDepositRequest() {
@@ -798,34 +991,49 @@
             const amount = Number(inputEl ? inputEl.value : 0);
 
             if (!amount || amount < MIN_STAKE_ETB) {
+                setWalletStatus("Please enter at least 10 ETB.");
                 alert("Please enter at least 10 ETB.");
                 return;
             }
 
             isSubmittingDeposit = true;
+            setWalletStatus("Submitting deposit...");
             try {
-                const res = await fetch(`${API_BASE_URL}/api/wallet/deposit`, {
-                    method: "POST",
-                    headers: getInitHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({ amount })
-                });
-                const data = await res.json();
-                if (res.ok && (data.status === "success" || data.status === "pending_verification")) {
+                const tgUser = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+                const parsed = await postWithEndpointFallback(
+                    ["/api/wallet/deposit", "/api/deposit", "/api/wallet/add"],
+                    {
+                        amount,
+                        user_id: tgUser && tgUser.id ? tgUser.id : undefined,
+                        init_data: tg && tg.initData ? tg.initData : ""
+                    }
+                );
+                const data = parsed.data;
+                if (parsed.ok && data && (!data.status || data.status === "success" || data.status === "pending_verification" || data.status === "ok")) {
                     if (typeof data.balance === "number") userBalance = data.balance;
                     else if (typeof data.confirmed_balance === "number") userBalance = data.confirmed_balance;
+                    else userBalance += amount;
+
                     const balEl = document.getElementById("walletBalanceVal");
                     const formattedBal = `${userBalance.toFixed(2)} ETB`;
                     if (balEl && balEl.textContent !== formattedBal) {
                         balEl.textContent = formattedBal;
                     }
                     if (txListEl) {
-                        txListEl.innerHTML = `<div>• Deposit logged: ${amount.toFixed(2)} ETB (${data.status})</div>` + txListEl.innerHTML;
+                        const statusLabel = data.status || "submitted";
+                        txListEl.innerHTML = `<div>• Deposit logged: ${amount.toFixed(2)} ETB (${statusLabel})</div>` + txListEl.innerHTML;
                     }
-                    alert(data.message || "Deposit request submitted.");
+                    const successMsg = data.message || `Deposit of ${amount.toFixed(2)} ETB submitted.`;
+                    setWalletStatus(successMsg);
+                    alert(successMsg);
                 } else {
-                    alert(data.message || "Could not process deposit.");
+                    const errMsg = (data && (data.message || data.error))
+                        || `Deposit failed (HTTP ${parsed.status || "network"}).`;
+                    setWalletStatus(errMsg);
+                    alert(errMsg);
                 }
             } catch (_) {
+                setWalletStatus("Network error while contacting backend.");
                 alert("Network error while contacting backend.");
             } finally {
                 isSubmittingDeposit = false;
@@ -885,18 +1093,18 @@
             }
 
             const matrix = generateCartelaMatrix(cartelaNo);
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/cartela/select`, {
-                    method: "POST",
-                    headers: getInitHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({
-                        room_id: currentRoomId,
-                        cartela_no: cartelaNo,
-                        numbers: matrix
-                    })
-                });
-                const data = await res.json();
-                if (!res.ok || data.status === "error") {
+            const parsed = await fetchWithBackendFallback("/api/cartela/select", {
+                method: "POST",
+                headers: getInitHeaders({ "Content-Type": "application/json" }),
+                body: JSON.stringify({
+                    room_id: currentRoomId,
+                    cartela_no: cartelaNo,
+                    numbers: matrix
+                })
+            });
+            const data = parsed.data;
+            if (data) {
+                if (!parsed.ok || data.status === "error") {
                     if ((data.message || "").toLowerCase().includes("balance")) {
                         showLocalInsufficientBalanceNotice();
                     } else {
@@ -907,8 +1115,6 @@
                 if (typeof data.balance === "number") {
                     userBalance = data.balance;
                 }
-            } catch (_) {
-                // Allow local preview if backend is temporarily unreachable
             }
 
             if (selectedCartelaNo) {
@@ -961,6 +1167,17 @@
             if (winner.claimed_at === lastSeenWinnerTimestamp) return;
             lastSeenWinnerTimestamp = winner.claimed_at;
 
+            const alreadyExists = verifiedWinnersList.some(
+                w => w.name === (winner.winner_name || "አሸናፊ") && w.session === winner.claimed_at
+            );
+            if (!alreadyExists) {
+                verifiedWinnersList.unshift({
+                    name: winner.winner_name || "አሸናፊ",
+                    phone: winner.phone || "ያልተመዘገበ",
+                    session: `Room #${winner.room_id || currentRoomId} - ${winner.claimed_at}`
+                });
+            }
+
             const banner = document.getElementById("roomWinnerBanner");
             if (banner) {
                 banner.style.display = "block";
@@ -970,19 +1187,16 @@
         }
 
         async function pollRoomWinner() {
-            try {
-                const sinceParam = lastSeenWinnerTimestamp
-                    ? `?since=${encodeURIComponent(lastSeenWinnerTimestamp)}`
-                    : "";
-                const res = await fetch(`${API_BASE_URL}/api/room/${currentRoomId}/winner${sinceParam}`, {
-                    headers: getInitHeaders()
-                });
-                if (!res.ok) return;
-                const data = await res.json();
-                if (data.status === "success" && data.winner) {
-                    displayRoomWinnerBanner(data.winner);
-                }
-            } catch (_) {}
+            const sinceParam = lastSeenWinnerTimestamp
+                ? `?since=${encodeURIComponent(lastSeenWinnerTimestamp)}`
+                : "";
+            const parsed = await fetchWithBackendFallback(`/api/room/${currentRoomId}/winner${sinceParam}`, {
+                headers: getInitHeaders()
+            });
+            const data = parsed.data;
+            if (parsed.ok && data && data.status === "success" && data.winner) {
+                displayRoomWinnerBanner(data.winner);
+            }
         }
 
         function updateCallerDisplay(numbers) {
@@ -1000,8 +1214,13 @@
             const recentEl = document.getElementById("recentCallsRow");
             if (calledNumbersList.length > 0) {
                 const lastNum = calledNumbersList[calledNumbersList.length - 1];
-                if (circleEl) circleEl.innerText = `${getBingoLetter(lastNum)}${lastNum}`;
-                playAudio(`${getBingoLetter(lastNum).toLowerCase()}${lastNum}.mp3`);
+                const callCode = `${getBingoLetter(lastNum)}${lastNum}`;
+                if (circleEl) circleEl.innerText = callCode;
+
+                if (!announcedNumbersSet.has(lastNum)) {
+                    announcedNumbersSet.add(lastNum);
+                    enqueueCallAudio(`${callCode.toLowerCase()}.mp3`);
+                }
             }
             if (recentEl) {
                 const lastFive = calledNumbersList.slice(-5).reverse();
@@ -1015,6 +1234,7 @@
             clearAllTimers();
             stopRegistrationMusic();
             calledNumbersList = [];
+            announcedNumbersSet = new Set();
             lastSeenWinnerTimestamp = "";
 
             const activeCartela = selectedCartelaNo || cartelaNo || 1;
@@ -1095,23 +1315,20 @@
             `;
 
             async function syncGameState() {
-                try {
-                    const res = await fetch(`${API_BASE_URL}/api/game/state`, {
-                        headers: getInitHeaders()
-                    });
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    if (data.status === "success" && data.room) {
-                        currentRoomId = data.room.room_id || currentRoomId;
-                        currentPot = Number(data.room.total_pot || 0);
-                        document.getElementById("gameIdVal").innerText = String(currentRoomId);
-                        document.getElementById("derashVal").innerText = `${currentPot.toFixed(0)}`;
-                        if (Array.isArray(data.called_numbers)) {
-                            const nums = data.called_numbers.map(x => Number(x.number)).filter(Boolean);
-                            updateCallerDisplay(nums);
-                        }
+                const parsed = await fetchWithBackendFallback("/api/game/state", {
+                    headers: getInitHeaders()
+                });
+                const data = parsed.data;
+                if (parsed.ok && data && data.status === "success" && data.room) {
+                    currentRoomId = data.room.room_id || currentRoomId;
+                    currentPot = Number(data.room.total_pot || 0);
+                    document.getElementById("gameIdVal").innerText = String(currentRoomId);
+                    document.getElementById("derashVal").innerText = `${currentPot.toFixed(0)}`;
+                    if (Array.isArray(data.called_numbers)) {
+                        const nums = data.called_numbers.map(x => Number(x.number)).filter(Boolean);
+                        updateCallerDisplay(nums);
                     }
-                } catch (_) {}
+                }
             }
 
             syncGameState();
@@ -1142,25 +1359,25 @@
                 ? (tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `Cartela #${selectedCartelaNo}`))
                 : `Cartela #${selectedCartelaNo}`;
 
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/claim-bingo`, {
-                    method: "POST",
-                    headers: getInitHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({
-                        room_id: currentRoomId,
-                        cartela_no: selectedCartelaNo,
-                        winner_name: winnerName
-                    })
-                });
-                const data = await res.json();
-                if (res.ok && data.winner) {
+            const parsed = await fetchWithBackendFallback("/api/claim-bingo", {
+                method: "POST",
+                headers: getInitHeaders({ "Content-Type": "application/json" }),
+                body: JSON.stringify({
+                    room_id: currentRoomId,
+                    cartela_no: selectedCartelaNo,
+                    winner_name: winnerName
+                })
+            });
+            const data = parsed.data;
+            if (data) {
+                if (parsed.ok && data.winner) {
                     displayRoomWinnerBanner(data.winner);
                 }
                 if (typeof data.user_balance === "number") {
                     userBalance = data.user_balance;
                 }
                 alert(data.message || "Bingo claim processed.");
-            } catch (_) {
+            } else {
                 alert("Network error while claiming Bingo.");
             }
         }
