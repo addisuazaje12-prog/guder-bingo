@@ -431,8 +431,15 @@
             opacity: 1 !important;
             transform: translateZ(0) !important;
         }
+        .wallet-status-msg {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #ffb703;
+            min-height: 18px;
+        }
         .tx-list {
-            margin-top: 12px;
+            margin-top: 10px;
             max-height: 120px;
             overflow-y: auto;
             text-align: left;
@@ -547,10 +554,8 @@
             tg.expand();
         }
 
-        const RENDER_BACKEND_URL = "https://guder-bingo-phase1.onrender.com";
-        const API_BASE_URL = window.location.origin.startsWith("http")
-            ? window.location.origin
-            : RENDER_BACKEND_URL;
+        // Set this to the exact Render URL hosting your Flask backend (app.py)
+        const API_BASE_URL = "https://guder-bingo-phase1.onrender.com";
 
         const MIN_STAKE_ETB = 10.0;
         const AVAILABLE_AUDIO_FILES = new Set(["bingo.mp3"]);
@@ -564,6 +569,10 @@
         let syncInterval = null;
         let winnerPollInterval = null;
         let lastSeenWinnerTimestamp = "";
+        let lastPlayedCallKey = "";
+        let callerAudioPlayer = null;
+        let audioQueue = [];
+        let isPlayingQueuedAudio = false;
         let selectedCartelaNo = null;
         let selectedCartelaMatrix = null;
         let calledNumbersList = [];
@@ -577,10 +586,40 @@
 
         function getInitHeaders(extra = {}) {
             const initData = tg && tg.initData ? tg.initData : "";
+            const userId = tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id
+                ? String(tg.initDataUnsafe.user.id)
+                : "";
             return {
                 "X-Telegram-Init-Data": initData,
+                "X-Telegram-User-Id": userId,
                 ...extra
             };
+        }
+
+        function drainAudioQueue() {
+            if (isPlayingQueuedAudio || audioQueue.length === 0) return;
+            const nextFile = audioQueue.shift();
+            isPlayingQueuedAudio = true;
+
+            if (!callerAudioPlayer) {
+                callerAudioPlayer = new Audio();
+            }
+
+            callerAudioPlayer.onended = () => {
+                isPlayingQueuedAudio = false;
+                drainAudioQueue();
+            };
+            callerAudioPlayer.onerror = () => {
+                isPlayingQueuedAudio = false;
+                drainAudioQueue();
+            };
+
+            callerAudioPlayer.src = `${API_BASE_URL}/audio/${nextFile}`;
+            callerAudioPlayer.currentTime = 0;
+            callerAudioPlayer.play().catch(() => {
+                isPlayingQueuedAudio = false;
+                drainAudioQueue();
+            });
         }
 
         function playAudio(elementIdOrFile) {
@@ -594,8 +633,18 @@
             if (!isNumberCall && !AVAILABLE_AUDIO_FILES.has(elementIdOrFile)) {
                 return;
             }
-            const audio = new Audio(`${API_BASE_URL}/audio/${elementIdOrFile}`);
-            audio.play().catch(() => {});
+            audioQueue.push(elementIdOrFile);
+            drainAudioQueue();
+        }
+
+        function resetCallerAudioState() {
+            lastPlayedCallKey = "";
+            audioQueue = [];
+            isPlayingQueuedAudio = false;
+            if (callerAudioPlayer) {
+                callerAudioPlayer.pause();
+                callerAudioPlayer.currentTime = 0;
+            }
         }
 
         function stopRegistrationMusic() {
@@ -684,8 +733,8 @@
                 });
                 if (!res.ok) return null;
                 const data = await res.json();
-                if (data.status === "success") {
-                    userBalance = Number(data.balance || 0.0);
+                if (data.status === "success" || typeof data.balance === "number") {
+                    userBalance = Number(data.balance ?? data.confirmed_balance ?? 0.0);
                     const walletBalEl = document.getElementById("walletBalanceVal");
                     const formattedBal = `${userBalance.toFixed(2)} ETB`;
                     if (walletBalEl && walletBalEl.textContent !== formattedBal) {
@@ -705,6 +754,7 @@
         function showStartScreen() {
             clearAllTimers();
             stopRegistrationMusic();
+            resetCallerAudioState();
 
             document.getElementById("topStats").style.display = "none";
             renderDefaultBottomNav();
@@ -738,6 +788,7 @@
         function switchTab(tabName) {
             clearAllTimers();
             stopRegistrationMusic();
+            resetCallerAudioState();
             document.getElementById("topStats").style.display = "none";
             renderDefaultBottomNav();
 
@@ -757,6 +808,7 @@
                         </p>
                         <input type="number" id="depositAmountInput" class="wallet-input" placeholder="Amount (ETB), e.g. 50" min="10" step="1">
                         <button type="button" class="btn-deposit" id="submitDepositBtn" onclick="submitDepositRequest()">Deposit Now</button>
+                        <div class="wallet-status-msg" id="walletStatusMsg"></div>
                         <div class="tx-list" id="txHistoryList">
                             <div>• Minimum cartela stake: 10.00 ETB</div>
                             <div>• Current confirmed balance: ${userBalance.toFixed(2)} ETB</div>
@@ -873,6 +925,14 @@
             );
         }
 
+        function setWalletStatus(msg, isError = false) {
+            const el = document.getElementById("walletStatusMsg");
+            if (el) {
+                el.style.color = isError ? "#ff6b6b" : "#38b000";
+                el.innerText = msg || "";
+            }
+        }
+
         async function submitDepositRequest() {
             if (isSubmittingDeposit) return;
 
@@ -881,35 +941,48 @@
             const amount = Number(inputEl ? inputEl.value : 0);
 
             if (!amount || amount < MIN_STAKE_ETB) {
-                alert("Please enter at least 10 ETB.");
+                setWalletStatus("Please enter at least 10 ETB.", true);
                 return;
             }
 
             isSubmittingDeposit = true;
+            setWalletStatus("Submitting deposit...", false);
+
             try {
                 const res = await fetch(`${API_BASE_URL}/api/wallet/deposit`, {
                     method: "POST",
                     headers: getInitHeaders({ "Content-Type": "application/json" }),
                     body: JSON.stringify({ amount })
                 });
-                const data = await res.json();
-                if (res.ok && (data.status === "success" || data.status === "pending_verification")) {
+
+                const rawText = await res.text();
+                let data = {};
+                try {
+                    data = JSON.parse(rawText);
+                } catch (_) {
+                    data = { message: rawText || `HTTP ${res.status}` };
+                }
+
+                if (res.ok && (data.status === "success" || data.status === "pending_verification" || data.ok)) {
                     if (typeof data.balance === "number") userBalance = data.balance;
                     else if (typeof data.confirmed_balance === "number") userBalance = data.confirmed_balance;
+                    else if (typeof data.new_balance === "number") userBalance = data.new_balance;
+
                     const balEl = document.getElementById("walletBalanceVal");
                     const formattedBal = `${userBalance.toFixed(2)} ETB`;
                     if (balEl && balEl.textContent !== formattedBal) {
                         balEl.textContent = formattedBal;
                     }
                     if (txListEl) {
-                        txListEl.innerHTML = `<div>• Deposit logged: ${amount.toFixed(2)} ETB (${data.status})</div>` + txListEl.innerHTML;
+                        const statusLabel = data.status || "submitted";
+                        txListEl.innerHTML = `<div>• Deposit ${amount.toFixed(2)} ETB (${statusLabel})</div>` + txListEl.innerHTML;
                     }
-                    alert(data.message || "Deposit request submitted.");
+                    setWalletStatus(data.message || `Deposit of ${amount.toFixed(2)} ETB processed.`, false);
                 } else {
-                    alert(data.message || "Could not process deposit.");
+                    setWalletStatus(data.message || `Deposit failed (HTTP ${res.status}).`, true);
                 }
-            } catch (_) {
-                alert("Network error while contacting backend.");
+            } catch (err) {
+                setWalletStatus(`Network error: ${err && err.message ? err.message : "check backend connection"}`, true);
             } finally {
                 isSubmittingDeposit = false;
             }
@@ -918,6 +991,7 @@
         function renderSelectionBoard() {
             clearAllTimers();
             stopRegistrationMusic();
+            resetCallerAudioState();
             selectedCartelaNo = null;
             selectedCartelaMatrix = null;
 
@@ -1082,171 +1156,4 @@
             const circleEl = document.getElementById("currentCallCircle");
             const recentEl = document.getElementById("recentCallsRow");
             if (calledNumbersList.length > 0) {
-                const lastNum = calledNumbersList[calledNumbersList.length - 1];
-                if (circleEl) circleEl.innerText = `${getBingoLetter(lastNum)}${lastNum}`;
-                playAudio(`${getBingoLetter(lastNum).toLowerCase()}${lastNum}.mp3`);
-            }
-            if (recentEl) {
-                const lastFive = calledNumbersList.slice(-5).reverse();
-                recentEl.innerHTML = lastFive
-                    .map(n => `<span class="recent-pill">${getBingoLetter(n)}${n}</span>`)
-                    .join("");
-            }
-        }
-
-        function renderCallingBoard(cartelaNo) {
-            clearAllTimers();
-            stopRegistrationMusic();
-            calledNumbersList = [];
-            lastSeenWinnerTimestamp = "";
-
-            const activeCartela = selectedCartelaNo || cartelaNo || 1;
-            const matrix = selectedCartelaMatrix || generateCartelaMatrix(activeCartela);
-
-            document.getElementById("topStats").style.display = "grid";
-            document.getElementById("gameIdVal").innerText = String(currentRoomId);
-            document.getElementById("derashVal").innerText = `${currentPot.toFixed(0)}`;
-            document.getElementById("playerVal").innerText = "1+";
-            document.getElementById("stakeVal").innerText = `${MIN_STAKE_ETB.toFixed(0)}`;
-            document.getElementById("calledVal").innerText = "0";
-
-            const ranges = [
-                { letter: "B", start: 1, end: 15 },
-                { letter: "I", start: 16, end: 30 },
-                { letter: "N", start: 31, end: 45 },
-                { letter: "G", start: 46, end: 60 },
-                { letter: "O", start: 61, end: 75 }
-            ];
-
-            let colsHtml = "";
-            ranges.forEach(r => {
-                let cells = "";
-                for (let n = r.start; n <= r.end; n++) {
-                    cells += `<div class="num-cell" id="board-num-${n}">${n}</div>`;
-                }
-                colsHtml += `<div class="bingo-col-group">${cells}</div>`;
-            });
-
-            let playerCellsHtml = "";
-            for (let r = 0; r < 5; r++) {
-                for (let c = 0; c < 5; c++) {
-                    const val = matrix[r][c];
-                    const isFree = val === "FREE";
-                    const cls = isFree ? "player-cell free marked" : "player-cell";
-                    playerCellsHtml += `<div class="${cls}" onclick="this.classList.toggle('marked')">${val}</div>`;
-                }
-            }
-
-            const container = document.getElementById("mainContainer");
-            container.innerHTML = `
-                <div class="calling-layout">
-                    <div class="left-column">
-                        <div class="bing-column-container">
-                            <div class="bingo-header-row">
-                                <div class="bingo-letter">B</div>
-                                <div class="bingo-letter">I</div>
-                                <div class="bingo-letter">N</div>
-                                <div class="bingo-letter">G</div>
-                                <div class="bingo-letter">O</div>
-                            </div>
-                            <div class="num-grid-75">${colsHtml}</div>
-                        </div>
-                    </div>
-                    <div class="right-column">
-                        <div class="caller-panel">
-                            <div class="winner-banner" id="roomWinnerBanner"></div>
-                            <div class="current-call-box">
-                                <span>CALL</span>
-                                <div class="call-circle" id="currentCallCircle">--</div>
-                            </div>
-                            <div class="recent-calls" id="recentCallsRow"></div>
-                        </div>
-                        <div class="player-cartela-box">
-                            <div class="player-cartela-title">Cartela #${activeCartela}</div>
-                            <div class="player-card-grid">${playerCellsHtml}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById("bottomNavContainer").innerHTML = `
-                <div class="game-footer-actions">
-                    <button type="button" class="btn-leave" onclick="leaveGame()">Leave</button>
-                    <button type="button" class="btn-refresh" onclick="refreshCallingGame()">Refresh</button>
-                    <button type="button" class="btn-bingo" onclick="claimBingo()">Bingo!</button>
-                </div>
-            `;
-
-            async function syncGameState() {
-                try {
-                    const res = await fetch(`${API_BASE_URL}/api/game/state`, {
-                        headers: getInitHeaders()
-                    });
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    if (data.status === "success" && data.room) {
-                        currentRoomId = data.room.room_id || currentRoomId;
-                        currentPot = Number(data.room.total_pot || 0);
-                        document.getElementById("gameIdVal").innerText = String(currentRoomId);
-                        document.getElementById("derashVal").innerText = `${currentPot.toFixed(0)}`;
-                        if (Array.isArray(data.called_numbers)) {
-                            const nums = data.called_numbers.map(x => Number(x.number)).filter(Boolean);
-                            updateCallerDisplay(nums);
-                        }
-                    }
-                } catch (_) {}
-            }
-
-            syncGameState();
-            syncInterval = setInterval(syncGameState, 2500);
-            winnerPollInterval = setInterval(pollRoomWinner, 3000);
-            pollRoomWinner();
-        }
-
-        async function refreshCallingGame() {
-            await syncWalletFromServer();
-            renderCallingBoard(selectedCartelaNo || 1);
-        }
-
-        function leaveGame() {
-            clearAllTimers();
-            stopRegistrationMusic();
-            renderSelectionBoard();
-        }
-
-        async function claimBingo() {
-            if (!selectedCartelaNo) {
-                alert("Spectator mode: select a cartela in an open round to claim Bingo.");
-                return;
-            }
-
-            const tgUser = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
-            const winnerName = tgUser
-                ? (tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || `Cartela #${selectedCartelaNo}`))
-                : `Cartela #${selectedCartelaNo}`;
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/claim-bingo`, {
-                    method: "POST",
-                    headers: getInitHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({
-                        room_id: currentRoomId,
-                        cartela_no: selectedCartelaNo,
-                        winner_name: winnerName
-                    })
-                });
-                const data = await res.json();
-                if (res.ok && data.winner) {
-                    displayRoomWinnerBanner(data.winner);
-                }
-                if (typeof data.user_balance === "number") {
-                    userBalance = data.user_balance;
-                }
-                alert(data.message || "Bingo claim processed.");
-            } catch (_) {
-                alert("Network error while claiming Bingo.");
-            }
-        }
-    </script>
-</body>
-</html>
+                const lastNum
