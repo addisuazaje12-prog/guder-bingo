@@ -702,13 +702,14 @@
         }
 
         function playAudio(elementIdOrFile) {
+            if (!elementIdOrFile) return;
             const sound = document.getElementById(elementIdOrFile);
             if (sound) {
                 sound.currentTime = 0;
                 sound.play().catch(() => {});
                 return;
             }
-            const isNumberCall = /^(?:b|i|n|g|o)\d+\.mp3$/i.test(elementIdOrFile);
+            const isNumberCall = /^(?:b|i|n|g|o)(?:[1-9]|[1-6][0-9]|7[0-5])\.mp3$/i.test(elementIdOrFile);
             if (!isNumberCall && !AVAILABLE_AUDIO_FILES.has(elementIdOrFile)) {
                 return;
             }
@@ -1226,11 +1227,17 @@
         }
 
         function getBingoLetter(num) {
-            if (num <= 15) return "B";
-            if (num <= 30) return "I";
-            if (num <= 45) return "N";
-            if (num <= 60) return "G";
+            const n = Number(num);
+            if (n <= 15) return "B";
+            if (n <= 30) return "I";
+            if (n <= 45) return "N";
+            if (n <= 60) return "G";
             return "O";
+        }
+
+        function getAmharicAudioFile(num) {
+            const n = Number(num);
+            return `${getBingoLetter(n).toLowerCase()}${n}.mp3`;
         }
 
         function displayRoomWinnerBanner(winner) {
@@ -1290,7 +1297,7 @@
 
                 if (!announcedNumbersSet.has(lastNum)) {
                     announcedNumbersSet.add(lastNum);
-                    enqueueCallAudio(`${callCode.toLowerCase()}.mp3`);
+                    playAudio(getAmharicAudioFile(lastNum));
                 }
             }
             if (recentEl) {
