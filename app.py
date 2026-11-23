@@ -54,7 +54,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 telegram_id TEXT UNIQUE,
-                phone_number TEXT,
+                phone_number TEXT UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -155,30 +155,47 @@ def get_user_balance(user_id):
         conn.close()
 
 
-def get_or_create_telegram_user(init_data):
-    telegram_id = "test_user_tg"
+def extract_telegram_id(init_data="", fallback_user_id=""):
     if init_data:
         try:
             parsed = urllib.parse.parse_qs(init_data)
             if "user" in parsed:
                 user_obj = json.loads(parsed["user"][0])
                 if user_obj.get("id") is not None:
-                    telegram_id = str(user_obj["id"])
+                    return str(user_obj["id"]).strip()
         except Exception:
             pass
+    if fallback_user_id and str(fallback_user_id).strip():
+        return str(fallback_user_id).strip()
+    return "test_user_tg"
+
+
+def get_or_create_telegram_user(init_data="", fallback_user_id=""):
+    telegram_id = extract_telegram_id(init_data, fallback_user_id)
+    safe_phone = f"tg_{telegram_id}"
 
     conn = get_db_connection()
     try:
         conn.execute("BEGIN IMMEDIATE;")
-        row = conn.execute("SELECT user_id FROM users WHERE telegram_id = ?", (telegram_id,)).fetchone()
+        row = conn.execute(
+            "SELECT user_id FROM users WHERE telegram_id = ?",
+            (telegram_id,),
+        ).fetchone()
         if row:
             user_id = row["user_id"]
         else:
-            cur = conn.execute(
-                "INSERT INTO users (telegram_id, phone_number) VALUES (?, ?)",
-                (telegram_id, "251913706670"),
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO users (telegram_id, phone_number)
+                VALUES (?, ?)
+                """,
+                (telegram_id, safe_phone),
             )
-            user_id = cur.lastrowid
+            created = conn.execute(
+                "SELECT user_id FROM users WHERE telegram_id = ?",
+                (telegram_id,),
+            ).fetchone()
+            user_id = created["user_id"] if created else None
         conn.execute("COMMIT;")
         return user_id
     except Exception:
@@ -311,7 +328,8 @@ threading.Thread(target=background_game_engine, daemon=True).start()
 @app.route("/api/wallet", methods=["GET"])
 def get_wallet():
     init_data = request.headers.get("X-Telegram-Init-Data", "")
-    user_id = get_or_create_telegram_user(init_data)
+    fallback_uid = request.headers.get("X-Telegram-User-Id", "")
+    user_id = get_or_create_telegram_user(init_data, fallback_uid)
 
     conn = get_db_connection()
     try:
@@ -376,7 +394,8 @@ def get_rooms_list():
 @app.route("/api/game/state", methods=["GET"])
 def get_game_state():
     init_data = request.headers.get("X-Telegram-Init-Data", "")
-    user_id = get_or_create_telegram_user(init_data)
+    fallback_uid = request.headers.get("X-Telegram-User-Id", "")
+    user_id = get_or_create_telegram_user(init_data, fallback_uid)
 
     conn = get_db_connection()
     try:
@@ -435,7 +454,8 @@ def get_game_state():
 @app.route("/api/game/history", methods=["GET"])
 def get_game_history():
     init_data = request.headers.get("X-Telegram-Init-Data", "")
-    user_id = get_or_create_telegram_user(init_data)
+    fallback_uid = request.headers.get("X-Telegram-User-Id", "")
+    user_id = get_or_create_telegram_user(init_data, fallback_uid)
 
     conn = get_db_connection()
     try:
@@ -460,8 +480,9 @@ def get_game_history():
 @app.route("/api/cartela/select", methods=["POST"])
 def select_cartela_endpoint():
     data = request.get_json(silent=True) or {}
-    init_data = request.headers.get("X-Telegram-Init-Data", "")
-    user_id = get_or_create_telegram_user(init_data)
+    init_data = request.headers.get("X-Telegram-Init-Data") or data.get("init_data", "")
+    fallback_uid = request.headers.get("X-Telegram-User-Id") or data.get("user_id", "")
+    user_id = get_or_create_telegram_user(init_data, fallback_uid)
 
     try:
         room_id = int(data.get("room_id", 1))
@@ -555,8 +576,9 @@ def select_cartela_endpoint():
 @app.route("/api/wallet/deposit", methods=["POST"])
 def deposit_funds():
     data = request.get_json(silent=True) or {}
-    init_data = request.headers.get("X-Telegram-Init-Data", "")
-    user_id = get_or_create_telegram_user(init_data)
+    init_data = request.headers.get("X-Telegram-Init-Data") or data.get("init_data", "")
+    fallback_uid = request.headers.get("X-Telegram-User-Id") or data.get("user_id", "")
+    user_id = get_or_create_telegram_user(init_data, fallback_uid)
 
     try:
         amount = float(data.get("amount", MIN_STAKE_ETB))
@@ -633,8 +655,9 @@ def get_room_winner(room_id):
 @app.route("/api/bingo/claim", methods=["POST"])
 def claim_bingo():
     data = request.get_json(silent=True) or {}
-    init_data = request.headers.get("X-Telegram-Init-Data", "")
-    user_id = get_or_create_telegram_user(init_data)
+    init_data = request.headers.get("X-Telegram-Init-Data") or data.get("init_data", "")
+    fallback_uid = request.headers.get("X-Telegram-User-Id") or data.get("user_id", "")
+    user_id = get_or_create_telegram_user(init_data, fallback_uid)
 
     try:
         room_id = int(data.get("room_id", 1))
