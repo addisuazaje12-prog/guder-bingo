@@ -16,14 +16,16 @@
             background-color: #9c7bb5;
             color: #fff;
             margin: 0;
-            padding: 4px;
+            padding: 6px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
+            min-height: 100dvh;
             box-sizing: border-box;
             justify-content: space-between;
-            overflow: hidden;
+            gap: 6px;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         .top-stats {
             display: grid;
@@ -213,7 +215,7 @@
             display: flex;
             flex-direction: row;
             gap: 1px;
-            max-height: 260px;
+            max-height: 210px;
             overflow-y: auto;
         }
         .bingo-col-group {
@@ -1400,9 +1402,10 @@
             pollRoomWinner();
         }
 
-        async function refreshCallingGame() {
-            await syncWalletFromServer();
+        function refreshCallingGame() {
+            unlockAudioOnce();
             renderCallingBoard(selectedCartelaNo || 1);
+            syncWalletFromServer();
         }
 
         function leaveGame() {
