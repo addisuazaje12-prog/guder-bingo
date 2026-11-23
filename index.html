@@ -573,6 +573,7 @@
         let currentPot = 0.0;
         let regTimer = 30;
         let prepTimer = 5;
+        let prepInterval = null;
         let callInterval = null;
         let globalCountdown = null;
         let syncInterval = null;
@@ -609,6 +610,7 @@
         }
         document.addEventListener("pointerdown", unlockAudioOnce, { passive: true });
         document.addEventListener("touchstart", unlockAudioOnce, { passive: true });
+        document.addEventListener("click", unlockAudioOnce, { passive: true });
 
         function getInitHeaders(extra = {}) {
             const initData = tg && tg.initData ? tg.initData : "";
@@ -676,14 +678,14 @@
                     tryNextUrl();
                 };
                 audio.play().catch(() => {
-                    if (audioUnlocked) {
-                        tryNextUrl();
-                    } else {
+                    if (!audioUnlocked) {
                         if (!callAudioQueue.includes(nextFile)) {
                             callAudioQueue.unshift(nextFile);
                         }
                         activeCallAudio = null;
                         isDrainingAudioQueue = false;
+                    } else {
+                        tryNextUrl();
                     }
                 });
             };
@@ -706,7 +708,7 @@
                 sound.play().catch(() => {});
                 return;
             }
-            const isNumberCall = /^[bingo]\d+\.mp3$/i.test(elementIdOrFile);
+            const isNumberCall = /^(?:b|i|n|g|o)\d+\.mp3$/i.test(elementIdOrFile);
             if (!isNumberCall && !AVAILABLE_AUDIO_FILES.has(elementIdOrFile)) {
                 return;
             }
@@ -724,6 +726,7 @@
         function clearAllTimers() {
             if (callInterval) { clearInterval(callInterval); callInterval = null; }
             if (globalCountdown) { clearInterval(globalCountdown); globalCountdown = null; }
+            if (prepInterval) { clearInterval(prepInterval); prepInterval = null; }
             if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
             if (winnerPollInterval) { clearInterval(winnerPollInterval); winnerPollInterval = null; }
             stopActiveCallAudio();
@@ -871,7 +874,7 @@
             container.innerHTML = `
                 <div class="start-screen">
                     <h2>Guder Bingo</h2>
-                    <p>ጨዋታ ለመጀመር በቴሌግራም ቦቱ ውስጥ deposit በሚለው ውስጥ ገንዘብ ያስተላልፉ !</p>
+                    <p>ጨዋታ ለመጀመር በቴሌግራም ቦቱ የ ሜሴጅ መጻፊያ ላይ  /start የሚል በመጻፍ  deposit በሚለው ውስጥ ገንዘብ ያስተላልፉ !</p>
                     <button type="button" class="btn-start-game" onclick="startAppSession()">▶ Start Game</button>
                 </div>
             `;
@@ -1139,6 +1142,7 @@
 
                 if (regTimer <= 0) {
                     clearInterval(globalCountdown);
+                    globalCountdown = null;
                     stopRegistrationMusic();
                     showPreparationScreen(selectedCartelaNo || 1);
                 }
@@ -1195,6 +1199,7 @@
 
         function showPreparationScreen(cartelaNo) {
             stopRegistrationMusic();
+            if (prepInterval) { clearInterval(prepInterval); prepInterval = null; }
             prepTimer = 5;
             const statusText = selectedCartelaNo
                 ? `Cartela #${selectedCartelaNo} Confirmed!`
@@ -1208,12 +1213,13 @@
                 </div>
             `;
 
-            const prepInterval = setInterval(() => {
+            prepInterval = setInterval(() => {
                 prepTimer--;
                 const pBox = document.getElementById("prepTimerBox");
                 if (pBox) pBox.innerText = `🎲 Preparing Game: ${Math.max(0, prepTimer)}s`;
                 if (prepTimer <= 0) {
                     clearInterval(prepInterval);
+                    prepInterval = null;
                     renderCallingBoard(cartelaNo);
                 }
             }, 1000);
@@ -1387,8 +1393,10 @@
                 if (parsed.ok && data && data.status === "success" && data.room) {
                     currentRoomId = data.room.room_id || currentRoomId;
                     currentPot = Number(data.room.total_pot || 0);
-                    document.getElementById("gameIdVal").innerText = String(currentRoomId);
-                    document.getElementById("derashVal").innerText = `${currentPot.toFixed(0)}`;
+                    const gameIdEl = document.getElementById("gameIdVal");
+                    const derashEl = document.getElementById("derashVal");
+                    if (gameIdEl) gameIdEl.innerText = String(currentRoomId);
+                    if (derashEl) derashEl.innerText = `${currentPot.toFixed(0)}`;
                     if (Array.isArray(data.called_numbers)) {
                         const nums = data.called_numbers.map(x => Number(x.number)).filter(Boolean);
                         updateCallerDisplay(nums);
