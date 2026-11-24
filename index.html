@@ -557,6 +557,7 @@
         let roundPhase = "SELECTION"; // SELECTION (30s) -> PREPARATION (5s) -> CALLING (1-75) -> WINNER_DISPLAY (5s)
         let selectionSecondsLeft = 30;
         let prepSecondsLeft = 5;
+        let insufficientBalanceMessage = "";
 
         let phaseTicker = null;
         let callTicker = null;
@@ -860,6 +861,7 @@
             if (winnerCountdownTimer) { clearInterval(winnerCountdownTimer); winnerCountdownTimer = null; }
             roundPhase = "SELECTION";
             selectionSecondsLeft = seconds;
+            insufficientBalanceMessage = "";
             calledNumbersList = [];
             announcedNumbersSet.clear();
             renderSelectionBoard();
@@ -941,8 +943,10 @@
                 .map(n => `<div class="cartela-opt${selectedCartelaNo === n ? " selected" : ""}" onclick="pickCartela(${n})">${n}</div>`)
                 .join("");
 
+            const noticeDisplay = insufficientBalanceMessage ? "block" : "none";
+
             document.getElementById("mainContainer").innerHTML = `
-                <div class="local-notice-banner" id="localBalanceNotice"></div>
+                <div class="local-notice-banner" id="localBalanceNotice" style="display:${noticeDisplay};">${insufficientBalanceMessage}</div>
                 <div class="winner-banner" id="winnerBanner"></div>
                 <div class="timer-banner" id="selectionBanner">
                     ካርቴላ ይምረጡ (1–800) • ጊዜ: ${selectionSecondsLeft}s • ${userBalance.toFixed(2)} ETB
@@ -960,8 +964,22 @@
             `;
         }
 
+        // Open playing flow for everyone; show "insufficient balance" only to the user trying to select when balance < MIN_STAKE_ETB
         function pickCartela(num) {
             unlockAudioOnce();
+            if (userBalance < MIN_STAKE_ETB) {
+                insufficientBalanceMessage = `insufficient balance (Cartela #${num} requires ${MIN_STAKE_ETB.toFixed(0)} ETB • You can still watch & play)`;
+                const noticeEl = document.getElementById("localBalanceNotice");
+                if (noticeEl) {
+                    noticeEl.style.display = "block";
+                    noticeEl.textContent = insufficientBalanceMessage;
+                } else {
+                    renderSelectionBoard();
+                }
+                return;
+            }
+
+            insufficientBalanceMessage = "";
             selectedCartelaNo = num;
             selectedCartelaMatrix = generateCartelaMatrix(num);
             markedCells = new Set(["FREE"]);
