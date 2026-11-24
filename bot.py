@@ -2,6 +2,7 @@ import asyncio
 import html
 import logging
 import os
+import re
 import sqlite3
 import threading
 import time
@@ -40,10 +41,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH, timeout=20.0, isolation_level=None)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA busy_timeout=15000;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA busy_timeout=30000;")
     return conn
 
 
@@ -155,6 +157,23 @@ def get_or_create_user(telegram_id, username="", full_name="") -> int:
         conn.close()
 
 
+def parse_receipt_amount(receipt_text: str, fallback_amount: float) -> float:
+    match = re.search(
+        r"(?:ETB\s*|birr\s*)(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:ETB|birr)",
+        receipt_text,
+        re.IGNORECASE,
+    )
+    if match:
+        raw_num = match.group(1) or match.group(2)
+        try:
+            parsed = float(raw_num)
+            if parsed > 0:
+                return parsed
+        except ValueError:
+            pass
+    return float(fallback_amount)
+
+
 def build_main_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
         [InlineKeyboardButton("🎮 Play Game", web_app=WebAppInfo(url=WEB_APP_URL))],
@@ -216,6 +235,8 @@ async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def deposit_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.pop("deposit_amount", None)
+    context.user_data.pop("gateway", None)
     prompt = f"💰 የሚፈልጉትን መጠን ከ{MIN_DEPOSIT_ETB:.0f} ብር ጀምሮ ያስገቡ::"
     if update.callback_query:
         await update.callback_query.answer()
@@ -288,9 +309,14 @@ async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ እባክዎት የክፍያ SMS ወይም ማረጋገጫ ጽሁፍ ያስገቡ:")
         return AWAITING_RECEIPT
 
-    amount = float(context.user_data.get("deposit_amount", MIN_DEPOSIT_ETB))
+    fallback_amount = float(context.user_data.get("deposit_amount", MIN_DEPOSIT_ETB))
+    amount = parse_receipt_amount(receipt, fallback_amount)
     gateway = str(context.user_data.get("gateway", "Tele-Birr"))
     user_id = get_or_create_user(user.id, user.username or "", user.full_name or "")
+
+    # Always clear conversation keys so the user is never stuck in a state
+    context.user_data.pop("deposit_amount", None)
+    context.user_data.pop("gateway", None)
 
     conn = get_db_connection()
     try:
@@ -312,12 +338,17 @@ async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             (txn_id, user_id, amount, f"deposit_req_{req_id}"),
         )
         conn.execute("COMMIT;")
-    except Exception:
+    except Exception as e:
         try:
             conn.execute("ROLLBACK;")
         except Exception:
             pass
-        raise
+        logger.error("Deposit commit failed for user %s: %s", user.id, e)
+        await update.message.reply_text(
+            "⚠️ በጊዜያዊነት ችግር ተፈጥሯል፣ እባክዎን እንደገና ይላኩ።",
+            reply_markup=build_main_keyboard(),
+        )
+        return ConversationHandler.END
     finally:
         conn.close()
 
@@ -353,8 +384,6 @@ async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error("Failed to notify manager: %s", e)
 
-    context.user_data.pop("deposit_amount", None)
-    context.user_data.pop("gateway", None)
     return ConversationHandler.END
 
 
