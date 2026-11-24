@@ -554,13 +554,14 @@
         let userBalance = 0.0;
         let currentRoomId = 1;
         let currentPot = 0.0;
-        let roundPhase = "SELECTION"; // SELECTION (30s) -> PREPARATION (5s) -> CALLING (1-75)
+        let roundPhase = "SELECTION"; // SELECTION (30s) -> PREPARATION (5s) -> CALLING (1-75) -> WINNER_DISPLAY (5s)
         let selectionSecondsLeft = 30;
         let prepSecondsLeft = 5;
 
         let phaseTicker = null;
         let callTicker = null;
         let pollTimer = null;
+        let winnerCountdownTimer = null;
 
         let selectedCartelaNo = null;
         let selectedCartelaMatrix = null;
@@ -734,6 +735,7 @@
             if (phaseTicker) { clearInterval(phaseTicker); phaseTicker = null; }
             if (callTicker) { clearInterval(callTicker); callTicker = null; }
             if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            if (winnerCountdownTimer) { clearInterval(winnerCountdownTimer); winnerCountdownTimer = null; }
         }
 
         async function parseJsonSafe(res) {
@@ -826,7 +828,6 @@
             return null;
         }
 
-        // 1. Gate screen matching the first image
         function initApp() {
             syncWalletFromServer();
             showGateScreen();
@@ -845,7 +846,6 @@
             `;
         }
 
-        // 3. 30s selection -> 5s preparation -> 1-75 calling with Amharic sound
         async function startAppSession() {
             unlockAudioOnce();
             await syncWalletFromServer();
@@ -857,6 +857,7 @@
         function startSelectionPhase(seconds = 30) {
             if (phaseTicker) { clearInterval(phaseTicker); phaseTicker = null; }
             if (callTicker) { clearInterval(callTicker); callTicker = null; }
+            if (winnerCountdownTimer) { clearInterval(winnerCountdownTimer); winnerCountdownTimer = null; }
             roundPhase = "SELECTION";
             selectionSecondsLeft = seconds;
             calledNumbersList = [];
@@ -879,6 +880,7 @@
 
         function startPreparationPhase(seconds = 5) {
             if (phaseTicker) { clearInterval(phaseTicker); phaseTicker = null; }
+            if (winnerCountdownTimer) { clearInterval(winnerCountdownTimer); winnerCountdownTimer = null; }
             roundPhase = "PREPARING";
             prepSecondsLeft = seconds;
             if (!selectedCartelaNo) {
@@ -930,7 +932,6 @@
             }, 3500);
         }
 
-        // 4. 1-800 numbers in the cartela selection grid
         function renderSelectionBoard() {
             document.getElementById("topStats").style.display = "grid";
             const phaseEl = document.getElementById("phaseVal");
@@ -1043,6 +1044,46 @@
             }
         }
 
+        function startWinnerDisplayCountdown(winnerSummary, seconds = 5) {
+            if (phaseTicker) { clearInterval(phaseTicker); phaseTicker = null; }
+            if (callTicker) { clearInterval(callTicker); callTicker = null; }
+            if (winnerCountdownTimer) { clearInterval(winnerCountdownTimer); winnerCountdownTimer = null; }
+
+            roundPhase = "WINNER_DISPLAY";
+            const phaseEl = document.getElementById("phaseVal");
+            let remaining = seconds;
+
+            const renderCountdown = (secLeft) => {
+                if (phaseEl) phaseEl.textContent = `WIN ${Math.max(0, secLeft)}s`;
+                const wBanner = document.getElementById("winnerBanner");
+                if (wBanner) {
+                    wBanner.style.display = "block";
+                    wBanner.textContent = `${winnerSummary} • ቀጣይ ካርቴላ መምረጫ በ ${Math.max(0, secLeft)}s`;
+                }
+                setAudioStatus(`🏆 ${winnerSummary} • ቀጣይ ዙር በ ${Math.max(0, secLeft)}s`);
+            };
+
+            renderCountdown(remaining);
+
+            winnerCountdownTimer = setInterval(() => {
+                remaining -= 1;
+                if (remaining > 0) {
+                    renderCountdown(remaining);
+                } else {
+                    clearInterval(winnerCountdownTimer);
+                    winnerCountdownTimer = null;
+                    stopActiveCallAudio();
+                    currentRoomId += 1;
+                    selectedCartelaNo = null;
+                    selectedCartelaMatrix = null;
+                    markedCells = new Set(["FREE"]);
+                    calledNumbersList = [];
+                    announcedNumbersSet.clear();
+                    startSelectionPhase(30);
+                }
+            }, 1000);
+        }
+
         function claimBingoWinner() {
             const cNo = selectedCartelaNo || 1;
             const nowLabel = new Date().toISOString().slice(0, 16).replace("T", " ");
@@ -1059,11 +1100,8 @@
             });
 
             playWinnerAmharicSound();
-            const wBanner = document.getElementById("winnerBanner");
-            if (wBanner) {
-                wBanner.style.display = "block";
-                wBanner.textContent = `🏆 አሸናፊ: ${tgUser} | ስልክ: ${phone} | ጊዜ: ${sessionLabel}`;
-            }
+            const winnerSummary = `🏆 አሸናፊ: ${tgUser} | ስልክ: ${phone} | ጊዜ: ${sessionLabel}`;
+            startWinnerDisplayCountdown(winnerSummary, 5);
 
             postWithEndpointFallback(["/api/claim-bingo", "/api/bingo/claim"], {
                 room_id: currentRoomId,
@@ -1097,13 +1135,14 @@
         }
 
         async function pollGameState() {
+            if (roundPhase === "WINNER_DISPLAY") return;
             const parsed = await fetchWithBackendFallback("/api/game/state", { headers: getInitHeaders() });
             const data = parsed.data;
             if (!parsed.ok || !data || data.status !== "success") return;
 
             userBalance = Number(data.balance ?? userBalance);
             if (data.room) {
-                currentRoomId = Number(data.room.room_id || 1);
+                currentRoomId = Number(data.room.room_id || currentRoomId || 1);
                 currentPot = Number(data.room.total_pot || 0.0);
                 const gameIdEl = document.getElementById("gameIdVal");
                 const derashEl = document.getElementById("derashVal");
@@ -1131,7 +1170,6 @@
             }
         }
 
-        // 5. Preserved inline deposit handler
         async function submitDepositRequest() {
             if (isSubmittingDeposit) return;
             const btn = document.getElementById("submitDepositBtn");
