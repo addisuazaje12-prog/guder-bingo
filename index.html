@@ -841,6 +841,7 @@
             document.getElementById("mainContainer").innerHTML = `
                 <div class="start-screen">
                     <h2>Guder Bingo</h2>
+                    <p style="font-weight: 800; color: #ffb703; margin-bottom: 8px;">እንኳን ወደ ጉደር ቢንጎ ጨዋታ በሰላም መጡ !</p>
                     <p>ጨዋታ ለመጀመር በቴሌግራም ቦቱ የ ሜሴጅ መጻፊያ ላይ /start የሚል በመጻፍ deposit በሚለው ውስጥ ገንዘብ ያስተላልፉ !</p>
                     <button type="button" class="btn-start-game" onclick="startAppSession()">▶ Start Game</button>
                 </div>
@@ -964,7 +965,6 @@
             `;
         }
 
-        // Open playing flow for everyone; show "insufficient balance" only to the user trying to select when balance < MIN_STAKE_ETB
         function pickCartela(num) {
             unlockAudioOnce();
             if (userBalance < MIN_STAKE_ETB) {
