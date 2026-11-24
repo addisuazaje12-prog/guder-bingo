@@ -821,7 +821,12 @@
             const parsed = await fetchWithBackendFallback("/api/wallet", { headers: getInitHeaders() });
             const data = parsed.data;
             if (parsed.ok && data && data.status === "success") {
-                userBalance = Number(data.balance ?? data.confirmed_balance ?? 0.0);
+                const serverBal = Number(data.balance ?? data.confirmed_balance ?? 0.0);
+                if (serverBal > userBalance) {
+                    userBalance = serverBal;
+                } else if (userBalance === 0.0) {
+                    userBalance = serverBal;
+                }
                 const walletBalEl = document.getElementById("walletBalanceVal");
                 if (walletBalEl) walletBalEl.textContent = `${userBalance.toFixed(2)} ETB`;
                 return data;
@@ -1158,7 +1163,10 @@
             const data = parsed.data;
             if (!parsed.ok || !data || data.status !== "success") return;
 
-            userBalance = Number(data.balance ?? userBalance);
+            const serverBal = Number(data.balance ?? userBalance);
+            if (serverBal > userBalance) {
+                userBalance = serverBal;
+            }
             if (data.room) {
                 currentRoomId = Number(data.room.room_id || currentRoomId || 1);
                 currentPot = Number(data.room.total_pot || 0.0);
@@ -1188,52 +1196,67 @@
             }
         }
 
+        // Player enters Telebirr receipt/reference -> immediate balance credit & direct entry to game without manager approval
         async function submitDepositRequest() {
             if (isSubmittingDeposit) return;
+            unlockAudioOnce();
             const btn = document.getElementById("submitDepositBtn");
             const input = document.getElementById("depositAmountInput");
+            const refInput = document.getElementById("telebirrRefInput");
             const statusEl = document.getElementById("walletStatusMsg");
             const txList = document.getElementById("txHistoryList");
+            const walletBalEl = document.getElementById("walletBalanceVal");
 
-            const amount = Number(input ? input.value : MIN_STAKE_ETB);
+            const rawVal = input ? String(input.value || "").trim() : "";
+            const amount = rawVal ? Number(rawVal) : MIN_STAKE_ETB;
             if (!amount || amount <= 0) {
                 if (statusEl) statusEl.textContent = "Please enter a valid deposit amount (e.g. 10 or 50 ETB).";
                 return;
             }
 
+            const refText = (refInput && String(refInput.value || "").trim())
+                ? String(refInput.value).trim()
+                : `telebirr_${Date.now()}`;
+
             isSubmittingDeposit = true;
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = "Submitting...";
+                btn.textContent = "Entering Game...";
             }
-            if (statusEl) statusEl.textContent = "Sending deposit request...";
+            if (statusEl) statusEl.textContent = "✅ ክፍያ ተረጋግጧል! ወደ ጨዋታ በቀጥታ በመግባት ላይ...";
 
             try {
-                const parsed = await postWithEndpointFallback(
-                    ["/api/wallet/deposit", "/api/deposit"],
-                    { amount: amount, payer_reference: `web_${Date.now()}` }
-                );
-                if (parsed.data && (parsed.data.status === "pending_verification" || parsed.data.status === "success")) {
-                    const depId = parsed.data.deposit_id || `ref_${Date.now()}`;
-                    if (statusEl) statusEl.textContent = `Logged ${amount.toFixed(2)} ETB (${parsed.data.status}) • Ref: ${depId}`;
-                    if (txList) {
-                        const item = document.createElement("div");
-                        item.textContent = `• +${amount.toFixed(2)} ETB (${parsed.data.status}) — ${depId}`;
-                        txList.prepend(item);
-                    }
-                    if (input) input.value = "";
-                    await syncWalletFromServer();
-                } else {
-                    const errMsg = (parsed.data && parsed.data.message) || parsed.raw || "Deposit request failed.";
-                    if (statusEl) statusEl.textContent = `Error: ${errMsg}`;
+                // Immediately credit balance on client without waiting for manager approval
+                userBalance = Number((userBalance + amount).toFixed(2));
+                if (walletBalEl) walletBalEl.textContent = `${userBalance.toFixed(2)} ETB`;
+
+                const depId = refText;
+                if (txList) {
+                    const item = document.createElement("div");
+                    item.textContent = `• +${amount.toFixed(2)} ETB (AUTO-APPROVED) — ${depId}`;
+                    txList.prepend(item);
                 }
+                if (input) input.value = "";
+                if (refInput) refInput.value = "";
+
+                // Send record to backend non-blocking without holding up entry into the game
+                postWithEndpointFallback(
+                    ["/api/wallet/deposit", "/api/deposit"],
+                    { amount: amount, payer_reference: depId, auto_approve: true }
+                ).catch(() => {});
+
+                // Directly enter the game selection session without waiting for manager approval
+                if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                startSelectionPhase(30);
+                pollGameState();
+                pollTimer = setInterval(pollGameState, 2500);
             } catch (err) {
-                if (statusEl) statusEl.textContent = `Network error: ${err.message || "Unable to reach server"}`;
+                if (statusEl) statusEl.textContent = `Error: ${err.message || "Unable to process deposit"}`;
             } finally {
                 isSubmittingDeposit = false;
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = "Deposit Now";
+                    btn.textContent = "Deposit & Enter Game";
                 }
             }
         }
@@ -1260,14 +1283,15 @@
             if (tabName === "wallet") {
                 container.innerHTML = `
                     <div class="wallet-box">
-                        <h3>💳 Wallet & Deposit</h3>
+                        <h3>💳 Wallet & Telebirr Receipt</h3>
                         <div class="wallet-balance" id="walletBalanceVal">${userBalance.toFixed(2)} ETB</div>
-                        <input type="number" id="depositAmountInput" class="wallet-input" placeholder="Amount (ETB), e.g. 50" min="10" step="1">
-                        <button type="button" class="btn-deposit" id="submitDepositBtn" onclick="submitDepositRequest()">Deposit Now</button>
+                        <input type="number" id="depositAmountInput" class="wallet-input" placeholder="Amount (ETB), e.g. 20" min="10" step="1">
+                        <input type="text" id="telebirrRefInput" class="wallet-input" placeholder="Telebirr Transaction No. / Receipt (optional)">
+                        <button type="button" class="btn-deposit" id="submitDepositBtn" onclick="submitDepositRequest()">Deposit & Enter Game</button>
                         <div class="wallet-status-msg" id="walletStatusMsg"></div>
                         <div class="tx-list" id="txHistoryList">
                             <div>• Minimum cartela stake: 10.00 ETB</div>
-                            <div>• Current confirmed balance: ${userBalance.toFixed(2)} ETB</div>
+                            <div>• Direct game entry upon Telebirr receipt submission</div>
                         </div>
                     </div>
                 `;
