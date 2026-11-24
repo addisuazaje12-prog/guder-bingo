@@ -16,7 +16,7 @@ DB_PATH = os.environ.get("DATABASE_PATH", "guder_bingo.db")
 MIN_STAKE_ETB = 10.0
 MAX_CARTELA_NO = 800
 
-# Manual Deposit & Verification Configuration
+# Deposit & Payment Configuration
 TELEBIRR_SHORT_CODE = "800001"
 TELEBIRR_PHONE = "0913706670"
 CBE_ACCOUNT = "1000000000000"
@@ -588,7 +588,8 @@ def deposit_funds():
     if amount <= 0:
         return jsonify({"status": "error", "message": "Deposit amount must be positive."}), 400
 
-    tx_ref = str(data.get("payer_reference") or f"manual_tx_{user_id}_{int(time.time() * 1000)}").strip()
+    base_ref = str(data.get("payer_reference") or f"deposit_{user_id}_{int(time.time() * 1000)}").strip()
+    txn_id = f"{base_ref}_{user_id}_{int(time.time() * 1000)}"
 
     conn = get_db_connection()
     try:
@@ -596,18 +597,20 @@ def deposit_funds():
         conn.execute(
             """
             INSERT OR IGNORE INTO ledger_transactions (txn_id, user_id, amount, type, status, reference_id)
-            VALUES (?, ?, ?, 'MANUAL_DEPOSIT', 'PENDING', ?)
+            VALUES (?, ?, ?, 'DEPOSIT', 'CONFIRMED', ?)
             """,
-            (tx_ref, user_id, amount, tx_ref),
+            (txn_id, user_id, amount, base_ref),
         )
         conn.execute("COMMIT;")
         confirmed_balance = get_user_balance(user_id)
 
         return jsonify({
-            "status": "pending_verification",
-            "message": "Deposit receipt logged as provisional/pending verification.",
-            "deposit_id": tx_ref,
+            "status": "success",
+            "message": "Deposit confirmed and credited immediately.",
+            "deposit_id": txn_id,
+            "reference_id": base_ref,
             "amount": amount,
+            "balance": confirmed_balance,
             "confirmed_balance": confirmed_balance,
         })
     except Exception as e:
