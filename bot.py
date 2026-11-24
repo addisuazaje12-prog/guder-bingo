@@ -23,7 +23,7 @@ from telegram.request import HTTPXRequest
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 MANAGER_CHAT_ID_RAW = os.environ.get("MANAGER_CHAT_ID", "").strip()
 MANAGER_CHAT_ID = int(MANAGER_CHAT_ID_RAW) if MANAGER_CHAT_ID_RAW.lstrip("-").isdigit() else None
-WEB_APP_URL = os.environ.get("WEB_APP_URL", "https://addisuazaje12-prog.github.io/guder-bingo/").strip()
+WEB_APP_URL = os.environ.get("WEB_APP_URL", "https://guder-bingo-b0wz.onrender.com").strip()
 DB_PATH = os.environ.get("GUDER_DB_PATH", os.environ.get("DATABASE_PATH", "guder_bingo.db")).strip()
 
 TELEBIRR_ACCOUNT = os.environ.get("TELEBIRR_ACCOUNT", "0913706670").strip()
@@ -129,6 +129,7 @@ def get_user_balance(user_id: int) -> float:
 
 def get_or_create_user(telegram_id, username="", full_name="") -> int:
     tg_str = str(telegram_id)
+    safe_phone = f"tg_{tg_str}"
     conn = get_db_connection()
     try:
         conn.execute("BEGIN IMMEDIATE;")
@@ -136,11 +137,12 @@ def get_or_create_user(telegram_id, username="", full_name="") -> int:
         if row:
             user_id = int(row["user_id"])
         else:
-            cur = conn.execute(
-                "INSERT INTO users (telegram_id, phone_number) VALUES (?, ?)",
-                (tg_str, None),
+            conn.execute(
+                "INSERT OR IGNORE INTO users (telegram_id, phone_number) VALUES (?, ?)",
+                (tg_str, safe_phone),
             )
-            user_id = int(cur.lastrowid)
+            created = conn.execute("SELECT user_id FROM users WHERE telegram_id = ?", (tg_str,)).fetchone()
+            user_id = int(created["user_id"])
         conn.execute("COMMIT;")
         return user_id
     except Exception:
@@ -204,6 +206,7 @@ async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     balance = get_user_balance(user_id)
     await query.message.reply_text(
         f"✅ <b>የእርስዎ ሂሳብ (Balance):</b> <code>{balance:.2f} ETB</code>",
+        reply_markup=build_main_keyboard(),
         parse_mode="HTML",
     )
 
@@ -291,11 +294,19 @@ async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         cur = conn.execute(
             """
             INSERT INTO deposit_requests (user_id, amount, gateway, receipt_text, status)
-            VALUES (?, ?, ?, ?, 'pending')
+            VALUES (?, ?, ?, ?, 'approved')
             """,
             (user_id, amount, gateway, receipt),
         )
         req_id = int(cur.lastrowid)
+        txn_id = f"deposit_auto_{req_id}_{user.id}_{int(time.time() * 1000)}"
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO ledger_transactions (txn_id, user_id, amount, type, status, reference_id)
+            VALUES (?, ?, ?, 'DEPOSIT', 'CONFIRMED', ?)
+            """,
+            (txn_id, user_id, amount, f"deposit_req_{req_id}"),
+        )
         conn.execute("COMMIT;")
     except Exception:
         try:
@@ -306,32 +317,33 @@ async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     finally:
         conn.close()
 
+    new_balance = get_user_balance(user_id)
+
+    play_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎮 ወደ ጨዋታ ግባ (Play Game)", web_app=WebAppInfo(url=WEB_APP_URL))],
+    ])
+
     await update.message.reply_text(
-        f"✅ የክፍያ ማረጋገጫዎ ደርሷል!\n\n"
+        f"✅ የክፍያ ማረጋገጫዎ ተቀባይነት አግኝቷል!\n\n"
         f"💵 መጠን: <b>{amount:.2f} ETB</b>\n"
-        f"⏳ አስተዳዳሪው (Manager) እስኪያረጋግጥ ድረስ በትዕግስት ይጠብቁ። ከተረጋገጠ በኋላ ቦርሳዎ ይሞላል።",
+        f"💰 ቦርሳዎ ተሞልቷል: <code>{new_balance:.2f} ETB</code>\n"
+        f"🎮 ያለ ምንም የማናጀር ጥበቃ አሁኑኑ ወደ ጨዋታ መግባት ይችላሉ!",
+        reply_markup=play_markup,
         parse_mode="HTML",
     )
 
     if MANAGER_CHAT_ID:
         try:
-            manager_keyboard = InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton("✅ Approve", callback_data=f"approve_{req_id}"),
-                    InlineKeyboardButton("❌ Reject", callback_data=f"reject_{req_id}"),
-                ]
-            ])
             await context.bot.send_message(
                 chat_id=MANAGER_CHAT_ID,
                 text=(
-                    f"📥 <b>NEW DEPOSIT REQUEST #{req_id}</b>\n"
+                    f"ℹ️ <b>AUTO-CREDITED DEPOSIT #{req_id}</b>\n"
                     f"Player: {html.escape(user.full_name or 'Unknown')}\n"
                     f"Telegram ID: <code>{user.id}</code>\n"
                     f"Gateway: {html.escape(gateway)}\n"
                     f"Amount: <code>{amount:.2f}</code> ETB\n\n"
                     f"Receipt:\n<code>{html.escape(receipt)}</code>"
                 ),
-                reply_markup=manager_keyboard,
                 parse_mode="HTML",
             )
         except Exception as e:
