@@ -173,6 +173,9 @@ def build_main_keyboard() -> InlineKeyboardMarkup:
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.pop("deposit_amount", None)
+    context.user_data.pop("gateway", None)
+
     user = update.effective_user
     user_id = get_or_create_user(user.id, user.username or "", user.full_name or "")
     balance = get_user_balance(user_id)
@@ -197,6 +200,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=build_main_keyboard(),
             parse_mode="HTML",
         )
+    return ConversationHandler.END
 
 
 async def check_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -352,6 +356,14 @@ async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.pop("deposit_amount", None)
     context.user_data.pop("gateway", None)
     return ConversationHandler.END
+
+
+async def handle_direct_receipt_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
+    lowered = update.message.text.strip().lower()
+    if any(k in lowered for k in ["transaction", "telebirr", "cbe", "etb", "birr", "received", "dk"]):
+        await handle_receipt(update, context)
 
 
 async def manager_decision(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -527,7 +539,10 @@ def main():
             SELECTING_PAYMENT: [CallbackQueryHandler(handle_payment_choice, pattern="^pay_")],
             AWAITING_RECEIPT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_receipt)],
         },
-        fallbacks=[CommandHandler("cancel", cancel_conversation)],
+        fallbacks=[
+            CommandHandler("cancel", cancel_conversation),
+            CommandHandler("start", start),
+        ],
     )
 
     app.add_handler(deposit_handler)
@@ -542,6 +557,7 @@ def main():
     app.add_handler(CallbackQueryHandler(instruction_cmd, pattern="^instruction_menu$"))
     app.add_handler(CallbackQueryHandler(invite_cmd, pattern="^invite_menu$"))
     app.add_handler(CallbackQueryHandler(manager_decision, pattern="^(approve|reject)_"))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_direct_receipt_fallback))
 
     try:
         asyncio.get_event_loop()
