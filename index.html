@@ -65,10 +65,10 @@
         .timer-banner {
             background: #d90429;
             color: #fff;
-            padding: 5px 10px;
+            padding: 6px 10px;
             border-radius: 6px;
             font-weight: 900;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             margin-bottom: 6px;
             text-align: center;
             width: 100%;
@@ -99,18 +99,18 @@
             border-radius: 8px;
             font-size: 0.72rem;
             font-weight: 900;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             text-align: center;
         }
         .cartela-grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
-            gap: 4px;
-            max-height: 250px;
+            gap: 3px;
+            max-height: 245px;
             overflow-y: auto;
             width: 100%;
             padding: 5px;
-            background: rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.14);
             border-radius: 8px;
             box-sizing: border-box;
         }
@@ -118,7 +118,7 @@
             aspect-ratio: 1;
             background-color: #f77f00;
             color: #fff;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 900;
             display: flex;
             align-items: center;
@@ -164,7 +164,6 @@
             border-radius: 8px;
             cursor: pointer;
         }
-
         .calling-layout {
             display: flex;
             gap: 6px;
@@ -173,19 +172,12 @@
             align-items: flex-start;
             justify-content: center;
         }
-        .left-column {
+        .left-column, .right-column {
             display: flex;
             flex-direction: column;
             gap: 6px;
             width: 190px;
         }
-        .right-column {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            width: 190px;
-        }
-
         .bing-column-container {
             display: flex;
             flex-direction: column;
@@ -210,7 +202,6 @@
             font-weight: 900;
             font-size: 0.75rem;
         }
-
         .num-grid-75 {
             display: flex;
             flex-direction: row;
@@ -241,7 +232,6 @@
             background-color: #f77f00;
             color: #fff;
         }
-
         .player-cartela-box {
             background: #ffffff;
             padding: 8px 6px;
@@ -285,7 +275,6 @@
             font-size: 0.55rem;
             font-weight: 900;
         }
-
         .caller-panel {
             display: flex;
             flex-direction: column;
@@ -305,8 +294,8 @@
         .call-circle {
             background: #ffb703;
             color: #000;
-            width: 30px;
-            height: 30px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -318,6 +307,7 @@
             display: flex;
             gap: 2px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         .recent-pill {
             background: #7b2cbf;
@@ -327,16 +317,37 @@
             font-size: 0.6rem;
             font-weight: 900;
         }
-        .waiting-msg {
-            background: rgba(255,255,255,0.95);
-            color: #222;
-            padding: 6px;
+        .audio-status-bar {
+            background: #2b1f3d;
+            color: #ffb703;
+            padding: 5px 8px;
             border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 800;
             text-align: center;
-            font-size: 0.65rem;
-            font-weight: 900;
         }
-
+        .btn-action-sm {
+            background: #0077b6;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 8px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-claim-bingo {
+            background: #ffb703;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.78rem;
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+        }
         .bottom-nav {
             display: flex;
             justify-content: space-around;
@@ -359,25 +370,6 @@
             cursor: pointer;
             gap: 2px;
         }
-        .game-footer-actions {
-            display: flex;
-            gap: 6px;
-            width: 100%;
-            max-width: 420px;
-            flex-shrink: 0;
-        }
-        .game-footer-actions button {
-            flex: 1;
-            padding: 10px;
-            font-weight: 900;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-        .btn-leave { background-color: #d90429; color: #fff; }
-        .btn-refresh { background-color: #0077b6; color: #fff; }
-        .btn-bingo { background-color: #ffb703; color: #000; }
 
         /* Static, non-blinking deposit button & wallet styles */
         .wallet-box,
@@ -478,14 +470,14 @@
         }
         .director-title {
             text-align: center;
-            font-size: 1.05rem;
+            font-size: 1.02rem;
             font-weight: 900;
             color: #ffb703;
             margin: 2px 0 0 0;
         }
         .director-subtitle {
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.74rem;
             color: #dcd6f7;
             margin-bottom: 2px;
         }
@@ -501,46 +493,34 @@
             text-align: center;
             width: 100%;
         }
-        .director-error-status {
-            text-align: center;
-            font-size: 0.74rem;
-            font-weight: 800;
-            color: #ff4d4d;
-            padding: 2px 4px;
-            min-height: 18px;
-        }
         .director-detail-box {
             display: none;
             background: #160e24;
             border: 1px solid #4a356b;
             border-radius: 8px;
             padding: 9px;
-            font-size: 0.76rem;
+            font-size: 0.75rem;
             line-height: 1.45;
             color: #f8f9fa;
             white-space: pre-line;
             text-align: left;
-            max-height: 140px;
+            max-height: 150px;
             overflow-y: auto;
         }
     </style>
 </head>
 <body onload="initApp()">
 
-    <!-- Top Header Stats Bar -->
     <div class="top-stats" id="topStats" style="display:none;">
         <div>Game ID<span id="gameIdVal">-</span></div>
         <div>Derash<span id="derashVal">-</span></div>
-        <div>Players<span id="playerVal">-</span></div>
+        <div>Phase<span id="phaseVal">OPEN</span></div>
         <div>Stake<span id="stakeVal">10</span></div>
         <div>Called<span id="calledVal">0</span></div>
     </div>
 
-    <div class="main-container" id="mainContainer">
-        <!-- Dynamic Content -->
-    </div>
+    <div class="main-container" id="mainContainer"></div>
 
-    <!-- Bottom Navigation -->
     <div id="bottomNavContainer">
         <div class="bottom-nav">
             <button type="button" class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
@@ -564,48 +544,80 @@
             "https://guder-bingo-server.onrender.com",
             "https://guder-bingo-phase1.onrender.com"
         ];
-        const API_BASE_URL = window.location.origin.startsWith("http")
+        const API_BASE_URL = window.location.hostname.includes("onrender.com") && window.location.hostname !== "guder-bingo-live.onrender.com"
             ? window.location.origin
             : BACKEND_CANDIDATES[0];
 
         const MIN_STAKE_ETB = 10.0;
-        const AVAILABLE_AUDIO_FILES = new Set(["bingo.mp3"]);
+        const MAX_CARTELA_NO = 800;
+
         let userBalance = 0.0;
         let currentRoomId = 1;
         let currentPot = 0.0;
-        let regTimer = 30;
-        let prepTimer = 5;
-        let prepInterval = null;
-        let callInterval = null;
-        let globalCountdown = null;
-        let syncInterval = null;
-        let winnerPollInterval = null;
-        let lastSeenWinnerTimestamp = "";
+        let roundPhase = "SELECTION"; // SELECTION (30s) -> PREPARATION (5s) -> CALLING (1-75)
+        let selectionSecondsLeft = 30;
+        let prepSecondsLeft = 5;
+
+        let phaseTicker = null;
+        let callTicker = null;
+        let pollTimer = null;
+
         let selectedCartelaNo = null;
         let selectedCartelaMatrix = null;
+        let markedCells = new Set(["FREE"]);
         let calledNumbersList = [];
         let announcedNumbersSet = new Set();
         let callAudioQueue = [];
         let isDrainingAudioQueue = false;
         let activeCallAudio = null;
-        let registrationMusic = null;
-        let localNoticeTimeout = null;
         let isSubmittingDeposit = false;
         let audioUnlocked = false;
+        let lastAudioStatusText = "Tap screen or Test Sound for Amharic voice";
 
         const verifiedWinnersList = [
             {
                 name: "አሸናፊ 1",
                 phone: "0911000000",
                 session: "Session #1 - 2026-11-20 09:00"
+            },
+            {
+                name: "አሸናፊ 2",
+                phone: "0912000000",
+                session: "Session #2 - 2026-11-21 15:30"
             }
         ];
 
+        function formatCallCode(num) {
+            const n = Number(num);
+            if (!Number.isInteger(n) || n < 1 || n > 75) return String(num || "--");
+            if (n <= 15) return `B${n}`;
+            if (n <= 30) return `I${n}`;
+            if (n <= 45) return `N${n}`;
+            if (n <= 60) return `G${n}`;
+            return `O${n}`;
+        }
+
+        function getAudioFilenameForNumber(num) {
+            const code = formatCallCode(num);
+            if (code === "--") return null;
+            return `${code.toLowerCase()}.mp3`;
+        }
+
+        function setAudioStatus(msg) {
+            lastAudioStatusText = msg;
+            const el = document.getElementById("audioStatusBar");
+            if (el) el.textContent = msg;
+        }
+
         function unlockAudioOnce() {
-            if (audioUnlocked) return;
             audioUnlocked = true;
-            const silent = new Audio();
-            silent.play().catch(() => {});
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) {
+                    const ctx = new AudioCtx();
+                    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+                }
+            } catch (_) {}
             if (callAudioQueue.length > 0 && !isDrainingAudioQueue) {
                 drainAudioQueue();
             }
@@ -616,10 +628,7 @@
 
         function getInitHeaders(extra = {}) {
             const initData = tg && tg.initData ? tg.initData : "";
-            const headers = {
-                "X-Telegram-Init-Data": initData,
-                ...extra
-            };
+            const headers = { "X-Telegram-Init-Data": initData, ...extra };
             if (!initData && tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
                 headers["X-Telegram-User-Id"] = String(tg.initDataUnsafe.user.id);
             }
@@ -633,66 +642,71 @@
                 activeCallAudio.onended = null;
                 activeCallAudio.onerror = null;
                 activeCallAudio.pause();
-                activeCallAudio.currentTime = 0;
+                activeCallAudio.src = "";
                 activeCallAudio = null;
             }
         }
 
         function drainAudioQueue() {
-            if (isDrainingAudioQueue) return;
-            const nextFile = callAudioQueue.shift();
-            if (!nextFile) return;
-
+            if (isDrainingAudioQueue || callAudioQueue.length === 0) return;
+            const nextFile = callAudioQueue[0];
             isDrainingAudioQueue = true;
-            const bases = [API_BASE_URL, ...BACKEND_CANDIDATES.filter(b => b !== API_BASE_URL)];
-            const candidates = [];
-            for (const base of bases) {
-                candidates.push(`${base}/audio/${nextFile}`);
-                candidates.push(`${base}/static/audio/${nextFile}`);
-                candidates.push(`${base}/${nextFile}`);
-            }
+
+            const primaryBase = BACKEND_CANDIDATES[0];
+            const audioUrls = [
+                `${primaryBase}/audio/${nextFile}`,
+                `${primaryBase}/static/audio/${nextFile}`,
+                `${primaryBase}/${nextFile}`
+            ];
 
             let idx = 0;
-            const tryNextUrl = () => {
-                if (idx >= candidates.length) {
-                    activeCallAudio = null;
-                    isDrainingAudioQueue = false;
-                    drainAudioQueue();
-                    return;
+            const finishItem = () => {
+                callAudioQueue.shift();
+                activeCallAudio = null;
+                isDrainingAudioQueue = false;
+                if (callAudioQueue.length > 0) {
+                    setTimeout(drainAudioQueue, 120);
                 }
-                const url = candidates[idx++];
-                const audio = new Audio(url);
-                activeCallAudio = audio;
-
-                const onDone = () => {
-                    if (activeCallAudio === audio) {
-                        activeCallAudio = null;
-                    }
-                    isDrainingAudioQueue = false;
-                    drainAudioQueue();
-                };
-
-                audio.onended = onDone;
-                audio.onerror = () => {
-                    if (activeCallAudio === audio) {
-                        activeCallAudio = null;
-                    }
-                    tryNextUrl();
-                };
-                audio.play().catch(() => {
-                    if (!audioUnlocked) {
-                        if (!callAudioQueue.includes(nextFile)) {
-                            callAudioQueue.unshift(nextFile);
-                        }
-                        activeCallAudio = null;
-                        isDrainingAudioQueue = false;
-                    } else {
-                        tryNextUrl();
-                    }
-                });
             };
 
-            tryNextUrl();
+            const tryNext = () => {
+                if (idx >= audioUrls.length) {
+                    setAudioStatus(`⚠️ Audio missing: ${nextFile}`);
+                    finishItem();
+                    return;
+                }
+                const url = audioUrls[idx++];
+                const audio = new Audio();
+                audio.preload = "auto";
+                audio.src = url;
+                activeCallAudio = audio;
+
+                audio.onended = () => {
+                    setAudioStatus(`🔊 Played ${nextFile}`);
+                    finishItem();
+                };
+                audio.onerror = () => {
+                    activeCallAudio = null;
+                    tryNext();
+                };
+
+                const playPromise = audio.play();
+                if (playPromise && typeof playPromise.then === "function") {
+                    playPromise.then(() => {
+                        setAudioStatus(`🔊 Calling ${nextFile}...`);
+                    }).catch((err) => {
+                        activeCallAudio = null;
+                        if (!audioUnlocked && err && err.name === "NotAllowedError") {
+                            isDrainingAudioQueue = false;
+                            setAudioStatus(`👆 Tap to play ${nextFile}`);
+                        } else {
+                            tryNext();
+                        }
+                    });
+                }
+            };
+
+            tryNext();
         }
 
         function enqueueCallAudio(fileName) {
@@ -703,36 +717,23 @@
             drainAudioQueue();
         }
 
-        function playAudio(elementIdOrFile) {
-            if (!elementIdOrFile) return;
-            const sound = document.getElementById(elementIdOrFile);
-            if (sound) {
-                sound.currentTime = 0;
-                sound.play().catch(() => {});
-                return;
-            }
-            const isNumberCall = /^(?:b|i|n|g|o)(?:[1-9]|[1-6][0-9]|7[0-5])\.mp3$/i.test(elementIdOrFile);
-            if (!isNumberCall && !AVAILABLE_AUDIO_FILES.has(elementIdOrFile)) {
-                return;
-            }
-            enqueueCallAudio(elementIdOrFile);
+        function playWinnerAmharicSound() {
+            unlockAudioOnce();
+            setAudioStatus("🏆 አሸናፊ ተረጋግጧል! (bingo.mp3)");
+            enqueueCallAudio("bingo.mp3");
         }
 
-        function stopRegistrationMusic() {
-            if (registrationMusic) {
-                registrationMusic.pause();
-                registrationMusic.currentTime = 0;
-                registrationMusic = null;
-            }
+        function testAmharicAudio(sampleNum = 1) {
+            unlockAudioOnce();
+            const file = getAudioFilenameForNumber(sampleNum) || "b1.mp3";
+            setAudioStatus(`Testing ${file}...`);
+            enqueueCallAudio(file);
         }
 
-        function clearAllTimers() {
-            if (callInterval) { clearInterval(callInterval); callInterval = null; }
-            if (globalCountdown) { clearInterval(globalCountdown); globalCountdown = null; }
-            if (prepInterval) { clearInterval(prepInterval); prepInterval = null; }
-            if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
-            if (winnerPollInterval) { clearInterval(winnerPollInterval); winnerPollInterval = null; }
-            stopActiveCallAudio();
+        function clearAllLoops() {
+            if (phaseTicker) { clearInterval(phaseTicker); phaseTicker = null; }
+            if (callTicker) { clearInterval(callTicker); callTicker = null; }
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         }
 
         async function parseJsonSafe(res) {
@@ -751,9 +752,7 @@
                 try {
                     const res = await fetch(`${base}${path}`, options);
                     const parsed = await parseJsonSafe(res);
-                    if (parsed.data !== null) {
-                        return parsed;
-                    }
+                    if (parsed.data !== null) return parsed;
                     lastResult = parsed;
                 } catch (err) {
                     lastResult = { ok: false, status: 0, data: null, raw: err.message || "Network error" };
@@ -771,36 +770,11 @@
                     body: JSON.stringify(payload)
                 });
                 lastResult = parsed;
-                if (parsed.ok && parsed.data) {
-                    return parsed;
-                }
-                if (parsed.status !== 404 && parsed.status !== 405 && parsed.data) {
+                if (parsed.data && (parsed.ok || (parsed.status !== 404 && parsed.status !== 405))) {
                     return parsed;
                 }
             }
             return lastResult || { ok: false, status: 0, data: null, raw: "Network error" };
-        }
-
-        function showLocalInsufficientBalanceNotice() {
-            const noticeEl = document.getElementById("localBalanceNotice");
-            if (noticeEl) {
-                noticeEl.style.display = "block";
-                noticeEl.innerHTML = `
-                    ⚠️ Insufficient balance (${userBalance.toFixed(2)} ETB < ${MIN_STAKE_ETB.toFixed(2)} ETB). You can still watch the game, or <a href="#" onclick="switchTab('wallet'); return false;" style="color:#38b000; text-decoration:underline;">Deposit</a>.
-                `;
-                if (localNoticeTimeout) clearTimeout(localNoticeTimeout);
-                localNoticeTimeout = setTimeout(() => {
-                    if (noticeEl) noticeEl.style.display = "none";
-                }, 4000);
-            } else if (tg && tg.showPopup) {
-                tg.showPopup({
-                    title: "Insufficient Balance",
-                    message: `Balance: ${userBalance.toFixed(2)} ETB. You can still watch the game or deposit in Wallet.`,
-                    buttons: [{ type: "ok" }]
-                });
-            } else {
-                alert(`Insufficient balance (${userBalance.toFixed(2)} ETB). You can still watch the game.`);
-            }
         }
 
         function inviteFriends() {
@@ -810,12 +784,8 @@
                 : "";
             const inviteText = encodeURIComponent("🎮 Come play Guder Bingo with me and win! Join the live game here:");
             const shareUrl = `https://t.me/share/url?url=https://t.me/${botUsername}${refSuffix}&text=${inviteText}`;
-
-            if (tg && tg.openTelegramLink) {
-                tg.openTelegramLink(shareUrl);
-            } else {
-                window.open(shareUrl, "_blank");
-            }
+            if (tg && tg.openTelegramLink) tg.openTelegramLink(shareUrl);
+            else window.open(shareUrl, "_blank");
         }
 
         function generateCartelaMatrix(cartelaNo) {
@@ -829,7 +799,6 @@
                 }
                 return r;
             }
-
             const colB = [], colI = [], colN = [], colG = [], colO = [];
             while (colB.length < 5) colB.push(nextRand(1, 15, colB));
             while (colI.length < 5) colI.push(nextRand(16, 30, colI));
@@ -846,35 +815,28 @@
         }
 
         async function syncWalletFromServer() {
-            const parsed = await fetchWithBackendFallback("/api/wallet", {
-                headers: getInitHeaders()
-            });
+            const parsed = await fetchWithBackendFallback("/api/wallet", { headers: getInitHeaders() });
             const data = parsed.data;
             if (parsed.ok && data && data.status === "success") {
                 userBalance = Number(data.balance ?? data.confirmed_balance ?? 0.0);
                 const walletBalEl = document.getElementById("walletBalanceVal");
-                const formattedBal = `${userBalance.toFixed(2)} ETB`;
-                if (walletBalEl && walletBalEl.textContent !== formattedBal) {
-                    walletBalEl.textContent = formattedBal;
-                }
+                if (walletBalEl) walletBalEl.textContent = `${userBalance.toFixed(2)} ETB`;
                 return data;
             }
             return null;
         }
 
+        // 1. Gate screen matching the first image
         function initApp() {
             syncWalletFromServer();
-            showStartScreen();
+            showGateScreen();
         }
 
-        function showStartScreen() {
-            clearAllTimers();
-            stopRegistrationMusic();
-
+        function showGateScreen() {
+            clearAllLoops();
+            stopActiveCallAudio();
             document.getElementById("topStats").style.display = "none";
-            renderDefaultBottomNav();
-            const container = document.getElementById("mainContainer");
-            container.innerHTML = `
+            document.getElementById("mainContainer").innerHTML = `
                 <div class="start-screen">
                     <h2>Guder Bingo</h2>
                     <p>ጨዋታ ለመጀመር በቴሌግራም ቦቱ የ ሜሴጅ መጻፊያ ላይ /start የሚል በመጻፍ deposit በሚለው ውስጥ ገንዘብ ያስተላልፉ !</p>
@@ -883,24 +845,293 @@
             `;
         }
 
+        // 3. 30s selection -> 5s preparation -> 1-75 calling with Amharic sound
         async function startAppSession() {
             unlockAudioOnce();
             await syncWalletFromServer();
-            renderSelectionBoard();
+            startSelectionPhase(30);
+            pollGameState();
+            pollTimer = setInterval(pollGameState, 2500);
         }
 
-        function renderDefaultBottomNav() {
-            document.getElementById("bottomNavContainer").innerHTML = `
-                <div class="bottom-nav">
-                    <button type="button" class="nav-btn" onclick="switchTab('game')">🎮 Game</button>
-                    <button type="button" class="nav-btn" onclick="switchTab('history')">📜 History</button>
-                    <button type="button" class="nav-btn" onclick="inviteFriends()">👥 Invite</button>
-                    <button type="button" class="nav-btn" onclick="switchTab('wallet')">💳 Wallet</button>
-                    <button type="button" class="nav-btn" onclick="switchTab('director')">⚙️ Director</button>
+        function startSelectionPhase(seconds = 30) {
+            if (phaseTicker) { clearInterval(phaseTicker); phaseTicker = null; }
+            if (callTicker) { clearInterval(callTicker); callTicker = null; }
+            roundPhase = "SELECTION";
+            selectionSecondsLeft = seconds;
+            calledNumbersList = [];
+            announcedNumbersSet.clear();
+            renderSelectionBoard();
+
+            phaseTicker = setInterval(() => {
+                selectionSecondsLeft -= 1;
+                const banner = document.getElementById("selectionBanner");
+                if (banner) {
+                    banner.textContent = `ካርቴላ ይምረጡ (1–800) • ጊዜ: ${Math.max(0, selectionSecondsLeft)}s • ${userBalance.toFixed(2)} ETB`;
+                }
+                if (selectionSecondsLeft <= 0) {
+                    clearInterval(phaseTicker);
+                    phaseTicker = null;
+                    startPreparationPhase(5);
+                }
+            }, 1000);
+        }
+
+        function startPreparationPhase(seconds = 5) {
+            if (phaseTicker) { clearInterval(phaseTicker); phaseTicker = null; }
+            roundPhase = "PREPARING";
+            prepSecondsLeft = seconds;
+            if (!selectedCartelaNo) {
+                selectedCartelaNo = 1;
+                selectedCartelaMatrix = generateCartelaMatrix(1);
+            }
+            renderCallingBoard();
+
+            phaseTicker = setInterval(() => {
+                prepSecondsLeft -= 1;
+                const phaseEl = document.getElementById("phaseVal");
+                if (phaseEl) phaseEl.textContent = `PREP ${Math.max(0, prepSecondsLeft)}s`;
+                setAudioStatus(`⏳ ጨዋታ በ ${Math.max(0, prepSecondsLeft)} ሰከንድ ይጀምራል...`);
+                if (prepSecondsLeft <= 0) {
+                    clearInterval(phaseTicker);
+                    phaseTicker = null;
+                    startCallingPhase();
+                }
+            }, 1000);
+        }
+
+        function startCallingPhase() {
+            roundPhase = "RUNNING";
+            const phaseEl = document.getElementById("phaseVal");
+            if (phaseEl) phaseEl.textContent = "RUNNING";
+            setAudioStatus("🎙️ የቁጥር ጥሪ ጀምሯል (1–75)");
+
+            if (callTicker) clearInterval(callTicker);
+            callTicker = setInterval(() => {
+                if (roundPhase !== "RUNNING") return;
+                const calledSet = new Set(calledNumbersList);
+                const available = [];
+                for (let n = 1; n <= 75; n++) {
+                    if (!calledSet.has(n)) available.push(n);
+                }
+                if (available.length === 0) {
+                    clearInterval(callTicker);
+                    callTicker = null;
+                    return;
+                }
+                const nextNum = available[Math.floor(Math.random() * available.length)];
+                calledNumbersList.push(nextNum);
+                updateCallerUI();
+                if (!announcedNumbersSet.has(nextNum)) {
+                    announcedNumbersSet.add(nextNum);
+                    const mp3 = getAudioFilenameForNumber(nextNum);
+                    if (mp3) enqueueCallAudio(mp3);
+                }
+            }, 3500);
+        }
+
+        // 4. 1-800 numbers in the cartela selection grid
+        function renderSelectionBoard() {
+            document.getElementById("topStats").style.display = "grid";
+            const phaseEl = document.getElementById("phaseVal");
+            if (phaseEl) phaseEl.textContent = "SELECT";
+
+            const gridHtml = Array.from({ length: MAX_CARTELA_NO }, (_, i) => i + 1)
+                .map(n => `<div class="cartela-opt${selectedCartelaNo === n ? " selected" : ""}" onclick="pickCartela(${n})">${n}</div>`)
+                .join("");
+
+            document.getElementById("mainContainer").innerHTML = `
+                <div class="local-notice-banner" id="localBalanceNotice"></div>
+                <div class="winner-banner" id="winnerBanner"></div>
+                <div class="timer-banner" id="selectionBanner">
+                    ካርቴላ ይምረጡ (1–800) • ጊዜ: ${selectionSecondsLeft}s • ${userBalance.toFixed(2)} ETB
                 </div>
+                <div class="cartela-grid">${gridHtml}</div>
+                <div style="display:flex; gap:6px; width:100%; margin-top:8px;">
+                    <button type="button" class="btn-action-sm" style="background:#38b000;" onclick="startPreparationPhase(5)">
+                        ▶ ጨዋታ ጀምር (${selectedCartelaNo ? "#" + selectedCartelaNo : "#1"})
+                    </button>
+                    <button type="button" class="btn-action-sm" onclick="testAmharicAudio(${calledNumbersList[calledNumbersList.length - 1] || 1})">
+                        🔊 Test Sound
+                    </button>
+                </div>
+                <div class="audio-status-bar" id="audioStatusBar" style="margin-top:6px; width:100%; box-sizing:border-box;">${lastAudioStatusText}</div>
             `;
         }
 
+        function pickCartela(num) {
+            unlockAudioOnce();
+            selectedCartelaNo = num;
+            selectedCartelaMatrix = generateCartelaMatrix(num);
+            markedCells = new Set(["FREE"]);
+            renderSelectionBoard();
+        }
+
+        function renderCallingBoard() {
+            document.getElementById("topStats").style.display = "grid";
+            const cols = [
+                { letter: "B", start: 1, end: 15 },
+                { letter: "I", start: 16, end: 30 },
+                { letter: "N", start: 31, end: 45 },
+                { letter: "G", start: 46, end: 60 },
+                { letter: "O", start: 61, end: 75 }
+            ];
+
+            const boardColsHtml = cols.map(c => {
+                let cells = "";
+                for (let n = c.start; n <= c.end; n++) {
+                    const isCalled = calledNumbersList.includes(n);
+                    cells += `<div class="num-cell${isCalled ? " called" : ""}" id="boardNum_${n}">${n}</div>`;
+                }
+                return `<div class="bingo-col-group">${cells}</div>`;
+            }).join("");
+
+            const matrix = selectedCartelaMatrix || generateCartelaMatrix(selectedCartelaNo || 1);
+            const playerCellsHtml = matrix.flat().map(val => {
+                if (val === "FREE") {
+                    return `<div class="player-cell free marked">FREE</div>`;
+                }
+                const isMarked = markedCells.has(val);
+                return `<div class="player-cell${isMarked ? " marked" : ""}" onclick="toggleMarkCell(${val}, this)">${val}</div>`;
+            }).join("");
+
+            const latestNum = calledNumbersList.length ? calledNumbersList[calledNumbersList.length - 1] : null;
+            const recentNums = calledNumbersList.slice(-4).reverse().map(n => `<span class="recent-pill">${formatCallCode(n)}</span>`).join("");
+
+            document.getElementById("mainContainer").innerHTML = `
+                <div class="winner-banner" id="winnerBanner"></div>
+                <div class="calling-layout">
+                    <div class="left-column">
+                        <div class="bing-column-container">
+                            <div class="bingo-header-row">
+                                <div class="bingo-letter">B</div>
+                                <div class="bingo-letter">I</div>
+                                <div class="bingo-letter">N</div>
+                                <div class="bingo-letter">G</div>
+                                <div class="bingo-letter">O</div>
+                            </div>
+                            <div class="num-grid-75">${boardColsHtml}</div>
+                        </div>
+                        <div class="player-cartela-box">
+                            <div class="player-cartela-title">Cartela #${selectedCartelaNo || 1}</div>
+                            <div class="player-card-grid">${playerCellsHtml}</div>
+                        </div>
+                    </div>
+                    <div class="right-column caller-panel">
+                        <div class="current-call-box">
+                            <span>CALL</span>
+                            <div class="call-circle" id="currentCallCircle">${latestNum ? formatCallCode(latestNum) : "--"}</div>
+                        </div>
+                        <div class="recent-calls" id="recentCallsBox">${recentNums}</div>
+                        <div class="audio-status-bar" id="audioStatusBar">${lastAudioStatusText}</div>
+                        <button type="button" class="btn-claim-bingo" onclick="claimBingoWinner()">🏆 BINGO (አሸናፊ)</button>
+                        <button type="button" class="btn-action-sm" onclick="testAmharicAudio(${latestNum || 1})">🔊 Test Sound</button>
+                        <button type="button" class="btn-action-sm" style="background:#7b2cbf;" onclick="startSelectionPhase(30)">🔢 Cartelas (1-800)</button>
+                    </div>
+                </div>
+            `;
+            updateCallerUI();
+        }
+
+        function toggleMarkCell(num, el) {
+            if (markedCells.has(num)) {
+                markedCells.delete(num);
+                el.classList.remove("marked");
+            } else {
+                markedCells.add(num);
+                el.classList.add("marked");
+            }
+        }
+
+        function claimBingoWinner() {
+            const cNo = selectedCartelaNo || 1;
+            const nowLabel = new Date().toISOString().slice(0, 16).replace("T", " ");
+            const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user
+                ? (tg.initDataUnsafe.user.first_name || "ተጫዋች")
+                : `ተጫዋች (Cartela #${cNo})`;
+            const phone = "0913706670";
+            const sessionLabel = `Room #${currentRoomId} - ${nowLabel}`;
+
+            verifiedWinnersList.unshift({
+                name: tgUser,
+                phone: phone,
+                session: sessionLabel
+            });
+
+            playWinnerAmharicSound();
+            const wBanner = document.getElementById("winnerBanner");
+            if (wBanner) {
+                wBanner.style.display = "block";
+                wBanner.textContent = `🏆 አሸናፊ: ${tgUser} | ስልክ: ${phone} | ጊዜ: ${sessionLabel}`;
+            }
+
+            postWithEndpointFallback(["/api/claim-bingo", "/api/bingo/claim"], {
+                room_id: currentRoomId,
+                cartela_no: cNo,
+                winner_name: tgUser
+            }).catch(() => {});
+        }
+
+        function updateCallerUI() {
+            const latestNum = calledNumbersList.length ? calledNumbersList[calledNumbersList.length - 1] : null;
+            const circle = document.getElementById("currentCallCircle");
+            if (circle) circle.textContent = latestNum ? formatCallCode(latestNum) : "--";
+
+            const recentBox = document.getElementById("recentCallsBox");
+            if (recentBox) {
+                recentBox.innerHTML = calledNumbersList
+                    .slice(-4)
+                    .reverse()
+                    .map(n => `<span class="recent-pill">${formatCallCode(n)}</span>`)
+                    .join("");
+            }
+
+            const calledVal = document.getElementById("calledVal");
+            if (calledVal) calledVal.textContent = String(calledNumbersList.length);
+
+            document.querySelectorAll(".num-cell").forEach(cell => cell.classList.remove("called"));
+            for (const n of calledNumbersList) {
+                const cell = document.getElementById(`boardNum_${n}`);
+                if (cell) cell.classList.add("called");
+            }
+        }
+
+        async function pollGameState() {
+            const parsed = await fetchWithBackendFallback("/api/game/state", { headers: getInitHeaders() });
+            const data = parsed.data;
+            if (!parsed.ok || !data || data.status !== "success") return;
+
+            userBalance = Number(data.balance ?? userBalance);
+            if (data.room) {
+                currentRoomId = Number(data.room.room_id || 1);
+                currentPot = Number(data.room.total_pot || 0.0);
+                const gameIdEl = document.getElementById("gameIdVal");
+                const derashEl = document.getElementById("derashVal");
+                if (gameIdEl) gameIdEl.textContent = String(currentRoomId);
+                if (derashEl) derashEl.textContent = `${(currentPot * 0.5).toFixed(0)}`;
+            }
+
+            const rawCalled = Array.isArray(data.called_numbers) ? data.called_numbers : [];
+            const serverNums = rawCalled
+                .map(item => (typeof item === "object" && item !== null ? Number(item.number) : Number(item)))
+                .filter(n => Number.isInteger(n) && n >= 1 && n <= 75);
+
+            for (const n of serverNums) {
+                if (!calledNumbersList.includes(n)) {
+                    calledNumbersList.push(n);
+                }
+                if (!announcedNumbersSet.has(n)) {
+                    announcedNumbersSet.add(n);
+                    const fileName = getAudioFilenameForNumber(n);
+                    if (fileName) enqueueCallAudio(fileName);
+                }
+            }
+            if (serverNums.length > 0) {
+                updateCallerUI();
+            }
+        }
+
+        // 5. Preserved inline deposit handler
         async function submitDepositRequest() {
             if (isSubmittingDeposit) return;
             const btn = document.getElementById("submitDepositBtn");
@@ -919,24 +1150,16 @@
                 btn.disabled = true;
                 btn.textContent = "Submitting...";
             }
-            if (statusEl) {
-                statusEl.textContent = "Sending deposit request...";
-            }
+            if (statusEl) statusEl.textContent = "Sending deposit request...";
 
             try {
                 const parsed = await postWithEndpointFallback(
                     ["/api/wallet/deposit", "/api/deposit"],
-                    {
-                        amount: amount,
-                        payer_reference: `web_${Date.now()}`
-                    }
+                    { amount: amount, payer_reference: `web_${Date.now()}` }
                 );
-
                 if (parsed.data && (parsed.data.status === "pending_verification" || parsed.data.status === "success")) {
                     const depId = parsed.data.deposit_id || `ref_${Date.now()}`;
-                    if (statusEl) {
-                        statusEl.textContent = `Logged ${amount.toFixed(2)} ETB (${parsed.data.status}) • Ref: ${depId}`;
-                    }
+                    if (statusEl) statusEl.textContent = `Logged ${amount.toFixed(2)} ETB (${parsed.data.status}) • Ref: ${depId}`;
                     if (txList) {
                         const item = document.createElement("div");
                         item.textContent = `• +${amount.toFixed(2)} ETB (${parsed.data.status}) — ${depId}`;
@@ -946,14 +1169,10 @@
                     await syncWalletFromServer();
                 } else {
                     const errMsg = (parsed.data && parsed.data.message) || parsed.raw || "Deposit request failed.";
-                    if (statusEl) {
-                        statusEl.textContent = `Error: ${errMsg}`;
-                    }
+                    if (statusEl) statusEl.textContent = `Error: ${errMsg}`;
                 }
             } catch (err) {
-                if (statusEl) {
-                    statusEl.textContent = `Network error: ${err.message || "Unable to reach server"}`;
-                }
+                if (statusEl) statusEl.textContent = `Network error: ${err.message || "Unable to reach server"}`;
             } finally {
                 isSubmittingDeposit = false;
                 if (btn) {
@@ -963,50 +1182,30 @@
             }
         }
 
-        function renderSelectionBoard() {
-            const container = document.getElementById("mainContainer");
-            const gridHtml = Array.from({ length: 100 }, (_, i) => i + 1)
-                .map(n => `<div class="cartela-opt${selectedCartelaNo === n ? " selected" : ""}" onclick="pickCartela(${n})">${n}</div>`)
-                .join("");
-
-            container.innerHTML = `
-                <div class="local-notice-banner" id="localBalanceNotice"></div>
-                <div class="timer-banner" id="regTimerBanner">Select Cartela • Balance: ${userBalance.toFixed(2)} ETB</div>
-                <div class="cartela-grid">${gridHtml}</div>
-            `;
-        }
-
-        function pickCartela(num) {
-            unlockAudioOnce();
-            if (userBalance < MIN_STAKE_ETB) {
-                showLocalInsufficientBalanceNotice();
-                return;
-            }
-            selectedCartelaNo = num;
-            selectedCartelaMatrix = generateCartelaMatrix(num);
-            renderSelectionBoard();
+        function renderVerifiedWinnersBox() {
+            const box = document.getElementById("verifiedWinnersBox");
+            if (!box) return;
+            box.style.display = "block";
+            box.textContent = verifiedWinnersList
+                .map(w => `• ስም: ${w.name} | ስልክ: ${w.phone} | ጊዜ (Session): ${w.session}`)
+                .join("\n");
         }
 
         function switchTab(tabName) {
-            clearAllTimers();
-            stopRegistrationMusic();
             document.getElementById("topStats").style.display = "none";
-            renderDefaultBottomNav();
-
             const container = document.getElementById("mainContainer");
+
             if (tabName === "game") {
-                renderSelectionBoard();
+                startSelectionPhase(30);
                 return;
             }
 
+            clearAllLoops();
             if (tabName === "wallet") {
                 container.innerHTML = `
                     <div class="wallet-box">
                         <h3>💳 Wallet & Deposit</h3>
                         <div class="wallet-balance" id="walletBalanceVal">${userBalance.toFixed(2)} ETB</div>
-                        <p style="font-size:0.78rem; color:#f0e6f6; margin:0 0 8px 0;">
-                            ገንዘብ ለማስገባት መጠን ያስገቡ ወይም በቴሌግራም ቦቱ Deposit ይጠቀሙ።
-                        </p>
                         <input type="number" id="depositAmountInput" class="wallet-input" placeholder="Amount (ETB), e.g. 50" min="10" step="1">
                         <button type="button" class="btn-deposit" id="submitDepositBtn" onclick="submitDepositRequest()">Deposit Now</button>
                         <div class="wallet-status-msg" id="walletStatusMsg"></div>
@@ -1017,31 +1216,31 @@
                     </div>
                 `;
                 syncWalletFromServer();
-                return;
-            }
-
-            if (tabName === "history") {
+            } else if (tabName === "history") {
                 container.innerHTML = `
                     <div class="director-panel">
-                        <div class="director-title">📜 Recent History</div>
-                        <div class="director-subtitle">Verified Recent Winners</div>
+                        <div class="director-title">📜 የተረጋገጡ አሸናፊዎች</div>
+                        <div class="director-subtitle">የአሸናፊዎች ስም፣ ስልክ ቁጥር፣ የጨዋታ ጊዜ (Session)</div>
                         <div class="director-detail-box" style="display:block;">
-                            ${verifiedWinnersList.map(w => `${w.name} (${w.phone}) - ${w.session}`).join("\n")}
+                            ${verifiedWinnersList.map(w => `• ስም: ${w.name} | ስልክ: ${w.phone} | ጊዜ (Session): ${w.session}`).join("\n")}
                         </div>
+                        <button type="button" class="director-back-btn" onclick="switchTab('game')">← ወደ ጨዋታ ተመለስ</button>
                     </div>
                 `;
-                return;
-            }
-
-            if (tabName === "director") {
+            } else if (tabName === "director") {
                 container.innerHTML = `
                     <div class="director-panel">
-                        <div class="director-title">⚙️ Game Director</div>
-                        <div class="director-subtitle">Backend: ${API_BASE_URL}</div>
-                        <button type="button" class="director-row-btn" onclick="syncWalletFromServer()">🔄 Sync Wallet</button>
-                        <div class="director-error-status" id="directorStatus"></div>
+                        <button type="button" class="director-back-btn" onclick="switchTab('game')">← ወደ ጨዋታ ገጽ ተመለስ</button>
+                        <div class="director-title">⚙️ የዳይሬክተር መቆጣጠሪያ ፓነል</div>
+                        <div class="director-subtitle">የግደር ቢንጎ አስተዳደር</div>
+                        <button type="button" class="director-row-btn" onclick="renderVerifiedWinnersBox()">🏆 የተረጋገጡ አሸናፊዎች</button>
+                        <div class="director-detail-box" id="verifiedWinnersBox"></div>
+                        <button type="button" class="director-row-btn" onclick="playWinnerAmharicSound()">🔊 የአሸናፊ የአማርኛ ድምጽ ሞክር</button>
+                        <button type="button" class="director-row-btn" onclick="testAmharicAudio(1)">🎙️ የቁጥር ጥሪ ድምጽ ሞክር (B1)</button>
+                        <button type="button" class="director-row-btn" onclick="syncWalletFromServer()">🔄 ቦርሳ አድስ (Sync Wallet)</button>
                     </div>
                 `;
+                renderVerifiedWinnersBox();
             }
         }
     </script>
