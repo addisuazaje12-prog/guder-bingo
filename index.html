@@ -63,6 +63,20 @@
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
         }
+        .low-balance-banner {
+            display: none;
+            width: 100%;
+            box-sizing: border-box;
+            background: #2b1f3d;
+            border: 1px solid #ffb703;
+            color: #ffb703;
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            text-align: center;
+        }
         .timer-banner {
             background: #d90429;
             color: #fff;
@@ -547,7 +561,7 @@
         const MIN_STAKE_ETB = 10.0;
         const MAX_CARTELA_NO = 800;
 
-        let userBalance = 15.0;
+        let userBalance = 0.0;
         let roundPhase = "SELECTION";
         let selectionSecondsLeft = 30;
         let prepSecondsLeft = 5;
@@ -790,12 +804,8 @@
             `;
 
             const container = document.getElementById("mainContainer");
-            if (userBalance < MIN_STAKE_ETB) {
-                container.innerHTML = `<div style="color:#d90429; font-weight:900; background:#fff; padding:20px; border-radius:8px;">Insufficient amount (Min 10 ETB)</div>`;
-                return;
-            }
-
             let html = `
+                <div class="low-balance-banner" id="lowBalanceBanner"></div>
                 <div class="timer-banner" id="selectionBanner">ካርቴላ ይምረጡ (1–800) • ጊዜ: ${selectionSecondsLeft}s • ${userBalance.toFixed(2)} ETB</div>
                 <div class="cartela-grid">
             `;
@@ -821,6 +831,21 @@
 
         function selectCartela(cartelaNo) {
             if (roundPhase !== "SELECTION") return;
+            const lowBanner = document.getElementById("lowBalanceBanner");
+
+            if (Number(userBalance) < MIN_STAKE_ETB) {
+                if (lowBanner) {
+                    lowBanner.textContent = `insufficient balance (Cartela #${cartelaNo} requires ${MIN_STAKE_ETB} ETB • You can still watch & play)`;
+                    lowBanner.style.display = "block";
+                }
+                return;
+            }
+
+            if (lowBanner) {
+                lowBanner.style.display = "none";
+                lowBanner.textContent = "";
+            }
+
             if (selectedCartelaNo) {
                 const prev = document.getElementById(`cart-${selectedCartelaNo}`);
                 if (prev) prev.classList.remove("selected");
@@ -925,28 +950,36 @@
                 { start: 46, end: 60 },
                 { start: 61, end: 75 }
             ];
-            let gridHtml = "";
-            ranges.forEach(range => {
-                gridHtml += `<div class="bingo-col-group">`;
-                for (let i = range.start; i <= range.end; i++) {
-                    const calledClass = calledNumbersList.includes(i) ? "called" : "";
-                    gridHtml += `<div class="num-cell ${calledClass}" id="num-${i}">${i}</div>`;
+
+            let colsHtml = "";
+            for (const r of ranges) {
+                let cellsHtml = "";
+                for (let n = r.start; n <= r.end; n++) {
+                    const isCalled = calledNumbersList.includes(n);
+                    cellsHtml += `<div class="num-cell ${isCalled ? "called" : ""}" id="num-${n}">${n}</div>`;
                 }
-                gridHtml += `</div>`;
-            });
+                colsHtml += `<div class="bingo-col-group">${cellsHtml}</div>`;
+            }
 
             const matrix = selectedCartelaMatrix || generateCartelaMatrix(selectedCartelaNo || 1);
-            let playerCardHtml = "";
+            let cardCellsHtml = "";
             for (let row = 0; row < 5; row++) {
                 for (let col = 0; col < 5; col++) {
                     const val = matrix[row][col];
                     if (val === "FREE") {
-                        playerCardHtml += `<div class="player-cell free marked">FREE</div>`;
+                        cardCellsHtml += `<div class="player-cell free marked" onclick="togglePlayerCell(this)">FREE</div>`;
                     } else {
-                        playerCardHtml += `<div class="player-cell" onclick="this.classList.toggle('marked')">${val}</div>`;
+                        cardCellsHtml += `<div class="player-cell" onclick="togglePlayerCell(this)">${val}</div>`;
                     }
                 }
             }
+
+            const lastNum = calledNumbersList.length ? calledNumbersList[calledNumbersList.length - 1] : null;
+            const callCode = lastNum ? formatCallCode(lastNum) : "--";
+            const recentThree = calledNumbersList.slice(-3).reverse();
+            const recentHtml = recentThree.length
+                ? recentThree.map(n => `<div class="recent-pill">${formatCallCode(n)}</div>`).join("")
+                : `<div class="recent-pill">-</div>`;
 
             document.getElementById("mainContainer").innerHTML = `
                 <div class="winner-banner" id="winnerBanner"></div>
@@ -960,26 +993,20 @@
                                 <div class="bingo-letter">G</div>
                                 <div class="bingo-letter">O</div>
                             </div>
-                            <div class="num-grid-75">
-                                ${gridHtml}
-                            </div>
+                            <div class="num-grid-75">${colsHtml}</div>
                         </div>
                     </div>
-
                     <div class="right-column">
                         <div class="caller-panel">
                             <div class="current-call-box">
-                                <span>CALL</span>
-                                <div class="call-circle" id="currentCallCircle">--</div>
+                                <span>ጥሪ</span>
+                                <div class="call-circle" id="currentCallCircle">${callCode}</div>
                             </div>
-                            <div class="recent-calls" id="recentPills">
-                                <div class="recent-pill">-</div>
-                            </div>
+                            <div class="recent-calls" id="recentPills">${recentHtml}</div>
                             <div class="audio-status-bar" id="audioStatusBar">${lastAudioStatusText}</div>
-                            <button type="button" class="btn-action-sm" onclick="testAmharicAudio(1)">🔊 Test Sound</button>
-                            <button type="button" class="btn-claim-bingo" onclick="claimBingo()">🏆 BINGO (አሸናፊ)</button>
+                            <button type="button" class="btn-action-sm" onclick="testAmharicAudio(lastNum || 1)">🔊 Test Sound</button>
+                            <button type="button" class="btn-claim-bingo" onclick="claimBingo()">🏆 BINGO</button>
                         </div>
-
                         <div class="player-cartela-box">
                             <div class="player-cartela-title">Cartela #${selectedCartelaNo || 1}</div>
                             <div class="player-bingo-header">
@@ -989,25 +1016,31 @@
                                 <div class="player-bingo-letter">G</div>
                                 <div class="player-bingo-letter">O</div>
                             </div>
-                            <div class="player-card-grid">
-                                ${playerCardHtml}
-                            </div>
+                            <div class="player-card-grid">${cardCellsHtml}</div>
                         </div>
                     </div>
                 </div>
             `;
+
+            document.getElementById("calledVal").textContent = String(calledNumbersList.length);
+            document.getElementById("stakeVal").textContent = String(MIN_STAKE_ETB);
+        }
+
+        function togglePlayerCell(cell) {
+            if (!cell) return;
+            cell.classList.toggle("marked");
         }
 
         function claimBingo() {
             playWinnerAmharicSound();
-            const banner = document.getElementById("winnerBanner");
-            if (banner) {
-                banner.style.display = "block";
-                banner.textContent = `🏆 BINGO claim submitted for Cartela #${selectedCartelaNo || 1}!`;
+            const wb = document.getElementById("winnerBanner");
+            if (wb) {
+                wb.textContent = `🏆 Cartela #${selectedCartelaNo || 1} BINGO Claimed!`;
+                wb.style.display = "block";
             }
         }
 
-        function switchTab(tab) {
+        function switchTab(tabName) {
             clearAllLoops();
             stopActiveCallAudio();
             document.getElementById("topStats").style.display = "none";
@@ -1022,63 +1055,58 @@
             `;
 
             const container = document.getElementById("mainContainer");
-            if (tab === "game") {
+            if (tabName === "game") {
                 startSelectionPhase(30);
-            } else if (tab === "wallet") {
+                return;
+            }
+            if (tabName === "wallet") {
                 container.innerHTML = `
                     <div class="wallet-box">
-                        <h3>💳 Guder Wallet</h3>
-                        <p>Available Balance</p>
-                        <div class="wallet-balance" id="walletBalanceVal">${userBalance.toFixed(2)} ETB</div>
-                        <input type="number" id="depositAmountInput" class="wallet-input" min="10" step="1" placeholder="Amount (min 10 ETB)">
-                        <button type="button" class="btn-deposit" onclick="handleLocalDeposit()">Deposit Funds</button>
+                        <h3>💳 Wallet</h3>
+                        <div class="wallet-balance">${userBalance.toFixed(2)} ETB</div>
+                        <input type="number" id="depositAmountInput" class="wallet-input" placeholder="Amount in ETB (e.g. 50)" min="10" step="1">
+                        <button type="button" class="btn-deposit" onclick="depositFunds()">Deposit Funds</button>
                         <div class="wallet-status-msg" id="walletStatusMsg"></div>
                     </div>
                 `;
-            } else if (tab === "history") {
-                container.innerHTML = `
-                    <div class="wallet-box">
-                        <h3>📜 Game History</h3>
-                        <p>Called numbers in last round: <b>${calledNumbersList.length}</b></p>
-                        <button type="button" class="btn-deposit" onclick="switchTab('game')">Back to Game</button>
-                    </div>
-                `;
-            } else if (tab === "director") {
-                container.innerHTML = `
-                    <div class="director-panel">
-                        <button type="button" class="director-back-btn" onclick="switchTab('game')">← ወደ ጨዋታ ገጽ ተመለስ</button>
-                        <div class="director-title">⚙️ የዳይሬክተር መቆጣጠሪያ ፓነል</div>
-                        <div class="director-subtitle">የጉደር ቢንጎ አስተዳደር</div>
-                        <button type="button" class="director-row-btn" onclick="renderVerifiedWinnersBox()">🏆 የተረጋገጡ አሸናፊዎች</button>
-                        <button type="button" class="director-row-btn" onclick="playWinnerAmharicSound()">🔊 የአሸናፊ የአማርኛ ድምጽ (bingo.mp3)</button>
-                        <button type="button" class="director-row-btn" onclick="testAmharicAudio(1)">🎙️ የቁጥር ጥሪ ድምጽ ሞክር (B1)</button>
-                        <div class="director-detail-box" id="verifiedWinnersBox"></div>
-                    </div>
-                `;
-                renderVerifiedWinnersBox();
-            }
-        }
-
-        function handleLocalDeposit() {
-            const input = document.getElementById("depositAmountInput");
-            const statusEl = document.getElementById("walletStatusMsg");
-            const val = Number(input ? input.value : 0);
-            if (!val || val < MIN_STAKE_ETB) {
-                if (statusEl) statusEl.textContent = "❌ Minimum deposit is 10 ETB.";
                 return;
             }
-            userBalance += val;
-            const balEl = document.getElementById("walletBalanceVal");
-            if (balEl) balEl.textContent = `${userBalance.toFixed(2)} ETB`;
-            if (statusEl) statusEl.textContent = `✅ Added ${val.toFixed(2)} ETB to local wallet view.`;
+            if (tabName === "history") {
+                const rows = verifiedWinnersList.map(w => `• ${w.name} (${w.phone}) — ${w.session}`).join("\n");
+                container.innerHTML = `
+                    <div class="director-panel">
+                        <div class="director-title">📜 Verified Winners History</div>
+                        <div class="director-detail-box">${rows}</div>
+                        <button type="button" class="director-back-btn" onclick="startSelectionPhase(30)">Back to Game</button>
+                    </div>
+                `;
+                return;
+            }
+            if (tabName === "director") {
+                container.innerHTML = `
+                    <div class="director-panel">
+                        <div class="director-title">⚙️ Director Panel</div>
+                        <div class="director-subtitle">Guder Bingo Controls</div>
+                        <button type="button" class="director-row-btn" onclick="startSelectionPhase(30)">Start New Cartela Selection</button>
+                        <button type="button" class="director-back-btn" onclick="showGateScreen()">Back to Welcome</button>
+                    </div>
+                `;
+            }
         }
 
-        function renderVerifiedWinnersBox() {
-            const box = document.getElementById("verifiedWinnersBox");
-            if (!box) return;
-            box.textContent = verifiedWinnersList
-                .map((w, i) => `${i + 1}. ${w.name} | ${w.phone} | ${w.session}`)
-                .join("\n");
+        function depositFunds() {
+            const input = document.getElementById("depositAmountInput");
+            const statusEl = document.getElementById("walletStatusMsg");
+            const balEl = document.querySelector(".wallet-balance");
+            const amt = Number(input && input.value ? input.value : 0);
+            if (!amt || amt <= 0) {
+                if (statusEl) statusEl.textContent = "Please enter a valid amount.";
+                return;
+            }
+            userBalance += amt;
+            if (balEl) balEl.textContent = `${userBalance.toFixed(2)} ETB`;
+            if (statusEl) statusEl.textContent = `Added ${amt.toFixed(2)} ETB to wallet.`;
+            if (input) input.value = "";
         }
     </script>
 </body>
