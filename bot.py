@@ -1,6 +1,4 @@
-```python
 import os
-import re
 import logging
 import asyncio
 import requests
@@ -25,7 +23,7 @@ from telegram.ext import (
 # GUDER BINGO TELEGRAM BOT
 # ============================================================
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 
 APP_URL = os.environ.get(
     "APP_URL",
@@ -37,12 +35,25 @@ BACKEND_URL = os.environ.get(
     APP_URL
 ).rstrip("/")
 
-BOT_API_SECRET = os.environ.get("BOT_API_SECRET", "")
+BOT_API_SECRET = os.environ.get(
+    "BOT_API_SECRET",
+    ""
+).strip()
 
 TELEBIRR_NUMBER = os.environ.get(
     "TELEBIRR_NUMBER",
     "0913706670"
-)
+).strip()
+
+SUPPORT_NUMBER = os.environ.get(
+    "SUPPORT_NUMBER",
+    "0913706670"
+).strip()
+
+
+# ============================================================
+# LOGGING
+# ============================================================
 
 logging.basicConfig(
     level=logging.INFO,
@@ -72,6 +83,7 @@ def main_keyboard():
                 "💰 Deposit",
                 callback_data="deposit"
             ),
+
             InlineKeyboardButton(
                 "💳 Balance",
                 callback_data="balance"
@@ -83,6 +95,7 @@ def main_keyboard():
                 "🏆 History",
                 callback_data="history"
             ),
+
             InlineKeyboardButton(
                 "📤 Invite Friends",
                 callback_data="invite"
@@ -94,6 +107,7 @@ def main_keyboard():
                 "📖 Instructions",
                 callback_data="instructions"
             ),
+
             InlineKeyboardButton(
                 "☎ Support",
                 callback_data="support"
@@ -107,15 +121,25 @@ def main_keyboard():
 # START COMMAND
 # ============================================================
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    context.user_data["waiting_for_receipt"] = False
 
     welcome = (
         "🎉 እንኳን ወደ ጉደር ቢንጎ በሰላም መጡ!\n\n"
+
         "Welcome to Guder Bingo!\n\n"
+
         "Choose an option below to continue.\n\n"
+
         "💰 Deposit before selecting your cartela.\n"
+
         "🎮 You can watch the live game without a balance.\n\n"
-        "To submit a payment receipt, first press Deposit."
+
+        "To submit a payment receipt, press Deposit first."
     )
 
     await update.effective_message.reply_text(
@@ -133,7 +157,6 @@ async def deposit_instructions(
     context: ContextTypes.DEFAULT_TYPE
 ):
 
-    # Activate receipt mode for this Telegram user.
     context.user_data["waiting_for_receipt"] = True
 
     message = (
@@ -142,21 +165,24 @@ async def deposit_instructions(
         f"TeleBirr number: {TELEBIRR_NUMBER}\n\n"
 
         "1. Transfer your payment using TeleBirr.\n"
+
         "2. Open your TeleBirr transaction receipt.\n"
+
         "3. Copy the complete receipt text.\n"
+
         "4. Return here and send the receipt as a text message.\n\n"
 
-        "After successful submission, the system will check "
-        "the transaction reference for duplicate submissions.\n\n"
+        "Your submitted receipt will be processed by the system.\n\n"
 
-        "Your eligible deposit will receive PROVISIONAL "
-        "playing credit so that you can proceed to cartela "
-        "selection without waiting for manager approval.\n\n"
+        "Eligible submissions may receive PROVISIONAL playing "
+        "credit so that you can proceed to cartela selection "
+        "without waiting for manager approval.\n\n"
 
         "⚠️ Provisional credit is subject to independent "
         "payment verification by the manager.\n\n"
 
         "Send your complete receipt now.\n"
+
         "Send /cancel if you want to stop."
     )
 
@@ -167,7 +193,10 @@ async def deposit_instructions(
 # CANCEL RECEIPT SUBMISSION
 # ============================================================
 
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cancel(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     context.user_data["waiting_for_receipt"] = False
 
@@ -190,46 +219,35 @@ async def receive_receipt(
     user = update.effective_user
     message = update.effective_message
 
-    if not message or not message.text:
+    if not message or not message.text or not user:
         return
 
     receipt = message.text.strip()
 
-    # Do not silently ignore messages.
     if not context.user_data.get("waiting_for_receipt"):
 
         await message.reply_text(
             "I received your message, but you have not started "
             "the deposit process.\n\n"
-            "Please press 💰 Deposit first, then send your "
+
+            "Please press Deposit first, then send your "
             "complete TeleBirr receipt.",
+
             reply_markup=main_keyboard()
         )
 
         return
 
-    # Basic receipt validation.
     if len(receipt) < 10:
 
         await message.reply_text(
             "❌ The receipt appears incomplete.\n\n"
+
             "Please copy and send the complete TeleBirr "
             "transaction receipt."
         )
 
         return
-
-    # Check for a possible transaction reference.
-    # This is only a basic format check, not payment verification.
-    reference_pattern = re.search(
-        r"(?:transaction|trans(?:action)?\s*(?:id|no|number)?|reference|ref)"
-        r"\s*[:#\-]?\s*([A-Za-z0-9\-]{6,})",
-        receipt,
-        re.IGNORECASE
-    )
-
-    # Do not reject receipts solely because their wording differs.
-    # The backend remains responsible for parsing the actual receipt.
 
     if not BOT_API_SECRET:
 
@@ -242,7 +260,6 @@ async def receive_receipt(
 
         return
 
-    # Tell the player that the receipt is being processed.
     processing_message = await message.reply_text(
         "⏳ Your TeleBirr receipt has been received.\n\n"
         "Please wait while the system processes it."
@@ -263,7 +280,6 @@ async def receive_receipt(
 
     try:
 
-        # Run the blocking HTTP request outside the async event loop.
         response = await asyncio.to_thread(
             requests.post,
             f"{BACKEND_URL}/api/bot/deposit",
@@ -274,15 +290,18 @@ async def receive_receipt(
 
         try:
             data = response.json()
+
         except ValueError:
 
             logger.error(
-                "Deposit backend returned non-JSON response: %s",
+                "Backend returned non-JSON response: %s",
                 response.text[:1000]
             )
 
             await processing_message.edit_text(
-                "❌ The deposit service returned an unexpected response.\n\n"
+                "❌ The deposit service returned an unexpected "
+                "response.\n\n"
+
                 "Your receipt has not been confirmed. "
                 "Please try again later or contact support."
             )
@@ -290,13 +309,13 @@ async def receive_receipt(
             return
 
         logger.info(
-            "Deposit response for Telegram user %s: HTTP %s, success=%s",
+            "Deposit response: user=%s HTTP=%s success=%s",
             user.id,
             response.status_code,
             data.get("success")
         )
 
-        if response.status_code != 200 or not data.get("success"):
+        if not (200 <= response.status_code < 300) or not data.get("success"):
 
             error = data.get(
                 "error",
@@ -308,35 +327,62 @@ async def receive_receipt(
 
             await processing_message.edit_text(
                 "❌ DEPOSIT NOT PROCESSED\n\n"
+
                 f"{error}\n\n"
-                "Please check your receipt and try again.\n"
-                "Your deposit submission session is still active."
+
+                "Please check your receipt and try again."
             )
 
-            # Keep receipt mode active so the player can retry.
             context.user_data["waiting_for_receipt"] = True
 
             return
 
-        # Backend must explicitly return the amount and reference.
-        amount = data.get("amount", 0)
+        amount = data.get("amount")
         reference = data.get("reference", "")
 
         status = str(
-            data.get("status", "PROVISIONAL")
+            data.get("status", "")
         ).upper()
+
+        # Do not tell the player that credit was recorded
+        # unless the backend confirms the provisional status.
 
         if status != "PROVISIONAL":
 
             logger.warning(
-                "Unexpected deposit status returned: %s",
+                "Unexpected deposit status: %s",
                 status
             )
 
-        # Successful submission: leave receipt mode.
+            await processing_message.edit_text(
+                "⚠️ Your receipt was received by the server, "
+                "but provisional playing credit was not confirmed.\n\n"
+
+                "Please contact Guder Bingo support before "
+                "submitting the receipt again."
+            )
+
+            context.user_data["waiting_for_receipt"] = False
+
+            return
+
+        if not reference or amount is None:
+
+            logger.error(
+                "Backend response missing amount or reference."
+            )
+
+            await processing_message.edit_text(
+                "❌ The server response is incomplete.\n\n"
+                "Please contact Guder Bingo support."
+            )
+
+            return
+
         context.user_data["waiting_for_receipt"] = False
 
         await processing_message.edit_text(
+
             "✅ RECEIPT SUBMITTED SUCCESSFULLY\n\n"
 
             f"Amount: {amount} ETB\n"
@@ -361,7 +407,8 @@ async def receive_receipt(
 
         await processing_message.edit_text(
             "⏳ The deposit service did not respond in time.\n\n"
-            "Your receipt may not have been processed. "
+
+            "Your receipt may already have been processed. "
             "Please check your wallet before submitting it again."
         )
 
@@ -373,8 +420,8 @@ async def receive_receipt(
 
         await processing_message.edit_text(
             "❌ Could not connect to the deposit service.\n\n"
-            "Please try again later. Your receipt submission "
-            "session remains active."
+
+            "Please try again later."
         )
 
         context.user_data["waiting_for_receipt"] = True
@@ -386,6 +433,7 @@ async def receive_receipt(
         await processing_message.edit_text(
             "❌ An unexpected error occurred while processing "
             "your receipt.\n\n"
+
             "Please contact Guder Bingo support."
         )
 
@@ -403,7 +451,9 @@ async def button_handler(
 
     query = update.callback_query
 
-    # Answer the callback only once.
+    if not query:
+        return
+
     await query.answer()
 
     user_id = update.effective_user.id
@@ -416,10 +466,13 @@ async def button_handler(
 
         await query.message.reply_text(
             "💳 WALLET BALANCE\n\n"
+
             "Open Guder Bingo Mini App to see your latest "
             "wallet balance.\n\n"
+
             "If you have just submitted a deposit receipt, "
             "refresh the Mini App to update your balance.",
+
             reply_markup=main_keyboard()
         )
 
@@ -428,6 +481,7 @@ async def button_handler(
         await query.message.reply_text(
             "🏆 Open Guder Bingo and select History "
             "to view your game results.",
+
             reply_markup=main_keyboard()
         )
 
@@ -439,8 +493,11 @@ async def button_handler(
 
         await query.message.reply_text(
             "📤 INVITE FRIENDS TO GUDER BINGO\n\n"
+
             "Share this link with your friends:\n\n"
+
             f"{link}",
+
             reply_markup=main_keyboard()
         )
 
@@ -450,13 +507,19 @@ async def button_handler(
             "📖 HOW TO PLAY GUDER BINGO\n\n"
 
             "1. Press Deposit.\n"
+
             "2. Transfer money using TeleBirr.\n"
+
             "3. Copy and submit your complete receipt.\n"
+
             "4. After successful provisional credit, "
             "open the Mini App.\n"
+
             "5. Select an available cartela during the "
             "selection period.\n"
+
             "6. Watch the numbers being called.\n"
+
             "7. Press BINGO when your card has a valid "
             "winning pattern.\n\n"
 
@@ -472,11 +535,29 @@ async def button_handler(
 
         await query.message.reply_text(
             "☎ GUDER BINGO SUPPORT\n\n"
-            f"TeleBirr contact: {TELEBIRR_NUMBER}\n\n"
+
+            f"Support contact: {SUPPORT_NUMBER}\n\n"
+
             "Please contact support if your receipt "
             "cannot be processed.",
+
             reply_markup=main_keyboard()
         )
+
+
+# ============================================================
+# ERROR HANDLER
+# ============================================================
+
+async def error_handler(
+    update: object,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    logger.exception(
+        "Telegram bot encountered an error:",
+        exc_info=context.error
+    )
 
 
 # ============================================================
@@ -520,9 +601,13 @@ def main():
         )
     )
 
-    logger.info("Guder Bingo bot is starting...")
+    application.add_error_handler(error_handler)
 
-    application.run_polling()
+    logger.info("Guder Bingo Telegram bot is starting...")
+
+    application.run_polling(
+        drop_pending_updates=False
+    )
 
 
 # ============================================================
@@ -531,4 +616,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
