@@ -3,925 +3,1043 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#101010">
 <title>Guder Bingo</title>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 :root {
-    --bg:#101010;
-    --panel:#1b1b1b;
-    --panel2:#242424;
-    --gold:#e6b94a;
-    --gold2:#ffda75;
-    --green:#168b45;
-    --red:#c93636;
-    --text:#fff;
-    --muted:#b8b8b8;
-    --border:#414141;
+    --bg: #101426;
+    --panel: #1b2340;
+    --panel2: #252f50;
+    --gold: #f5bd42;
+    --green: #16b86a;
+    --red: #e64b4b;
+    --white: #ffffff;
+    --muted: #b8c0d8;
 }
-*{box-sizing:border-box}
-body{
-    margin:0;padding:12px;background:var(--bg);color:var(--text);
-    font-family:Arial,Helvetica,sans-serif
+
+* {
+    box-sizing: border-box;
 }
-button,input{font:inherit}
-button{cursor:pointer}
-.container{max-width:850px;margin:auto}
-header{text-align:center;padding:15px 8px;border-bottom:1px solid var(--border);margin-bottom:15px}
-.logo{color:var(--gold);font-size:30px;font-weight:bold;letter-spacing:2px}
-.subtitle{color:var(--muted);margin-top:5px;font-size:13px}
-.welcome{
-    background:linear-gradient(135deg,#28200c,#1b1b1b);
-    border:1px solid #725a20;border-radius:12px;padding:15px;
-    text-align:center;margin-bottom:15px;line-height:1.7
+
+body {
+    margin: 0;
+    padding: 12px;
+    background: var(--bg);
+    color: var(--white);
+    font-family: Arial, sans-serif;
 }
-.welcome strong{color:var(--gold2);display:block;font-size:17px;margin-bottom:5px}
-.wallet{
-    display:flex;justify-content:space-between;align-items:center;
-    background:var(--panel);border:1px solid var(--border);
-    padding:13px;border-radius:10px;margin-bottom:15px
+
+button, input {
+    font: inherit;
 }
-.wallet-label{color:var(--muted);font-size:13px}
-.wallet-amount{color:var(--gold2);font-size:22px;font-weight:bold;margin-top:4px}
-.menu{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:15px}
-.menu button{
-    background:var(--panel2);border:1px solid var(--border);
-    color:white;border-radius:9px;padding:12px 5px;font-size:13px
+
+button {
+    border: none;
+    border-radius: 9px;
+    padding: 11px 14px;
+    cursor: pointer;
+    font-weight: bold;
 }
-.menu button:hover{border-color:var(--gold);color:var(--gold2)}
-.section{
-    background:var(--panel);border:1px solid var(--border);
-    border-radius:12px;padding:14px;margin-bottom:15px
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
 }
-.section h2{color:var(--gold);font-size:18px;margin:0 0 12px}
-.status{
-    text-align:center;color:var(--gold2);font-weight:bold;font-size:16px;
-    padding:10px;background:#28200c;border-radius:8px;margin-bottom:12px
+
+.header {
+    text-align: center;
+    padding: 12px 5px;
 }
-.timer{text-align:center;font-size:25px;font-weight:bold;color:var(--gold2);margin:10px 0}
-.small-text{color:var(--muted);font-size:12px;text-align:center;margin-top:7px}
-.number-board{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin-top:12px}
-.number{
-    background:#303030;border:1px solid #505050;border-radius:5px;
-    padding:7px 1px;text-align:center;font-size:11px;font-weight:bold
+
+.header h1 {
+    color: var(--gold);
+    margin: 4px 0;
+    font-size: 27px;
 }
-.number.called{background:var(--green);border-color:#36c875;color:white}
-.last-number{text-align:center;font-size:32px;color:var(--gold2);font-weight:bold;margin:10px 0}
-.cartela-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:12px}
-.cartela-button{
-    background:#333;color:white;border:1px solid #555;
-    padding:10px 2px;border-radius:6px;font-weight:bold;font-size:12px
+
+.header p {
+    color: var(--muted);
+    margin: 5px 0;
 }
-.cartela-button.taken{background:#702727;color:#ddd;opacity:.65;cursor:not-allowed}
-.cartela-button.own{background:var(--green);border-color:#52d58a;color:white}
-.cartela-button:disabled{cursor:not-allowed}
-.card{max-width:390px;margin:15px auto;background:#f5f5f5;color:#111;padding:10px;border-radius:9px}
-.card-title{text-align:center;color:#9b7115;font-weight:bold;margin-bottom:8px}
-.bingo-head,.card-row{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
-.bingo-head div{background:#c99b31;color:#111;text-align:center;padding:7px 2px;font-weight:bold}
-.card-cell{background:white;border:1px solid #aaa;text-align:center;padding:9px 2px;min-height:35px;font-weight:bold}
-.card-cell.free{background:#e7c96c}
-.card-cell.marked{background:#168b45;color:white}
-.primary-button{
-    width:100%;border:none;border-radius:8px;background:var(--gold);
-    color:#171717;padding:13px;font-weight:bold;margin-top:10px
+
+.panel {
+    background: var(--panel);
+    border-radius: 13px;
+    padding: 13px;
+    margin-bottom: 12px;
+    border: 1px solid #303b60;
 }
-.primary-button:disabled{opacity:.5;cursor:not-allowed}
-.secondary-button{
-    width:100%;border:1px solid var(--gold);border-radius:8px;
-    background:transparent;color:var(--gold2);padding:11px;margin-top:8px
+
+.menu {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
 }
-.input{
-    width:100%;background:#111;border:1px solid #555;color:white;
-    border-radius:7px;padding:12px;margin:7px 0
+
+.menu button {
+    background: var(--panel2);
+    color: white;
 }
-.message{padding:10px;border-radius:7px;margin-top:10px;font-size:13px;line-height:1.5;display:none}
-.message.success{display:block;background:#123d25;color:#8df0b0}
-.message.error{display:block;background:#481c1c;color:#ffaaaa}
-.winner-box{
-    display:none;text-align:center;background:#30250c;
-    border:2px solid var(--gold);border-radius:12px;padding:18px;margin:12px 0
+
+.menu button.active {
+    background: var(--gold);
+    color: #171717;
 }
-.winner-box h2{color:var(--gold2);font-size:25px}
-.winner-name{font-size:21px;font-weight:bold;color:white}
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:520px}
-th,td{border:1px solid #555;padding:9px 6px;text-align:left}
-th{color:var(--gold2);background:#292929}
-.hidden{display:none!important}
-.manager-title{color:var(--gold2);font-weight:bold}
-footer{color:#888;text-align:center;font-size:11px;padding:15px 5px}
-@media(max-width:480px){
-    body{padding:8px}
-    .number-board{gap:2px}
-    .number{font-size:9px;padding:6px 0}
-    .cartela-button{font-size:11px;padding:9px 1px}
-    .menu button{font-size:11px}
+
+.primary {
+    background: var(--gold);
+    color: #171717;
+}
+
+.green {
+    background: var(--green);
+    color: white;
+}
+
+.red {
+    background: var(--red);
+    color: white;
+}
+
+.full {
+    width: 100%;
+}
+
+.balance {
+    color: var(--gold);
+    font-size: 21px;
+    font-weight: bold;
+}
+
+.status {
+    text-align: center;
+    padding: 10px;
+    background: #111a31;
+    border-radius: 10px;
+    margin: 8px 0;
+}
+
+.timer {
+    color: var(--gold);
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.call-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    text-align: center;
+}
+
+.call-column {
+    background: var(--panel2);
+    border-radius: 8px;
+    padding: 6px 2px;
+}
+
+.call-column h3 {
+    color: var(--gold);
+    margin: 3px 0 8px;
+}
+
+.call-number {
+    display: block;
+    padding: 5px 1px;
+    margin: 3px 0;
+    border-radius: 5px;
+    background: #11182c;
+    font-size: 13px;
+}
+
+.call-number.called {
+    background: var(--green);
+    color: white;
+    font-weight: bold;
+}
+
+.latest-call {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--gold);
+    text-align: center;
+    padding: 10px;
+}
+
+.cartela-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.cell {
+    background: #f0b93e;
+    color: #171717;
+    padding: 10px 2px;
+    text-align: center;
+    border-radius: 5px;
+    font-weight: bold;
+    min-height: 38px;
+}
+
+.cell.marked {
+    background: var(--green);
+    color: white;
+}
+
+.cell.free {
+    background: #d7d7d7;
+}
+
+.cartela-picker {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    max-height: 270px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+.cartela-choice {
+    background: #d99e27;
+    color: #171717;
+    padding: 9px 2px;
+    border-radius: 6px;
+}
+
+.cartela-choice.taken {
+    background: #555d70;
+    color: #ddd;
+}
+
+.cartela-choice.mine {
+    background: var(--green);
+    color: white;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #58617b;
+    background: #11182c;
+    color: white;
+    margin: 7px 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.notice {
+    padding: 10px;
+    border-radius: 8px;
+    background: #303b60;
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+.notice.error {
+    background: #612b37;
+}
+
+.notice.success {
+    background: #145b3b;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+td, th {
+    border-bottom: 1px solid #3c4666;
+    padding: 8px 4px;
+    text-align: left;
+}
+
+.manager-actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.manager-actions button {
+    padding: 7px;
+    font-size: 12px;
 }
 </style>
 </head>
 
 <body>
-<div class="container">
 
-<header>
-    <div class="logo">GUDER BINGO</div>
-    <div class="subtitle">ጉደር ቢንጎ | Play • Enjoy • Win</div>
-</header>
-
-<div class="welcome">
-    <strong>እንኳን ወደ ጉደር ቢንጎ በሰላም መጡ !</strong>
-    ጨዋታ ለመጀመር በቴሌግራም ቦቱ የሜሴጅ መጻፊያ ላይ /start የሚል በመጻፍ deposit የሚለውን በመንካት ገንዘብ ያስተላልፉ !
+<div class="header">
+    <h1>🎱 GUDER BINGO</h1>
+    <p>ጉደር ቢንጎ — Play and Win</p>
 </div>
 
-<div class="wallet">
-    <div>
-        <div class="wallet-label">MY WALLET / የእኔ ቀሪ ሂሳብ</div>
-        <div class="wallet-amount"><span id="balance">0.00</span> ETB</div>
-    </div>
-    <button class="secondary-button" style="width:auto;margin:0" onclick="refreshWallet()">Refresh</button>
+<div class="panel">
+    <div>💰 Wallet Balance</div>
+    <div class="balance" id="balance">0.00 ETB</div>
+    <div class="muted" id="playerStatus">Connecting to Guder Bingo...</div>
 </div>
 
 <div class="menu">
-    <button onclick="showSection('gameSection')">🎮 Game</button>
-    <button onclick="showSection('historySection');loadHistory()">🏆 History</button>
-    <button onclick="inviteFriends()">👥 Invite</button>
-    <button onclick="openDeposit()">💰 Deposit</button>
-    <button onclick="showSection('walletSection');refreshWallet()">👛 Wallet</button>
-    <button onclick="showSection('managerSection')">⚙️ Manager / Director</button>
+    <button class="active" onclick="showPage('game',this)">🎮 Play</button>
+    <button onclick="showPage('deposit',this)">💰 Deposit</button>
+    <button onclick="showPage('history',this)">🏆 History</button>
+    <button onclick="showPage('instructions',this)">📖 Instructions</button>
+    <button onclick="showPage('support',this)">☎ Support</button>
+    <button onclick="showPage('manager',this)">🔐 Manager</button>
 </div>
 
-<div class="section" id="gameSection">
-    <h2>🎮 Live Bingo Game</h2>
-    <div class="status" id="gameStatus">Connecting to game...</div>
-    <div class="timer" id="timer">--</div>
-    <div class="small-text" id="gameMessage">Please wait while the game information loads.</div>
+<!-- GAME PAGE -->
+<section id="page-game">
 
-    <div id="winnerBox" class="winner-box">
-        <h2>🏆 BINGO WINNER! 🏆</h2>
-        <div class="winner-name" id="winnerName"></div>
-        <div id="winnerPrize" style="color:var(--gold2);margin-top:8px"></div>
+    <div class="panel">
+        <h3>🎮 Live Game</h3>
+
+        <div class="status">
+            <div id="gameStatus">Loading game...</div>
+            <div class="timer" id="timer">--</div>
+            <div class="muted" id="roomNumber"></div>
+        </div>
+
+        <div class="latest-call" id="latestCall">Waiting...</div>
+
+        <div class="call-board" id="callBoard"></div>
     </div>
 
-    <h2 style="margin-top:18px">Last Called Number</h2>
-    <div class="last-number" id="lastNumber">--</div>
+    <div class="panel">
+        <h3>🎟 Select Your Cartela</h3>
+        <div class="muted">
+            Select an available cartela during the 30-second selection period.
+            Each cartela costs 10 ETB.
+        </div>
 
-    <h2>Live Number Board</h2>
-    <div class="number-board" id="numberBoard"></div>
+        <div id="gameMessage" class="notice">
+            Loading available cartelas...
+        </div>
 
-    <div id="selectionArea">
-        <h2 style="margin-top:20px">Select Your Cartela</h2>
-        <div class="small-text">Choose one available cartela. Minimum stake: 10 ETB.</div>
-        <div class="cartela-grid" id="cartelaGrid"></div>
-        <div id="selectionMessage" class="message"></div>
+        <div class="cartela-picker" id="cartelaPicker"></div>
     </div>
 
-    <div id="myCardArea" class="hidden">
-        <h2 style="margin-top:20px">My Playing Cartela</h2>
-        <div id="myCard"></div>
-        <button class="primary-button" id="claimButton" onclick="claimBingo()">🏆 CLAIM BINGO</button>
-        <div id="claimMessage" class="message"></div>
-    </div>
-</div>
-
-<div class="section hidden" id="historySection">
-    <h2>🏆 Recent Winners</h2>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>R.no</th><th>Winner Name</th><th>Phone</th>
-                    <th>Game Session</th><th>Prize (ETB)</th><th>Date</th>
-                </tr>
-            </thead>
-            <tbody id="historyBody">
-                <tr><td colspan="6">Loading...</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="section hidden" id="walletSection">
-    <h2>👛 My Wallet</h2>
-    <p>Available balance: <strong style="color:var(--gold2)"><span id="walletBalance">0.00</span> ETB</strong></p>
-    <p class="small-text">Deposits may remain provisional until independently verified by the manager.</p>
-    <button class="primary-button" onclick="openDeposit()">💰 Deposit Money</button>
-    <div id="walletMessage" class="message"></div>
-</div>
-
-<div class="section hidden" id="managerSection">
-    <h2>⚙️ Manager / Director Panel</h2>
-    <div id="managerLogin">
-        <p class="small-text">Authorized manager access only.</p>
-        <input class="input" id="managerPin" type="password" inputmode="numeric" maxlength="20" autocomplete="off" placeholder="Enter Manager PIN">
-        <button class="primary-button" onclick="managerLogin()">🔐 Manager Login</button>
-        <div id="managerLoginMessage" class="message"></div>
+    <div class="panel" id="myCartelaPanel">
+        <h3>🎟 Your Playing Cartela</h3>
+        <div id="myCartelaNumber" class="muted">
+            You have not selected a cartela.
+        </div>
+        <div id="myCartela" class="cartela-grid"></div>
+        <button class="green full hidden" id="bingoButton" onclick="claimBingo()">
+            🏆 BINGO!
+        </button>
     </div>
 
-    <div id="managerDashboard" class="hidden">
-        <div class="manager-title">MANAGER DASHBOARD</div>
-        <h2 style="margin-top:15px">Game Overview</h2>
-        <div id="managerOverview">Loading manager information...</div>
-        <button class="secondary-button" onclick="loadManagerOverview()">Refresh Overview</button>
-
-        <h2 style="margin-top:20px">Deposit Management</h2>
-        <div class="small-text">Review provisional deposits. Verify only after independently confirming payment receipt.</div>
-        <div id="depositList">Loading deposits...</div>
-        <button class="secondary-button" onclick="loadManagerOverview()">Refresh Deposits</button>
-        <button class="secondary-button" onclick="managerLogout()">Logout</button>
+    <div class="panel">
+        <h3>👥 Players in This Game</h3>
+        <div id="playerCount">0 players</div>
+        <div id="selectedCartelas" class="muted"></div>
     </div>
-</div>
 
-<footer>
-    Guder Bingo | ጉደር ቢንጎ<br>
-    Play responsibly.
-</footer>
+    <div class="panel">
+        <h3>🏆 Recent Winners</h3>
+        <div id="recentWinners" class="muted">No winners yet.</div>
+    </div>
 
-</div>
+</section>
+
+
+<!-- DEPOSIT PAGE -->
+<section id="page-deposit" class="hidden">
+
+    <div class="panel">
+        <h3>💰 Deposit Money</h3>
+
+        <div class="notice">
+            <strong>TeleBirr payment</strong><br><br>
+            Transfer your payment to the TeleBirr number below.
+            After payment, open Telegram and press Deposit in the bot.
+            Copy the complete transaction receipt and send it to the bot.
+        </div>
+
+        <h2 id="telebirrNumber">0913706670</h2>
+
+        <button class="primary full" onclick="copyTelebirr()">
+            Copy TeleBirr Number
+        </button>
+
+        <div class="notice">
+            Once your receipt is successfully submitted and processed,
+            the playing credit is added to your wallet. You can then
+            select a cartela.
+        </div>
+
+        <button class="green full" onclick="openTelegramBot()">
+            Open Telegram Deposit
+        </button>
+    </div>
+
+</section>
+
+
+<!-- HISTORY PAGE -->
+<section id="page-history" class="hidden">
+
+    <div class="panel">
+        <h3>🏆 Game History</h3>
+        <div id="historyList">Loading history...</div>
+    </div>
+
+</section>
+
+
+<!-- INSTRUCTIONS PAGE -->
+<section id="page-instructions" class="hidden">
+
+    <div class="panel">
+        <h3>📖 How to Play Guder Bingo</h3>
+
+        <p>1. Deposit money using TeleBirr.</p>
+        <p>2. Submit your complete receipt through the Telegram bot.</p>
+        <p>3. Open the Guder Bingo Mini App.</p>
+        <p>4. Select an available cartela during the selection period.</p>
+        <p>5. Each cartela costs 10 ETB.</p>
+        <p>6. Wait for the game to begin.</p>
+        <p>7. Watch the numbers being called.</p>
+        <p>8. When you complete a valid winning line, press BINGO.</p>
+        <p>9. The server checks your Bingo claim.</p>
+    </div>
+
+</section>
+
+
+<!-- SUPPORT PAGE -->
+<section id="page-support" class="hidden">
+
+    <div class="panel">
+        <h3>☎ Guder Bingo Support</h3>
+        <p>For assistance with deposits or playing, contact support.</p>
+        <h2 id="supportNumber">0913706670</h2>
+    </div>
+
+</section>
+
+
+<!-- MANAGER PAGE -->
+<section id="page-manager" class="hidden">
+
+    <div class="panel">
+        <h3>🔐 Manager Panel</h3>
+
+        <input
+            type="password"
+            id="managerPin"
+            placeholder="Enter manager PIN"
+        >
+
+        <button class="primary full" onclick="loadManager()">
+            Login
+        </button>
+
+        <div id="managerMessage" class="notice hidden"></div>
+    </div>
+
+    <div class="panel hidden" id="managerDashboard">
+        <h3>📊 Dashboard</h3>
+        <div id="managerStats"></div>
+        <h3>💰 Deposit Records</h3>
+        <div id="managerDeposits"></div>
+    </div>
+
+</section>
+
 
 <script>
-const API_BASE = window.location.origin;
-const BOT_USERNAME = "guderbingo_bot";
-
-const tg = window.Telegram && window.Telegram.WebApp
-    ? window.Telegram.WebApp : null;
+const tg = window.Telegram?.WebApp;
 
 if (tg) {
     tg.ready();
     tg.expand();
 }
 
-let walletBalance = 0;
-let currentGame = null;
-let myCartela = null;
+const API = "";
+const BOT_URL = "https://t.me/guderbingo_bot";
+
+let initData = tg?.initData || "";
+let gameData = null;
+let configData = {};
+let currentBalance = 0;
 let managerPin = "";
-let lastAnnouncedNumber = null;
-let announcedWinnerKeys = new Set();
-let speechEnabled = false;
-let gameRefreshBusy = false;
+let refreshTimer = null;
 
-const telegramUser = tg?.initDataUnsafe?.user || null;
-const telegramUserId = telegramUser?.id || null;
-
-function getHeaders(extra = {}) {
-    const headers = {...extra};
-    if (tg?.initData) headers["X-Telegram-Init-Data"] = tg.initData;
-    if (managerPin) headers["X-Manager-PIN"] = managerPin;
-    return headers;
-}
-
-async function apiRequest(path, options = {}) {
-    const config = {
-        ...options,
-        headers: getHeaders(options.headers || {})
+function headers(extra = {}) {
+    const h = {
+        "Content-Type": "application/json",
+        ...extra
     };
 
-    if (config.body && typeof config.body !== "string") {
-        config.headers["Content-Type"] = "application/json";
-        config.body = JSON.stringify(config.body);
+    if (initData) {
+        h["X-Telegram-Init-Data"] = initData;
     }
 
-    let response;
-    try {
-        response = await fetch(API_BASE + path, config);
-    } catch (error) {
-        throw new Error("Cannot connect to the server. Please try again.");
-    }
+    return h;
+}
+
+async function api(path, options = {}) {
+    const response = await fetch(API + path, {
+        ...options,
+        headers: headers(options.headers || {})
+    });
 
     let data;
+
     try {
         data = await response.json();
-    } catch (error) {
+    } catch {
         throw new Error("The server returned an invalid response.");
     }
 
-    if (!response.ok || data.success === false || data.error) {
-        throw new Error(data.error || data.message || `Request failed (${response.status})`);
+    if (!response.ok || data.success === false) {
+        throw new Error(data.error || "Request failed.");
     }
+
     return data;
 }
 
-function showMessage(id, message, type="success") {
-    const element = document.getElementById(id);
-    if (!element) return;
-    element.className = "message " + type;
-    element.textContent = message;
+function showPage(page, button) {
+    document.querySelectorAll("section").forEach(section => {
+        section.classList.add("hidden");
+    });
+
+    document.getElementById("page-" + page).classList.remove("hidden");
+
+    document.querySelectorAll(".menu button").forEach(b => {
+        b.classList.remove("active");
+    });
+
+    if (button) {
+        button.classList.add("active");
+    }
+
+    if (page === "history") {
+        loadHistory();
+    }
 }
 
-function clearMessage(id) {
-    const element = document.getElementById(id);
-    if (!element) return;
-    element.className = "message";
-    element.textContent = "";
+function setMessage(text, type = "") {
+    const el = document.getElementById("gameMessage");
+    el.textContent = text;
+    el.className = "notice " + type;
+}
+
+function makeCallBoard(calledNumbers) {
+    const board = document.getElementById("callBoard");
+    board.innerHTML = "";
+
+    const ranges = [
+        ["B", 1, 15],
+        ["I", 16, 30],
+        ["N", 31, 45],
+        ["G", 46, 60],
+        ["O", 61, 75]
+    ];
+
+    ranges.forEach(([letter, start, end]) => {
+        const column = document.createElement("div");
+        column.className = "call-column";
+
+        const heading = document.createElement("h3");
+        heading.textContent = letter;
+        column.appendChild(heading);
+
+        for (let n = start; n <= end; n++) {
+            const item = document.createElement("span");
+            item.className = "call-number";
+
+            if (calledNumbers.includes(n)) {
+                item.classList.add("called");
+            }
+
+            item.textContent = n;
+            column.appendChild(item);
+        }
+
+        board.appendChild(column);
+    });
+}
+
+function renderCartela(matrix, calledNumbers) {
+    const container = document.getElementById("myCartela");
+    container.innerHTML = "";
+
+    matrix.forEach(row => {
+        row.forEach(value => {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+
+            if (String(value).toUpperCase() === "FREE") {
+                cell.classList.add("free");
+                cell.textContent = "FREE";
+            } else {
+                const number = Number(value);
+                cell.textContent = number;
+
+                if (calledNumbers.includes(number)) {
+                    cell.classList.add("marked");
+                }
+            }
+
+            container.appendChild(cell);
+        });
+    });
+}
+
+function renderCartelaPicker(data) {
+    const picker = document.getElementById("cartelaPicker");
+    picker.innerHTML = "";
+
+    const selections = data.selections || [];
+    const taken = new Set(
+        selections.map(s => Number(s.cartela_number || s.cartela_no))
+    );
+
+    const ownCartela = data.cartela
+        ? Number(data.cartela.cartela_no)
+        : null;
+
+    for (let n = 1; n <= 800; n++) {
+        const button = document.createElement("button");
+        button.className = "cartela-choice";
+        button.textContent = n;
+
+        if (ownCartela === n) {
+            button.classList.add("mine");
+            button.textContent = "✓ " + n;
+            button.disabled = true;
+        } else if (taken.has(n)) {
+            button.classList.add("taken");
+            button.disabled = true;
+        } else {
+            button.onclick = () => selectCartela(n);
+        }
+
+        picker.appendChild(button);
+    }
+}
+
+function renderSelections(data) {
+    const selections = data.selections || [];
+
+    document.getElementById("playerCount").textContent =
+        selections.length + " cartela(s) selected";
+
+    document.getElementById("selectedCartelas").textContent =
+        selections.map(s => {
+            const name = s.first_name || s.username || "Player";
+            return name + " — Cartela " + s.cartela_number;
+        }).join(" | ") || "No cartelas selected yet.";
+}
+
+function renderWinners(data) {
+    const winners = data.winners || [];
+    const el = document.getElementById("recentWinners");
+
+    if (!winners.length) {
+        el.textContent = "No winners yet.";
+        return;
+    }
+
+    el.innerHTML = winners.map(w => `
+        <div class="notice">
+            🏆 ${escapeHtml(w.winner_name || "Player")}
+            — Cartela ${Number(w.cartela_no || 0)}
+        </div>
+    `).join("");
 }
 
 function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, character => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    })[character]);
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
 }
 
-function showSection(id) {
-    document.querySelectorAll("#gameSection,#historySection,#walletSection,#managerSection")
-        .forEach(section => section.classList.add("hidden"));
-    document.getElementById(id)?.classList.remove("hidden");
-}
+async function loadWallet() {
+    if (!initData) {
+        document.getElementById("playerStatus").textContent =
+            "Open this game through the Guder Bingo Telegram bot.";
 
-function openDeposit() {
-    const url = `https://t.me/${BOT_USERNAME}?start=deposit`;
-    if (tg) tg.openTelegramLink(url);
-    else window.open(url, "_blank");
-}
-
-function inviteFriends() {
-    const referral = telegramUserId
-        ? `https://t.me/${BOT_USERNAME}?start=ref_${telegramUserId}`
-        : `https://t.me/${BOT_USERNAME}`;
-
-    const url = "https://t.me/share/url?url=" +
-        encodeURIComponent(referral) +
-        "&text=" + encodeURIComponent("Join me on Guder Bingo!");
-
-    if (tg) tg.openTelegramLink(url);
-    else window.open(url, "_blank");
-}
-
-/* WALLET */
-
-async function refreshWallet() {
-    try {
-        const data = await apiRequest("/api/wallet");
-        const balance = Number(data.balance ?? data.wallet_balance ?? data.available_balance ?? 0);
-        walletBalance = Number.isFinite(balance) ? balance : 0;
-
-        document.getElementById("balance").textContent = walletBalance.toFixed(2);
-        document.getElementById("walletBalance").textContent = walletBalance.toFixed(2);
-    } catch (error) {
-        console.error("Wallet refresh:", error);
+        return;
     }
-}
-
-/* NUMBER BOARD */
-
-function createNumberBoard() {
-    const board = document.getElementById("numberBoard");
-    board.innerHTML = "";
-    for (let number=1; number<=75; number++) {
-        const cell = document.createElement("div");
-        cell.className = "number";
-        cell.id = "number-" + number;
-        cell.textContent = number;
-        board.appendChild(cell);
-    }
-}
-
-function numberLabel(number) {
-    if (number<=15) return "B-" + number;
-    if (number<=30) return "I-" + number;
-    if (number<=45) return "N-" + number;
-    if (number<=60) return "G-" + number;
-    return "O-" + number;
-}
-
-function updateNumberBoard(calledNumbers) {
-    const numbers = Array.isArray(calledNumbers) ? calledNumbers.map(Number) : [];
-    document.querySelectorAll(".number").forEach(cell => cell.classList.remove("called"));
-
-    numbers.forEach(number => {
-        document.getElementById("number-" + number)?.classList.add("called");
-    });
-
-    const latest = numbers.length ? numbers[numbers.length-1] : null;
-    document.getElementById("lastNumber").textContent =
-        latest === null ? "--" : numberLabel(latest);
-
-    if (latest !== null && lastAnnouncedNumber !== latest) {
-        if (lastAnnouncedNumber !== null) announceNumber(latest);
-        lastAnnouncedNumber = latest;
-    }
-}
-
-/* SPEECH FALLBACK */
-
-function enableSpeech() {
-    speechEnabled = true;
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-}
-document.addEventListener("click", enableSpeech, {once:true});
-document.addEventListener("touchstart", enableSpeech, {once:true});
-
-function announceNumber(number) {
-    if (!speechEnabled || !("speechSynthesis" in window)) return;
-
-    const letter = number<=15 ? "B" :
-        number<=30 ? "I" :
-        number<=45 ? "N" :
-        number<=60 ? "G" : "O";
 
     try {
-        window.speechSynthesis.cancel();
-        const speech = new SpeechSynthesisUtterance(`${letter}, ${number}`);
-        speech.lang = "am-ET";
-        speech.rate = 0.85;
-        speech.volume = 1;
-        window.speechSynthesis.speak(speech);
+        const data = await api("/api/wallet");
+
+        currentBalance = Number(data.balance || 0);
+
+        document.getElementById("balance").textContent =
+            currentBalance.toFixed(2) + " ETB";
+
+        document.getElementById("playerStatus").textContent =
+            "Telegram player connected.";
+
     } catch (error) {
-        console.log("Speech error:", error);
+        document.getElementById("playerStatus").textContent =
+            error.message;
     }
-}
-
-/* GAME STATUS */
-
-function normalizeStatus(value) {
-    return String(value || "").toUpperCase();
-}
-
-function extractGameStatus(data) {
-    const candidates = [
-        data.game_status,
-        data.game?.status,
-        data.game_state?.status,
-        data.room?.status,
-        data.current_room?.status,
-        data.session?.status,
-        data.status
-    ];
-
-    for (const candidate of candidates) {
-        const status = normalizeStatus(candidate);
-        if (["OPEN","PREPARING","RUNNING","WINNER","COMPLETED"].includes(status)) {
-            return status;
-        }
-    }
-    return "WAITING";
-}
-
-function getRemainingSeconds(data, status) {
-    if (data.remaining_seconds !== undefined) {
-        return Math.max(0, Number(data.remaining_seconds) || 0);
-    }
-
-    const nested = data.game || data.game_state || data.room || data.current_room || {};
-    if (nested.remaining_seconds !== undefined) {
-        return Math.max(0, Number(nested.remaining_seconds) || 0);
-    }
-
-    const start = Number(
-        nested.phase_start_time ??
-        data.phase_start_time ??
-        nested.start_time ??
-        data.start_time ?? 0
-    );
-
-    if (!start) return 0;
-
-    const duration = status==="OPEN" ? 30 :
-        status==="PREPARING" ? 5 :
-        status==="WINNER" ? 5 : 0;
-
-    const startMs = start < 1000000000000 ? start*1000 : start;
-    return Math.max(0, Math.ceil(duration-(Date.now()-startMs)/1000));
 }
 
 async function loadGame() {
-    if (gameRefreshBusy) return;
-    gameRefreshBusy = true;
-
     try {
-        const data = await apiRequest("/api/game/state");
-        currentGame = data;
+        const data = await api("/api/game/state");
 
-        const nested = data.game || data.game_state || data.room || data.current_room || {};
-        const status = extractGameStatus(data);
+        gameData = data;
 
-        const selections = Array.isArray(data.selections) ? data.selections :
-            Array.isArray(nested.selections) ? nested.selections : [];
-
-        const calledNumbers = Array.isArray(data.called_numbers) ? data.called_numbers :
-            Array.isArray(nested.called_numbers) ? nested.called_numbers : [];
-
-        const remaining = getRemainingSeconds(data, status);
-
-        const labels = {
-            OPEN:"CARTELA SELECTION OPEN",
-            PREPARING:"GAME PREPARING",
-            RUNNING:"GAME RUNNING",
-            WINNER:"WINNER ANNOUNCED",
-            COMPLETED:"GAME COMPLETED",
-            WAITING:"WAITING FOR GAME SESSION"
-        };
-
-        document.getElementById("gameStatus").textContent = labels[status];
+        document.getElementById("gameStatus").textContent =
+            statusText(data.game_status);
 
         document.getElementById("timer").textContent =
-            ["OPEN","PREPARING","WINNER"].includes(status)
-                ? remaining + " seconds"
-                : status==="RUNNING" ? "LIVE GAME" : "--";
+            data.remaining_seconds > 0
+                ? data.remaining_seconds + " seconds"
+                : "";
 
-        const messages = {
-            OPEN:"Select an available cartela before the countdown ends.",
-            PREPARING:"Cartela selection is closed. The game is preparing.",
-            RUNNING:"The game is live. Watch the called numbers and your cartela.",
-            WINNER:"A winner has been announced.",
-            COMPLETED:"This game session has ended. Waiting for the next session.",
-            WAITING:"The server responded, but no recognized game-session status was returned. Check the game-state API."
-        };
+        document.getElementById("roomNumber").textContent =
+            data.room_id ? "Game Room #" + data.room_id : "";
 
-        document.getElementById("gameMessage").textContent = messages[status];
+        const called = data.called_numbers || [];
 
-        updateNumberBoard(calledNumbers);
-        renderCartelas(selections, status);
-        renderMyCard(selections, status);
+        const last = called.length
+            ? called[called.length - 1]
+            : null;
 
-        if (status==="WINNER" || status==="COMPLETED") {
-            displayWinners(data.winners || nested.winners || data.recent_winners || []);
+        document.getElementById("latestCall").textContent =
+            last ? "Latest Number: " + bingoLetter(last) + "-" + last : "Waiting for numbers...";
+
+        makeCallBoard(called);
+        renderCartelaPicker(data);
+        renderSelections(data);
+        renderWinners(data);
+
+        if (data.cartela) {
+            document.getElementById("myCartelaNumber").textContent =
+                "Your Cartela: " + data.cartela.cartela_no;
+
+            let matrix = [];
+
+            try {
+                matrix = JSON.parse(data.cartela.numbers_json);
+            } catch {
+                matrix = [];
+            }
+
+            if (matrix.length) {
+                renderCartela(matrix, called);
+            }
+
+            document.getElementById("bingoButton").classList.remove("hidden");
+
         } else {
-            document.getElementById("winnerBox").style.display = "none";
+            document.getElementById("myCartelaNumber").textContent =
+                "You have not selected a cartela.";
+
+            document.getElementById("myCartela").innerHTML = "";
+            document.getElementById("bingoButton").classList.add("hidden");
         }
 
-        if (status==="OPEN" && myCartela &&
-            String(myCartela.room_id ?? "") !== String(data.room_id ?? nested.id ?? "")) {
-            myCartela = null;
+        if (data.game_status === "OPEN") {
+            setMessage(
+                "Cartela selection is open. Choose an available cartela.",
+                "success"
+            );
+        } else if (data.game_status === "PREPARING") {
+            setMessage("Preparing the game. Please wait.");
+        } else if (data.game_status === "RUNNING") {
+            setMessage("The game is running. Watch the called numbers.");
+        } else if (data.game_status === "COMPLETED") {
+            setMessage("This game has ended. Preparing the next game.");
+        }
+
+        if (data.balance !== undefined) {
+            currentBalance = Number(data.balance);
+
+            document.getElementById("balance").textContent =
+                currentBalance.toFixed(2) + " ETB";
         }
 
     } catch (error) {
-        document.getElementById("gameStatus").textContent = "CONNECTION PROBLEM";
-        document.getElementById("gameMessage").textContent = error.message;
-        console.error("Game loading:", error);
-    } finally {
-        gameRefreshBusy = false;
+        setMessage(error.message, "error");
     }
 }
 
-/* CARTELA SELECTION */
+function statusText(status) {
+    const labels = {
+        OPEN: "🟢 Cartela Selection Open",
+        PREPARING: "🟡 Preparing Game",
+        RUNNING: "🔴 Game in Progress",
+        COMPLETED: "🏆 Game Completed",
+        WAITING: "Waiting for Game"
+    };
 
-function getSelectionCartela(item) {
-    return Number(item.cartela_number ?? item.cartela ?? item.number ?? 0);
+    return labels[status] || status || "Waiting...";
 }
 
-function getSelectionUserId(item) {
-    return String(item.telegram_user_id ?? item.user_id ?? item.userId ?? "");
-}
-
-function renderCartelas(selections, status) {
-    const area = document.getElementById("selectionArea");
-    const grid = document.getElementById("cartelaGrid");
-
-    if (status!=="OPEN") {
-        area.classList.add("hidden");
-        return;
-    }
-
-    area.classList.remove("hidden");
-    grid.innerHTML = "";
-
-    const taken = new Set(selections.map(getSelectionCartela).filter(n=>n>0));
-    let ownNumber = null;
-
-    if (telegramUserId) {
-        const own = selections.find(item =>
-            getSelectionUserId(item)===String(telegramUserId)
-        );
-        if (own) ownNumber = getSelectionCartela(own);
-    }
-
-    for (let number=1; number<=800; number++) {
-        const button = document.createElement("button");
-        button.className = "cartela-button";
-        button.textContent = number;
-
-        if (taken.has(number)) {
-            if (number===ownNumber) {
-                button.classList.add("own");
-                button.textContent = number+" ✓";
-            } else {
-                button.classList.add("taken");
-            }
-            button.disabled = true;
-        } else {
-            button.onclick = () => selectCartela(number);
-        }
-        grid.appendChild(button);
-    }
+function bingoLetter(number) {
+    if (number <= 15) return "B";
+    if (number <= 30) return "I";
+    if (number <= 45) return "N";
+    if (number <= 60) return "G";
+    return "O";
 }
 
 async function selectCartela(number) {
-    clearMessage("selectionMessage");
-
-    if (!currentGame || extractGameStatus(currentGame)!=="OPEN") {
-        showMessage("selectionMessage","Cartela selection is closed.","error");
+    if (!initData) {
+        setMessage(
+            "Please open Guder Bingo through the Telegram bot.",
+            "error"
+        );
         return;
     }
 
-    if (walletBalance<10) {
-        showMessage("selectionMessage",
-            "Your available balance is below 10 ETB. Please deposit first.","error");
+    if (currentBalance < 10) {
+        setMessage(
+            "Insufficient balance. Please deposit before selecting a cartela.",
+            "error"
+        );
+        return;
+    }
+
+    if (!confirm("Select Cartela " + number + " for 10 ETB?")) {
         return;
     }
 
     try {
-        const data = await apiRequest("/api/cartela/select", {
-            method:"POST",
-            body:{cartela_number:number}
+        const data = await api("/api/cartela/select", {
+            method: "POST",
+            body: JSON.stringify({
+                cartela_number: number
+            })
         });
 
-        myCartela = data.cartela || data.selection || {
-            cartela_number:number,
-            numbers:data.numbers
-        };
+        setMessage(
+            "Cartela " + number + " selected successfully!",
+            "success"
+        );
 
-        showMessage("selectionMessage",
-            data.message || "Cartela selected successfully!","success");
-
-        await refreshWallet();
+        await loadWallet();
         await loadGame();
 
     } catch (error) {
-        showMessage("selectionMessage",error.message,"error");
-        await loadGame();
-        await refreshWallet();
+        setMessage(error.message, "error");
     }
 }
-
-/* PLAYER CARTELA */
-
-function renderMyCard(selections, status) {
-    if (!telegramUserId) return;
-
-    const own = selections.find(item =>
-        getSelectionUserId(item)===String(telegramUserId)
-    );
-
-    if (!own) {
-        if (status==="OPEN") {
-            document.getElementById("myCardArea").classList.add("hidden");
-        }
-        return;
-    }
-
-    myCartela = own;
-    const cardData = own.numbers || own.cartela_data || own.card;
-
-    if (cardData) renderCard(cardData,getSelectionCartela(own));
-
-    document.getElementById("myCardArea").classList.remove("hidden");
-
-    const button = document.getElementById("claimButton");
-    button.disabled = status!=="RUNNING";
-    button.textContent = status==="RUNNING" ? "🏆 CLAIM BINGO" : "GAME NOT RUNNING";
-}
-
-function renderCard(numbers, cartelaNumber) {
-    const container = document.getElementById("myCard");
-    let rows = numbers;
-
-    if (typeof rows==="string") {
-        try { rows=JSON.parse(rows); } catch(error) { rows=[]; }
-    }
-    if (!Array.isArray(rows)) return;
-
-    const called = new Set((currentGame?.called_numbers || []).map(Number));
-
-    let html = `<div class="card">
-        <div class="card-title">CARTELA ${escapeHtml(cartelaNumber||"")}</div>
-        <div class="bingo-head"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
-
-    rows.forEach((row,rowIndex)=>{
-        html += `<div class="card-row">`;
-        (Array.isArray(row)?row:[]).forEach((value,colIndex)=>{
-            const free = rowIndex===2 && colIndex===2;
-            const marked = free || called.has(Number(value));
-            const classes = ["card-cell",free?"free":"",marked?"marked":""].join(" ");
-            html += `<div class="${classes}">${free?"FREE":escapeHtml(value)}</div>`;
-        });
-        html += `</div>`;
-    });
-
-    html += `</div>`;
-    container.innerHTML = html;
-}
-
-/* BINGO CLAIM */
 
 async function claimBingo() {
-    clearMessage("claimMessage");
-
-    if (!myCartela) {
-        showMessage("claimMessage","You have not selected a cartela.","error");
+    if (!confirm("Are you sure you have Bingo?")) {
         return;
     }
 
-    const button = document.getElementById("claimButton");
-    button.disabled = true;
-
     try {
-        const data = await apiRequest("/api/game/claim",{
-            method:"POST",
-            body:{}
+        const data = await api("/api/game/claim", {
+            method: "POST",
+            body: JSON.stringify({})
         });
 
-        showMessage("claimMessage",
-            data.message || "Your Bingo claim has been submitted.","success");
+        alert(
+            "🏆 BINGO VERIFIED!\n\n" +
+            "Winner: " + (data.winner || "Player") +
+            "\nCartela: " + data.cartela_no
+        );
 
         await loadGame();
 
-    } catch(error) {
-        showMessage("claimMessage",error.message,"error");
-    } finally {
-        button.disabled = false;
+    } catch (error) {
+        alert(error.message);
     }
 }
-
-/* WINNERS */
-
-function displayWinners(winners) {
-    if (!Array.isArray(winners) || !winners.length) return;
-
-    const winner = winners[0];
-    const name = winner.winner_name || winner.name || winner.full_name || "Winner";
-    const prize = winner.prize_amount ?? winner.prize ?? "";
-    const session = winner.room_id ?? winner.session_id ?? winner.game_session ?? "";
-
-    const key = String(winner.id ?? `${session}-${name}-${prize}`);
-
-    document.getElementById("winnerBox").style.display = "block";
-    document.getElementById("winnerName").textContent = name;
-    document.getElementById("winnerPrize").textContent =
-        prize!=="" ? `Prize: ${prize} ETB` : "";
-
-    if (!announcedWinnerKeys.has(key)) {
-        announcedWinnerKeys.add(key);
-        if (speechEnabled && "speechSynthesis" in window) {
-            try {
-                const speech = new SpeechSynthesisUtterance(`Bingo! ${name} is the winner!`);
-                speech.lang="am-ET";
-                speech.rate=.85;
-                window.speechSynthesis.speak(speech);
-            } catch(error) {
-                console.log(error);
-            }
-        }
-    }
-}
-
-/* HISTORY */
 
 async function loadHistory() {
-    const body = document.getElementById("historyBody");
-    body.innerHTML='<tr><td colspan="6">Loading winners...</td></tr>';
+    const el = document.getElementById("historyList");
+    el.textContent = "Loading history...";
 
     try {
-        const data=await apiRequest("/api/game/history");
-        const winners=Array.isArray(data.winners)?data.winners:
-            Array.isArray(data.history)?data.history:[];
+        const data = await api("/api/game/history");
+
+        const winners = data.winners || [];
 
         if (!winners.length) {
-            body.innerHTML='<tr><td colspan="6">No winners recorded yet.</td></tr>';
+            el.textContent = "No completed games yet.";
             return;
         }
 
-        body.innerHTML=winners.map((winner,index)=>`
-            <tr>
-                <td>${index+1}</td>
-                <td>${escapeHtml(winner.winner_name||winner.name||"")}</td>
-                <td>${escapeHtml(winner.phone||winner.phone_number||"")}</td>
-                <td>${escapeHtml(winner.room_id||winner.session_id||"")}</td>
-                <td>${escapeHtml(winner.prize_amount??winner.prize??"")}</td>
-                <td>${escapeHtml(winner.created_at||winner.date||"")}</td>
-            </tr>
+        el.innerHTML = winners.map(w => `
+            <div class="notice">
+                🏆 <strong>${escapeHtml(w.winner_name || "Player")}</strong><br>
+                Room: ${Number(w.room_id)}<br>
+                Cartela: ${Number(w.cartela_no)}<br>
+                Date: ${escapeHtml(w.created_at || "")}
+            </div>
         `).join("");
 
-    } catch(error) {
-        body.innerHTML=`<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
+    } catch (error) {
+        el.textContent = error.message;
     }
 }
 
-/* MANAGER LOGIN */
+async function loadConfig() {
+    try {
+        configData = await api("/api/config");
 
-async function managerLogin() {
-    const pin=document.getElementById("managerPin").value.trim();
+        document.getElementById("telebirrNumber").textContent =
+            configData.telebirr_phone || "0913706670";
 
-    if (!pin) {
-        showMessage("managerLoginMessage","Please enter your Manager PIN.","error");
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function copyTelebirr() {
+    const number =
+        configData.telebirr_phone || "0913706670";
+
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(number)
+            .then(() => alert("TeleBirr number copied: " + number))
+            .catch(() => alert("TeleBirr number: " + number));
+    } else {
+        alert("TeleBirr number: " + number);
+    }
+}
+
+function openTelegramBot() {
+    window.open(BOT_URL, "_blank");
+}
+
+async function loadManager() {
+    managerPin = document.getElementById("managerPin").value.trim();
+
+    if (!managerPin) {
+        managerMessage("Please enter the manager PIN.", true);
         return;
     }
 
-    managerPin=pin;
-
     try {
-        await loadManagerOverview();
+        const data = await api("/api/manager/overview", {
+            headers: {
+                "X-Manager-PIN": managerPin
+            }
+        });
 
-        document.getElementById("managerLogin").classList.add("hidden");
-        document.getElementById("managerDashboard").classList.remove("hidden");
-        clearMessage("managerLoginMessage");
+        document.getElementById("managerDashboard")
+            .classList.remove("hidden");
 
-    } catch(error) {
-        managerPin="";
-        showMessage("managerLoginMessage",error.message,"error");
+        document.getElementById("managerStats").innerHTML = `
+            <div class="notice">
+                Players: ${Number(data.players || 0)}<br>
+                Deposits: ${Number(data.deposit_count || 0)}<br>
+                Current Room: ${Number(data.current_room || 0)}<br>
+                Game Status: ${escapeHtml(data.game_status || "")}
+            </div>
+        `;
+
+        renderManagerDeposits(data.deposits || []);
+        managerMessage("Manager login successful.", false);
+
+    } catch (error) {
+        managerMessage(error.message, true);
+        document.getElementById("managerDashboard")
+            .classList.add("hidden");
     }
 }
 
-function managerLogout() {
-    managerPin="";
-    document.getElementById("managerPin").value="";
-    document.getElementById("managerDashboard").classList.add("hidden");
-    document.getElementById("managerLogin").classList.remove("hidden");
+function managerMessage(message, error) {
+    const el = document.getElementById("managerMessage");
+
+    el.textContent = message;
+    el.classList.remove("hidden");
+    el.className = "notice " + (error ? "error" : "success");
 }
 
-/* MANAGER OVERVIEW AND DEPOSITS */
-
-async function loadManagerOverview() {
-    const data=await apiRequest("/api/manager/overview");
-
-    document.getElementById("managerOverview").innerHTML=`
-        <p>Current session: <strong>${escapeHtml(data.room_id??data.current_room??"N/A")}</strong></p>
-        <p>Game status: <strong>${escapeHtml(data.status??data.game_status??"N/A")}</strong></p>
-        <p>Players: <strong>${escapeHtml(data.players??data.player_count??0)}</strong></p>
-        <p>Deposits: <strong>${escapeHtml(data.deposit_count??0)}</strong></p>
-    `;
-
-    const deposits=Array.isArray(data.deposits)?data.deposits:[];
-    const list=document.getElementById("depositList");
+function renderManagerDeposits(deposits) {
+    const el = document.getElementById("managerDeposits");
 
     if (!deposits.length) {
-        list.textContent="No deposits available.";
+        el.textContent = "No deposits submitted yet.";
         return;
     }
 
-    list.innerHTML=deposits.map(deposit=>{
-        const id=Number(deposit.id);
-        const status=String(deposit.status||"UNKNOWN").toUpperCase();
-        const actions=["PROVISIONAL","PENDING"].includes(status)
-            ? `<button class="secondary-button" onclick="verifyDeposit(${id})">Verify</button>
-               <button class="secondary-button" onclick="rejectDeposit(${id})">Reject</button>`
-            : "";
-
-        return `<div style="border:1px solid #555;padding:10px;margin:8px 0;border-radius:8px">
-            <p>Deposit ID: ${escapeHtml(id)}</p>
-            <p>Player: ${escapeHtml(deposit.telegram_user_id||deposit.user_id||"")}</p>
-            <p>Amount: ${escapeHtml(deposit.amount??0)} ETB</p>
-            <p>Reference: ${escapeHtml(deposit.reference||deposit.transaction_reference||"")}</p>
-            <p>Status: <strong>${escapeHtml(status)}</strong></p>
-            ${actions}
-        </div>`;
-    }).join("");
+    el.innerHTML = deposits.map(d => `
+        <div class="notice">
+            <strong>${escapeHtml(d.first_name || d.username || "Player")}</strong><br>
+            Amount: ${Number(d.amount).toFixed(2)} ETB<br>
+            Reference: ${escapeHtml(d.payer_reference || "")}<br>
+            Status: ${escapeHtml(d.status || "")}<br>
+            <div class="manager-actions">
+                <button class="green" onclick="reviewDeposit(${Number(d.deposit_id)},'verify')">
+                    Verify
+                </button>
+                <button class="red" onclick="reviewDeposit(${Number(d.deposit_id)},'reject')">
+                    Reject
+                </button>
+            </div>
+        </div>
+    `).join("");
 }
 
-async function verifyDeposit(id) {
-    if (!confirm("Have you independently confirmed that this payment was received?")) return;
+async function reviewDeposit(id, action) {
+    if (!confirm("Continue with " + action + " for this deposit?")) {
+        return;
+    }
 
     try {
-        await apiRequest(`/api/manager/deposit/${id}/verify`,{
-            method:"POST",body:{}
-        });
-        alert("Deposit verification submitted.");
-        await loadManagerOverview();
-    } catch(error) {
-        alert(error.message);
+        await api(
+            "/api/manager/deposit/" + id + "/" + action,
+            {
+                method: "POST",
+                headers: {
+                    "X-Manager-PIN": managerPin
+                },
+                body: JSON.stringify({})
+            }
+        );
+
+        await loadManager();
+
+    } catch (error) {
+        managerMessage(error.message, true);
     }
 }
 
-async function rejectDeposit(id) {
-    if (!confirm("Are you sure you want to reject this deposit?")) return;
-
-    try {
-        await apiRequest(`/api/manager/deposit/${id}/reject`,{
-            method:"POST",body:{}
-        });
-        alert("Deposit rejection submitted.");
-        await loadManagerOverview();
-        await refreshWallet();
-    } catch(error) {
-        alert(error.message);
-    }
+async function loadAll() {
+    await loadConfig();
+    await loadWallet();
+    await loadGame();
 }
 
-/* REFRESH WHEN RETURNING TO THE APP */
+loadAll();
 
-function refreshWhenVisible() {
-    if (document.visibilityState==="visible") {
-        refreshWallet();
-        loadGame();
-    }
+if (refreshTimer) {
+    clearInterval(refreshTimer);
 }
 
-window.addEventListener("focus",refreshWhenVisible);
-window.addEventListener("pageshow",refreshWhenVisible);
-document.addEventListener("visibilitychange",refreshWhenVisible);
+refreshTimer = setInterval(async () => {
+    await loadGame();
+    await loadWallet();
+}, 2500);
 
-if (tg && typeof tg.onEvent==="function") {
-    tg.onEvent("viewportChanged",refreshWhenVisible);
-}
-
-/* START */
-
-createNumberBoard();
-refreshWallet();
-loadGame();
-
-setInterval(refreshWallet,10000);
-setInterval(loadGame,2000);
 </script>
+
 </body>
 </html>
