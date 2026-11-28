@@ -10,6 +10,7 @@ import threading
 import random
 from urllib.parse import parse_qsl
 from contextlib import contextmanager
+
 from flask import Flask, request, jsonify, send_from_directory, abort
 
 # ============================================================
@@ -27,7 +28,9 @@ BOT_API_SECRET = os.environ.get("BOT_API_SECRET", "").strip()
 ADMIN_PIN = os.environ.get("ADMIN_PIN", "").strip()
 APP_ENV = os.environ.get("APP_ENV", "production").lower()
 
-PAYMENT_PHONE = os.environ.get("TELEBIRR_NUMBER", "0913706670").strip()
+PAYMENT_PHONE = os.environ.get(
+    "TELEBIRR_NUMBER", "0913706670"
+).strip()
 
 MIN_DEPOSIT = float(os.environ.get("MIN_DEPOSIT_ETB", "1"))
 MAX_DEPOSIT = float(os.environ.get("MAX_DEPOSIT_ETB", "100000"))
@@ -177,7 +180,8 @@ def init_db():
 
         if not room:
             conn.execute(
-                "INSERT INTO game_rooms(status, selection_ends_at) VALUES('OPEN', ?)",
+                "INSERT INTO game_rooms(status, selection_ends_at) "
+                "VALUES('OPEN', ?)",
                 (int(time.time()) + SELECTION_SECONDS,)
             )
 
@@ -204,7 +208,8 @@ def verify_telegram_init_data(init_data):
             return None
 
         check_string = "\n".join(
-            f"{k}={v}" for k, v in sorted(values.items())
+            f"{key}={value}"
+            for key, value in sorted(values.items())
         )
 
         secret = hmac.new(
@@ -223,6 +228,7 @@ def verify_telegram_init_data(init_data):
             return None
 
         user = json.loads(values.get("user", "{}"))
+
         return user if user.get("id") else None
 
     except Exception:
@@ -254,7 +260,8 @@ def authenticated_user():
         conn.execute("""
             INSERT INTO users(telegram_id, first_name, username)
             VALUES(?,?,?)
-            ON CONFLICT(telegram_id) DO UPDATE SET
+            ON CONFLICT(telegram_id)
+            DO UPDATE SET
                 first_name=excluded.first_name,
                 username=excluded.username
         """, (
@@ -292,32 +299,40 @@ def require_user():
 # ============================================================
 
 def balance_for(conn, user_id):
-    row = conn.execute("""
+    row = conn.execute(
+        """
         SELECT COALESCE(SUM(amount),0) AS balance
         FROM ledger_transactions
         WHERE user_id=?
-    """, (user_id,)).fetchone()
+        """,
+        (user_id,)
+    ).fetchone()
 
     return round(float(row["balance"]), 2)
 
 
 def add_ledger_entry(conn, user_id, amount, txn_type, reference):
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO ledger_transactions(
-            txn_id,user_id,amount,txn_type,reference_id
+            txn_id, user_id, amount, txn_type, reference_id
         )
         VALUES(?,?,?,?,?)
-    """, (
-        f"{txn_type}_{reference}_{time.time_ns()}",
-        user_id,
-        float(amount),
-        txn_type,
-        f"{txn_type}_{reference}"
-    ))
+        """,
+        (
+            f"{txn_type}_{reference}_{time.time_ns()}",
+            user_id,
+            float(amount),
+            txn_type,
+            f"{txn_type}_{reference}"
+        )
+    )
 
 
 def generate_cartela(room_id, cartela_no):
-    rng = random.Random(f"{room_id}-{cartela_no}-GUDER")
+    rng = random.Random(
+        f"{room_id}-{cartela_no}-GUDER"
+    )
 
     columns = [
         sorted(rng.sample(list(BINGO_RANGES[letter]), 5))
@@ -330,6 +345,7 @@ def generate_cartela(room_id, cartela_no):
     ]
 
     matrix[2][2] = "FREE"
+
     return matrix
 
 
@@ -352,8 +368,9 @@ def winning_patterns(matrix, called):
         f"line_{i+1}"
         for i, line in enumerate(lines)
         if all(
-            str(v).upper() == "FREE" or int(v) in called
-            for v in line
+            str(value).upper() == "FREE"
+            or int(value) in called
+            for value in line
         )
     ]
 
@@ -363,17 +380,21 @@ def winning_patterns(matrix, called):
 # ============================================================
 
 def create_next_room(conn):
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO game_rooms(status, selection_ends_at)
         VALUES('OPEN',?)
-    """, (int(time.time()) + SELECTION_SECONDS,))
+        """,
+        (int(time.time()) + SELECTION_SECONDS,)
+    )
 
 
 def game_engine_once():
     now = int(time.time())
 
     with db_transaction() as conn:
-        room = conn.execute("""
+        room = conn.execute(
+            """
             SELECT *
             FROM game_rooms
             WHERE status IN (
@@ -381,26 +402,35 @@ def game_engine_once():
             )
             ORDER BY room_id DESC
             LIMIT 1
-        """).fetchone()
+            """
+        ).fetchone()
 
         if not room:
-            latest = conn.execute("""
+            latest = conn.execute(
+                """
                 SELECT *
                 FROM game_rooms
                 ORDER BY room_id DESC
                 LIMIT 1
-            """).fetchone()
+                """
+            ).fetchone()
 
             if latest and latest["status"] == "COMPLETED":
-                completed = conn.execute("""
+                completed = conn.execute(
+                    """
                     SELECT strftime('%s', completed_at) AS t
                     FROM game_rooms
                     WHERE room_id=?
-                """, (latest["room_id"],)).fetchone()
+                    """,
+                    (latest["room_id"],)
+                ).fetchone()
 
-                if completed and completed["t"]:
-                    if now - int(completed["t"]) >= WINNER_SECONDS:
-                        create_next_room(conn)
+                if (
+                    completed
+                    and completed["t"]
+                    and now - int(completed["t"]) >= WINNER_SECONDS
+                ):
+                    create_next_room(conn)
 
             elif not latest or latest["status"] == "CANCELLED":
                 create_next_room(conn)
@@ -414,69 +444,95 @@ def game_engine_once():
             end = room["selection_ends_at"]
 
             if end is None:
-                conn.execute("""
+                conn.execute(
+                    """
                     UPDATE game_rooms
                     SET selection_ends_at=?
                     WHERE room_id=?
-                """, (now + SELECTION_SECONDS, rid))
+                    """,
+                    (now + SELECTION_SECONDS, rid)
+                )
 
             elif now >= int(end):
-                conn.execute("""
+                conn.execute(
+                    """
                     UPDATE game_rooms
                     SET status='PREPARATION',
                         preparation_ends_at=?
                     WHERE room_id=?
-                """, (now + PREPARATION_SECONDS, rid))
+                    """,
+                    (now + PREPARATION_SECONDS, rid)
+                )
 
         elif status == "PREPARATION":
             if (
                 room["preparation_ends_at"]
                 and now >= int(room["preparation_ends_at"])
             ):
-                conn.execute("""
+                conn.execute(
+                    """
                     UPDATE game_rooms
                     SET status='PLAYING'
                     WHERE room_id=?
-                """, (rid,))
+                    """,
+                    (rid,)
+                )
 
         elif status == "PLAYING":
-            last = conn.execute("""
+            last = conn.execute(
+                """
                 SELECT strftime('%s',called_at) AS t
                 FROM called_numbers
                 WHERE room_id=?
                 ORDER BY call_id DESC
                 LIMIT 1
-            """, (rid,)).fetchone()
+                """,
+                (rid,)
+            ).fetchone()
 
-            last_time = int(last["t"]) if last and last["t"] else 0
+            last_time = (
+                int(last["t"])
+                if last and last["t"]
+                else 0
+            )
 
             if now - last_time >= NUMBER_CALL_INTERVAL:
                 called = {
-                    r["number"]
-                    for r in conn.execute("""
+                    row["number"]
+                    for row in conn.execute(
+                        """
                         SELECT number
                         FROM called_numbers
                         WHERE room_id=?
-                    """, (rid,)).fetchall()
+                        """,
+                        (rid,)
+                    ).fetchall()
                 }
 
                 remaining = [
-                    n for n in range(1, 76)
-                    if n not in called
+                    number
+                    for number in range(1, 76)
+                    if number not in called
                 ]
 
                 if remaining:
-                    conn.execute("""
+                    conn.execute(
+                        """
                         INSERT INTO called_numbers(room_id,number)
                         VALUES(?,?)
-                    """, (rid, random.choice(remaining)))
+                        """,
+                        (rid, random.choice(remaining))
+                    )
                 else:
-                    conn.execute("""
+                    conn.execute(
+                        """
                         UPDATE game_rooms
                         SET status='COMPLETED',
                             completed_at=CURRENT_TIMESTAMP
                         WHERE room_id=?
-                    """, (rid,))
+                        """,
+                        (rid,)
+                    )
 
 
 _engine_started = False
@@ -551,6 +607,7 @@ def amharic_audio(filename):
     )
 
     response.headers["Cache-Control"] = "public, max-age=3600"
+
     return response
 
 
@@ -596,26 +653,32 @@ def wallet():
         return error
 
     with db_read() as conn:
-        balance = balance_for(conn, user["user_id"])
+        balance = balance_for(
+            conn,
+            user["user_id"]
+        )
 
-        transactions = conn.execute("""
+        transactions = conn.execute(
+            """
             SELECT *
             FROM ledger_transactions
             WHERE user_id=?
             ORDER BY created_at DESC
             LIMIT 50
-        """, (user["user_id"],)).fetchall()
+            """,
+            (user["user_id"],)
+        ).fetchall()
 
     return jsonify(
         success=True,
         status="success",
         balance=balance,
-        transactions=[dict(x) for x in transactions]
+        transactions=[dict(row) for row in transactions]
     )
 
 
 # ============================================================
-# TELEBIRR RECEIPT PARSER AND BOT API
+# TELEBIRR RECEIPT PARSER AND BOT DEPOSIT API
 # ============================================================
 
 def extract_receipt_details(receipt):
@@ -626,8 +689,15 @@ def extract_receipt_details(receipt):
 
     amount_match = next(
         (
-            m for p in amount_patterns
-            if (m := re.search(p, receipt, re.I))
+            match
+            for pattern in amount_patterns
+            if (
+                match := re.search(
+                    pattern,
+                    receipt,
+                    re.I
+                )
+            )
         ),
         None
     )
@@ -639,8 +709,15 @@ def extract_receipt_details(receipt):
 
     reference_match = next(
         (
-            m for p in reference_patterns
-            if (m := re.search(p, receipt, re.I))
+            match
+            for pattern in reference_patterns
+            if (
+                match := re.search(
+                    pattern,
+                    receipt,
+                    re.I
+                )
+            )
         ),
         None
     )
@@ -665,11 +742,17 @@ def extract_receipt_details(receipt):
 
 @app.post("/api/bot/deposit")
 def bot_deposit():
-    supplied = request.headers.get("X-Bot-Secret", "")
+    supplied = request.headers.get(
+        "X-Bot-Secret",
+        ""
+    )
 
-    if not BOT_API_SECRET or not hmac.compare_digest(
-        supplied,
-        BOT_API_SECRET
+    if (
+        not BOT_API_SECRET
+        or not hmac.compare_digest(
+            supplied,
+            BOT_API_SECRET
+        )
     ):
         return jsonify(
             success=False,
@@ -678,8 +761,13 @@ def bot_deposit():
 
     data = request.get_json(silent=True) or {}
 
-    telegram_id = str(data.get("user_id", "")).strip()
-    receipt = str(data.get("receipt", "")).strip()
+    telegram_id = str(
+        data.get("user_id", "")
+    ).strip()
+
+    receipt = str(
+        data.get("receipt", "")
+    ).strip()
 
     if not telegram_id.isdigit():
         return jsonify(
@@ -698,48 +786,64 @@ def bot_deposit():
     if not details:
         return jsonify(
             success=False,
-            error="Could not identify the payment amount and transaction reference. Please submit the complete receipt."
+            error=(
+                "Could not identify the payment amount and "
+                "transaction reference. Please submit the "
+                "complete receipt."
+            )
         ), 400
 
     amount, reference = details
 
     try:
         with db_transaction() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO users(
-                    telegram_id,first_name,username
+                    telegram_id,
+                    first_name,
+                    username
                 )
                 VALUES(?,?,?)
-                ON CONFLICT(telegram_id) DO UPDATE SET
+                ON CONFLICT(telegram_id)
+                DO UPDATE SET
                     first_name=excluded.first_name,
                     username=excluded.username
-            """, (
-                telegram_id,
-                str(data.get("first_name", ""))[:100],
-                str(data.get("username", ""))[:100]
-            ))
+                """,
+                (
+                    telegram_id,
+                    str(data.get("first_name", ""))[:100],
+                    str(data.get("username", ""))[:100]
+                )
+            )
 
-            user = conn.execute("""
-                SELECT *
-                FROM users
-                WHERE telegram_id=?
-            """, (telegram_id,)).fetchone()
+            user = conn.execute(
+                "SELECT * FROM users WHERE telegram_id=?",
+                (telegram_id,)
+            ).fetchone()
 
-            cur = conn.execute("""
+            cur = conn.execute(
+                """
                 INSERT INTO provisional_deposits(
-                    user_id,amount,payer_reference,receipt_text,status
+                    user_id,
+                    amount,
+                    payer_reference,
+                    receipt_text,
+                    status
                 )
                 VALUES(?,?,?,?,'PROVISIONAL')
-            """, (
-                user["user_id"],
-                amount,
-                reference,
-                receipt
-            ))
+                """,
+                (
+                    user["user_id"],
+                    amount,
+                    reference,
+                    receipt
+                )
+            )
 
             deposit_id = cur.lastrowid
 
-            # IMMEDIATE PROVISIONAL PLAYING CREDIT
+            # IMMEDIATE PLAYING CREDIT AFTER RECEIPT SUBMISSION
             add_ledger_entry(
                 conn,
                 user["user_id"],
@@ -760,7 +864,9 @@ def bot_deposit():
         amount=amount,
         reference=reference,
         deposit_id=deposit_id,
-        message="Playing credit recorded immediately."
+        message=(
+            "Receipt submitted. Playing credit recorded immediately."
+        )
     )
 
 
@@ -772,14 +878,14 @@ def deposit_status(deposit_id):
         return error
 
     with db_read() as conn:
-        row = conn.execute("""
+        row = conn.execute(
+            """
             SELECT *
             FROM provisional_deposits
             WHERE deposit_id=? AND user_id=?
-        """, (
-            deposit_id,
-            user["user_id"]
-        )).fetchone()
+            """,
+            (deposit_id, user["user_id"])
+        ).fetchone()
 
     if not row:
         return jsonify(
@@ -799,11 +905,17 @@ def deposit_status(deposit_id):
 # ============================================================
 
 def manager_authorized():
-    supplied = request.headers.get("X-Manager-PIN", "")
+    supplied = request.headers.get(
+        "X-Manager-PIN",
+        ""
+    )
 
     return (
         bool(ADMIN_PIN)
-        and hmac.compare_digest(supplied, ADMIN_PIN)
+        and hmac.compare_digest(
+            supplied,
+            ADMIN_PIN
+        )
     )
 
 
@@ -826,36 +938,44 @@ def manager_overview():
         return denied
 
     with db_read() as conn:
-        room = conn.execute("""
+        room = conn.execute(
+            """
             SELECT *
             FROM game_rooms
             ORDER BY room_id DESC
             LIMIT 1
-        """).fetchone()
+            """
+        ).fetchone()
 
-        deposits = conn.execute("""
-            SELECT d.*,u.telegram_id,u.first_name,u.username
+        deposits = conn.execute(
+            """
+            SELECT
+                d.*,
+                u.telegram_id,
+                u.first_name,
+                u.username
             FROM provisional_deposits d
             JOIN users u ON u.user_id=d.user_id
             ORDER BY d.created_at DESC
             LIMIT 100
-        """).fetchall()
+            """
+        ).fetchall()
 
-        players = conn.execute("""
-            SELECT COUNT(*) AS n FROM users
-        """).fetchone()["n"]
+        players = conn.execute(
+            "SELECT COUNT(*) AS n FROM users"
+        ).fetchone()["n"]
 
-        deposit_count = conn.execute("""
-            SELECT COUNT(*) AS n FROM provisional_deposits
-        """).fetchone()["n"]
+        deposit_count = conn.execute(
+            "SELECT COUNT(*) AS n FROM provisional_deposits"
+        ).fetchone()["n"]
 
     dep_list = []
 
     for row in deposits:
-        d = dict(row)
-        d["id"] = d["deposit_id"]
-        d["reference"] = d["payer_reference"]
-        dep_list.append(d)
+        deposit = dict(row)
+        deposit["id"] = deposit["deposit_id"]
+        deposit["reference"] = deposit["payer_reference"]
+        dep_list.append(deposit)
 
     return jsonify(
         success=True,
@@ -877,11 +997,14 @@ def manager_verify_deposit(deposit_id):
         return denied
 
     with db_transaction() as conn:
-        deposit = conn.execute("""
+        deposit = conn.execute(
+            """
             SELECT *
             FROM provisional_deposits
             WHERE deposit_id=?
-        """, (deposit_id,)).fetchone()
+            """,
+            (deposit_id,)
+        ).fetchone()
 
         if not deposit:
             return jsonify(
@@ -895,13 +1018,16 @@ def manager_verify_deposit(deposit_id):
                 error="Deposit has already been reviewed."
             ), 409
 
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE provisional_deposits
             SET status='VERIFIED',
                 admin_note='Payment independently confirmed',
                 reviewed_at=CURRENT_TIMESTAMP
             WHERE deposit_id=?
-        """, (deposit_id,))
+            """,
+            (deposit_id,)
+        )
 
     return jsonify(
         success=True,
@@ -917,11 +1043,14 @@ def manager_reject_deposit(deposit_id):
         return denied
 
     with db_transaction() as conn:
-        deposit = conn.execute("""
+        deposit = conn.execute(
+            """
             SELECT *
             FROM provisional_deposits
             WHERE deposit_id=?
-        """, (deposit_id,)).fetchone()
+            """,
+            (deposit_id,)
+        ).fetchone()
 
         if not deposit:
             return jsonify(
@@ -943,13 +1072,16 @@ def manager_reject_deposit(deposit_id):
             f"deposit_{deposit_id}"
         )
 
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE provisional_deposits
             SET status='REJECTED',
                 admin_note='Payment could not be verified',
                 reviewed_at=CURRENT_TIMESTAMP
             WHERE deposit_id=?
-        """, (deposit_id,))
+            """,
+            (deposit_id,)
+        )
 
     return jsonify(
         success=True,
@@ -966,7 +1098,8 @@ def game_state():
     user = authenticated_user()
 
     with db_read() as conn:
-        active = conn.execute("""
+        active = conn.execute(
+            """
             SELECT *
             FROM game_rooms
             WHERE status IN (
@@ -974,14 +1107,17 @@ def game_state():
             )
             ORDER BY room_id DESC
             LIMIT 1
-        """).fetchone()
+            """
+        ).fetchone()
 
-        latest = active or conn.execute("""
+        latest = active or conn.execute(
+            """
             SELECT *
             FROM game_rooms
             ORDER BY room_id DESC
             LIMIT 1
-        """).fetchone()
+            """
+        ).fetchone()
 
         if not latest:
             return jsonify(
@@ -996,46 +1132,66 @@ def game_state():
 
         rid = latest["room_id"]
 
-        selections = conn.execute("""
-            SELECT c.cartela_no,c.numbers_json,
-                   u.telegram_id,u.first_name,u.username
+        selections = conn.execute(
+            """
+            SELECT
+                c.cartela_no,
+                c.numbers_json,
+                u.telegram_id,
+                u.first_name,
+                u.username
             FROM cartelas c
             JOIN users u ON u.user_id=c.user_id
             WHERE c.room_id=?
             ORDER BY c.cartela_no
-        """, (rid,)).fetchall()
+            """,
+            (rid,)
+        ).fetchall()
 
-        calls = conn.execute("""
+        calls = conn.execute(
+            """
             SELECT number,called_at
             FROM called_numbers
             WHERE room_id=?
             ORDER BY call_id
-        """, (rid,)).fetchall()
+            """,
+            (rid,)
+        ).fetchall()
 
-        winners = conn.execute("""
-            SELECT gr.room_id,gr.cartela_no,gr.created_at,
-                   u.first_name,u.username,u.telegram_id
+        winners = conn.execute(
+            """
+            SELECT
+                gr.room_id,
+                gr.cartela_no,
+                gr.created_at,
+                u.first_name,
+                u.username,
+                u.telegram_id
             FROM game_results gr
             JOIN users u ON u.user_id=gr.user_id
             ORDER BY gr.created_at DESC
             LIMIT 5
-        """).fetchall()
+            """
+        ).fetchall()
 
         balance = (
             balance_for(conn, user["user_id"])
             if user else 0
         )
 
-        own = conn.execute("""
-            SELECT cartela_no,numbers_json
-            FROM cartelas
-            WHERE room_id=? AND user_id=?
-            ORDER BY cartela_id DESC
-            LIMIT 1
-        """, (
-            rid,
-            user["user_id"]
-        )).fetchone() if user else None
+        own = (
+            conn.execute(
+                """
+                SELECT cartela_no,numbers_json
+                FROM cartelas
+                WHERE room_id=? AND user_id=?
+                ORDER BY cartela_id DESC
+                LIMIT 1
+                """,
+                (rid, user["user_id"])
+            ).fetchone()
+            if user else None
+        )
 
     status_map = {
         "OPEN": "OPEN",
@@ -1060,7 +1216,10 @@ def game_state():
             int(latest["selection_ends_at"]) - now
         )
 
-    elif game_status == "PREPARING" and latest["preparation_ends_at"]:
+    elif (
+        game_status == "PREPARING"
+        and latest["preparation_ends_at"]
+    ):
         remaining = max(
             0,
             int(latest["preparation_ends_at"]) - now
@@ -1068,12 +1227,14 @@ def game_state():
 
     elif game_status == "COMPLETED" and latest["completed_at"]:
         try:
-            completed = int(time.mktime(
-                time.strptime(
-                    latest["completed_at"],
-                    "%Y-%m-%d %H:%M:%S"
+            completed = int(
+                time.mktime(
+                    time.strptime(
+                        latest["completed_at"],
+                        "%Y-%m-%d %H:%M:%S"
+                    )
                 )
-            ))
+            )
 
             remaining = max(
                 0,
@@ -1085,29 +1246,29 @@ def game_state():
 
     selection_data = [
         {
-            "cartela_number": r["cartela_no"],
-            "cartela_no": r["cartela_no"],
-            "telegram_user_id": r["telegram_id"],
-            "first_name": r["first_name"],
-            "username": r["username"],
-            "numbers": json.loads(r["numbers_json"])
+            "cartela_number": row["cartela_no"],
+            "cartela_no": row["cartela_no"],
+            "telegram_user_id": row["telegram_id"],
+            "first_name": row["first_name"],
+            "username": row["username"],
+            "numbers": json.loads(row["numbers_json"])
         }
-        for r in selections
+        for row in selections
     ]
 
     winner_data = [
         {
-            "room_id": r["room_id"],
+            "room_id": row["room_id"],
             "winner_name": (
-                r["first_name"]
-                or r["username"]
-                or r["telegram_id"]
+                row["first_name"]
+                or row["username"]
+                or row["telegram_id"]
             ),
-            "cartela_no": r["cartela_no"],
-            "created_at": r["created_at"],
+            "cartela_no": row["cartela_no"],
+            "created_at": row["created_at"],
             "prize_amount": 0
         }
-        for r in winners
+        for row in winners
     ]
 
     return jsonify(
@@ -1118,7 +1279,9 @@ def game_state():
         room=dict(latest),
         remaining_seconds=remaining,
         selections=selection_data,
-        called_numbers=[r["number"] for r in calls],
+        called_numbers=[
+            row["number"] for row in calls
+        ],
         winners=winner_data,
         balance=balance,
         cartela={
@@ -1177,13 +1340,15 @@ def select_cartela():
                 message="Please deposit before selecting a cartela."
             ), 403
 
-        room = conn.execute("""
+        room = conn.execute(
+            """
             SELECT *
             FROM game_rooms
             WHERE status IN ('OPEN','REGISTRATION')
             ORDER BY room_id DESC
             LIMIT 1
-        """).fetchone()
+            """
+        ).fetchone()
 
         if not room:
             return jsonify(
@@ -1206,17 +1371,23 @@ def select_cartela():
         )
 
         try:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO cartelas(
-                    room_id,cartela_no,user_id,numbers_json
+                    room_id,
+                    cartela_no,
+                    user_id,
+                    numbers_json
                 )
                 VALUES(?,?,?,?)
-            """, (
-                room["room_id"],
-                cartela_no,
-                user["user_id"],
-                json.dumps(matrix)
-            ))
+                """,
+                (
+                    room["room_id"],
+                    cartela_no,
+                    user["user_id"],
+                    json.dumps(matrix)
+                )
+            )
 
         except sqlite3.IntegrityError:
             return jsonify(
@@ -1255,13 +1426,15 @@ def claim_bingo():
         return error
 
     with db_transaction() as conn:
-        room = conn.execute("""
+        room = conn.execute(
+            """
             SELECT *
             FROM game_rooms
             WHERE status='PLAYING'
             ORDER BY room_id DESC
             LIMIT 1
-        """).fetchone()
+            """
+        ).fetchone()
 
         if not room:
             return jsonify(
@@ -1269,16 +1442,16 @@ def claim_bingo():
                 error="There is no active game."
             ), 409
 
-        card = conn.execute("""
+        card = conn.execute(
+            """
             SELECT *
             FROM cartelas
             WHERE room_id=? AND user_id=?
             ORDER BY cartela_id DESC
             LIMIT 1
-        """, (
-            room["room_id"],
-            user["user_id"]
-        )).fetchone()
+            """,
+            (room["room_id"], user["user_id"])
+        ).fetchone()
 
         if not card:
             return jsonify(
@@ -1289,15 +1462,21 @@ def claim_bingo():
         matrix = json.loads(card["numbers_json"])
 
         called = {
-            r["number"]
-            for r in conn.execute("""
+            row["number"]
+            for row in conn.execute(
+                """
                 SELECT number
                 FROM called_numbers
                 WHERE room_id=?
-            """, (room["room_id"],)).fetchall()
+                """,
+                (room["room_id"],)
+            ).fetchall()
         }
 
-        patterns = winning_patterns(matrix, called)
+        patterns = winning_patterns(
+            matrix,
+            called
+        )
 
         if not patterns:
             return jsonify(
@@ -1305,18 +1484,21 @@ def claim_bingo():
                 error="Bingo could not be verified."
             ), 400
 
-        changed = conn.execute("""
+        changed = conn.execute(
+            """
             UPDATE game_rooms
             SET status='COMPLETED',
                 winner_user_id=?,
                 winner_cartela=?,
                 completed_at=CURRENT_TIMESTAMP
             WHERE room_id=? AND status='PLAYING'
-        """, (
-            user["user_id"],
-            card["cartela_no"],
-            room["room_id"]
-        )).rowcount
+            """,
+            (
+                user["user_id"],
+                card["cartela_no"],
+                room["room_id"]
+            )
+        ).rowcount
 
         if changed != 1:
             return jsonify(
@@ -1324,23 +1506,32 @@ def claim_bingo():
                 error="Another winning claim has already been processed."
             ), 409
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO game_results(
-                room_id,user_id,cartela_no,winning_pattern
+                room_id,
+                user_id,
+                cartela_no,
+                winning_pattern
             )
             VALUES(?,?,?,?)
-        """, (
-            room["room_id"],
-            user["user_id"],
-            card["cartela_no"],
-            ",".join(patterns)
-        ))
+            """,
+            (
+                room["room_id"],
+                user["user_id"],
+                card["cartela_no"],
+                ",".join(patterns)
+            )
+        )
 
     return jsonify(
         success=True,
         status="winner",
         message="Bingo claim verified.",
-        winner=user["first_name"] or user["username"],
+        winner=(
+            user["first_name"]
+            or user["username"]
+        ),
         cartela_no=card["cartela_no"],
         winning_patterns=patterns,
         celebration_seconds=WINNER_SECONDS
@@ -1348,37 +1539,44 @@ def claim_bingo():
 
 
 # ============================================================
-# HISTORY
+# GAME HISTORY
 # ============================================================
 
 @app.get("/api/game/history")
 def game_history():
     with db_read() as conn:
-        rows = conn.execute("""
-            SELECT gr.room_id,gr.cartela_no,
-                   gr.winning_pattern,gr.created_at,
-                   u.first_name,u.username,
-                   u.phone_number,u.telegram_id
+        rows = conn.execute(
+            """
+            SELECT
+                gr.room_id,
+                gr.cartela_no,
+                gr.winning_pattern,
+                gr.created_at,
+                u.first_name,
+                u.username,
+                u.phone_number,
+                u.telegram_id
             FROM game_results gr
             JOIN users u ON u.user_id=gr.user_id
             ORDER BY gr.created_at DESC
             LIMIT 100
-        """).fetchall()
+            """
+        ).fetchall()
 
     winners = [
         {
-            "room_id": r["room_id"],
+            "room_id": row["room_id"],
             "winner_name": (
-                r["first_name"]
-                or r["username"]
-                or r["telegram_id"]
+                row["first_name"]
+                or row["username"]
+                or row["telegram_id"]
             ),
-            "phone": r["phone_number"],
-            "cartela_no": r["cartela_no"],
+            "phone": row["phone_number"],
+            "cartela_no": row["cartela_no"],
             "prize_amount": 0,
-            "created_at": r["created_at"]
+            "created_at": row["created_at"]
         }
-        for r in rows
+        for row in rows
     ]
 
     return jsonify(
@@ -1417,7 +1615,9 @@ init_db()
 if __name__ == "__main__":
     start_game_engine()
 
-    port = int(os.environ.get("PORT", "5000"))
+    port = int(
+        os.environ.get("PORT", "5000")
+    )
 
     app.run(
         host="0.0.0.0",
