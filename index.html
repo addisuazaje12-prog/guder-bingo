@@ -3,280 +3,253 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#101426">
 <title>Guder Bingo</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 :root {
-    --bg: #101426;
-    --panel: #1b2340;
-    --panel2: #252f50;
-    --gold: #f5bd42;
-    --green: #16b86a;
-    --red: #e64b4b;
-    --white: #ffffff;
-    --muted: #b8c0d8;
+    --bg:#101426;
+    --panel:#1b2340;
+    --panel2:#252f50;
+    --gold:#f5bd42;
+    --green:#16b86a;
+    --red:#e64b4b;
+    --white:#fff;
+    --muted:#b8c0d8;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing:border-box; }
 
 body {
-    margin: 0;
-    padding: 12px;
-    background: var(--bg);
-    color: var(--white);
-    font-family: Arial, sans-serif;
+    margin:0;
+    padding:12px;
+    background:var(--bg);
+    color:var(--white);
+    font-family:Arial,sans-serif;
 }
 
-button, input {
-    font: inherit;
-}
+button,input { font:inherit; }
 
 button {
-    border: none;
-    border-radius: 9px;
-    padding: 11px 14px;
-    cursor: pointer;
-    font-weight: bold;
+    border:0;
+    border-radius:9px;
+    padding:11px 14px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
 button:disabled {
-    opacity: .5;
-    cursor: not-allowed;
+    opacity:.5;
+    cursor:not-allowed;
 }
 
 .header {
-    text-align: center;
-    padding: 12px 5px;
+    text-align:center;
+    padding:12px 5px;
 }
 
 .header h1 {
-    color: var(--gold);
-    margin: 4px 0;
-    font-size: 27px;
+    color:var(--gold);
+    margin:4px 0;
+    font-size:27px;
 }
 
-.header p {
-    color: var(--muted);
-    margin: 5px 0;
-}
+.header p { color:var(--muted); }
 
 .panel {
-    background: var(--panel);
-    border-radius: 13px;
-    padding: 13px;
-    margin-bottom: 12px;
-    border: 1px solid #303b60;
+    background:var(--panel);
+    border-radius:13px;
+    padding:13px;
+    margin-bottom:12px;
+    border:1px solid #303b60;
 }
 
 .menu {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+    margin-bottom:12px;
 }
 
 .menu button {
-    background: var(--panel2);
-    color: white;
+    background:var(--panel2);
+    color:white;
 }
 
 .menu button.active {
-    background: var(--gold);
-    color: #171717;
+    background:var(--gold);
+    color:#171717;
 }
 
-.primary {
-    background: var(--gold);
-    color: #171717;
-}
-
-.green {
-    background: var(--green);
-    color: white;
-}
-
-.red {
-    background: var(--red);
-    color: white;
-}
-
-.full {
-    width: 100%;
-}
+.primary { background:var(--gold); color:#171717; }
+.green { background:var(--green); color:white; }
+.red { background:var(--red); color:white; }
+.full { width:100%; }
 
 .balance {
-    color: var(--gold);
-    font-size: 21px;
-    font-weight: bold;
+    color:var(--gold);
+    font-size:21px;
+    font-weight:bold;
 }
 
 .status {
-    text-align: center;
-    padding: 10px;
-    background: #111a31;
-    border-radius: 10px;
-    margin: 8px 0;
+    text-align:center;
+    padding:10px;
+    background:#111a31;
+    border-radius:10px;
+    margin:8px 0;
 }
 
 .timer {
-    color: var(--gold);
-    font-size: 26px;
-    font-weight: bold;
+    color:var(--gold);
+    font-size:26px;
+    font-weight:bold;
 }
 
-.muted {
-    color: var(--muted);
-    font-size: 13px;
-}
+.muted { color:var(--muted); font-size:13px; }
 
 .call-board {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 5px;
-    text-align: center;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:5px;
+    text-align:center;
 }
 
 .call-column {
-    background: var(--panel2);
-    border-radius: 8px;
-    padding: 6px 2px;
+    background:var(--panel2);
+    border-radius:8px;
+    padding:6px 2px;
+    min-width:0;
 }
 
 .call-column h3 {
-    color: var(--gold);
-    margin: 3px 0 8px;
+    color:var(--gold);
+    margin:3px 0 8px;
 }
 
 .call-number {
-    display: block;
-    padding: 5px 1px;
-    margin: 3px 0;
-    border-radius: 5px;
-    background: #11182c;
-    font-size: 13px;
+    display:block;
+    padding:5px 1px;
+    margin:3px 0;
+    border-radius:5px;
+    background:#11182c;
+    font-size:13px;
 }
 
 .call-number.called {
-    background: var(--green);
-    color: white;
-    font-weight: bold;
+    background:var(--green);
+    color:white;
+    font-weight:bold;
 }
 
 .latest-call {
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--gold);
-    text-align: center;
-    padding: 10px;
+    font-size:28px;
+    font-weight:bold;
+    color:var(--gold);
+    text-align:center;
+    padding:10px;
 }
 
 .cartela-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 5px;
-    margin-top: 10px;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:5px;
+    margin-top:10px;
 }
 
 .cell {
-    background: #f0b93e;
-    color: #171717;
-    padding: 10px 2px;
-    text-align: center;
-    border-radius: 5px;
-    font-weight: bold;
-    min-height: 38px;
+    background:#f0b93e;
+    color:#171717;
+    padding:10px 2px;
+    text-align:center;
+    border-radius:5px;
+    font-weight:bold;
+    min-height:38px;
+    overflow:hidden;
 }
 
-.cell.marked {
-    background: var(--green);
-    color: white;
-}
-
-.cell.free {
-    background: #d7d7d7;
-}
+.cell.marked { background:var(--green); color:white; }
+.cell.free { background:#d7d7d7; }
 
 .cartela-picker {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-    max-height: 270px;
-    overflow-y: auto;
-    margin-top: 10px;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:6px;
+    max-height:270px;
+    overflow-y:auto;
+    margin-top:10px;
 }
 
 .cartela-choice {
-    background: #d99e27;
-    color: #171717;
-    padding: 9px 2px;
-    border-radius: 6px;
+    background:#d99e27;
+    color:#171717;
+    padding:9px 2px;
+    border-radius:6px;
 }
 
 .cartela-choice.taken {
-    background: #555d70;
-    color: #ddd;
+    background:#555d70;
+    color:#ddd;
 }
 
 .cartela-choice.mine {
-    background: var(--green);
-    color: white;
+    background:var(--green);
+    color:white;
 }
 
 input {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #58617b;
-    background: #11182c;
-    color: white;
-    margin: 7px 0;
+    width:100%;
+    padding:12px;
+    border-radius:8px;
+    border:1px solid #58617b;
+    background:#11182c;
+    color:white;
+    margin:7px 0;
 }
 
-.hidden {
-    display: none !important;
-}
+.hidden { display:none !important; }
 
 .notice {
-    padding: 10px;
-    border-radius: 8px;
-    background: #303b60;
-    margin: 8px 0;
-    line-height: 1.5;
+    padding:10px;
+    border-radius:8px;
+    background:#303b60;
+    margin:8px 0;
+    line-height:1.5;
+    overflow-wrap:anywhere;
 }
 
-.notice.error {
-    background: #612b37;
-}
-
-.notice.success {
-    background: #145b3b;
-}
+.notice.error { background:#612b37; }
+.notice.success { background:#145b3b; }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
 }
 
-td, th {
-    border-bottom: 1px solid #3c4666;
-    padding: 8px 4px;
-    text-align: left;
+td,th {
+    border-bottom:1px solid #3c4666;
+    padding:8px 4px;
+    text-align:left;
 }
 
 .manager-actions {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
+    display:flex;
+    gap:5px;
+    flex-wrap:wrap;
 }
 
 .manager-actions button {
-    padding: 7px;
-    font-size: 12px;
+    padding:7px;
+    font-size:12px;
+}
+
+@media(max-width:360px) {
+    body { padding:7px; }
+    .call-number { font-size:11px; }
+    .cell { font-size:12px; min-height:32px; }
 }
 </style>
 </head>
@@ -316,14 +289,14 @@ td, th {
         </div>
 
         <div class="latest-call" id="latestCall">Waiting...</div>
-
         <div class="call-board" id="callBoard"></div>
     </div>
 
     <div class="panel">
         <h3>🎟 Select Your Cartela</h3>
+
         <div class="muted">
-            Select an available cartela during the 30-second selection period.
+            Select an available cartela during the selection period.
             Each cartela costs 10 ETB.
         </div>
 
@@ -336,10 +309,13 @@ td, th {
 
     <div class="panel" id="myCartelaPanel">
         <h3>🎟 Your Playing Cartela</h3>
+
         <div id="myCartelaNumber" class="muted">
             You have not selected a cartela.
         </div>
+
         <div id="myCartela" class="cartela-grid"></div>
+
         <button class="green full hidden" id="bingoButton" onclick="claimBingo()">
             🏆 BINGO!
         </button>
@@ -357,7 +333,6 @@ td, th {
     </div>
 
 </section>
-
 
 <!-- DEPOSIT PAGE -->
 <section id="page-deposit" class="hidden">
@@ -379,9 +354,9 @@ td, th {
         </button>
 
         <div class="notice">
-            Once your receipt is successfully submitted and processed,
-            the playing credit is added to your wallet. You can then
-            select a cartela.
+            Your playing credit is added only when the server successfully
+            processes the receipt. A submitted receipt is not independent
+            proof that a payment was received.
         </div>
 
         <button class="green full" onclick="openTelegramBot()">
@@ -391,24 +366,18 @@ td, th {
 
 </section>
 
-
 <!-- HISTORY PAGE -->
 <section id="page-history" class="hidden">
-
     <div class="panel">
         <h3>🏆 Game History</h3>
         <div id="historyList">Loading history...</div>
     </div>
-
 </section>
-
 
 <!-- INSTRUCTIONS PAGE -->
 <section id="page-instructions" class="hidden">
-
     <div class="panel">
         <h3>📖 How to Play Guder Bingo</h3>
-
         <p>1. Deposit money using TeleBirr.</p>
         <p>2. Submit your complete receipt through the Telegram bot.</p>
         <p>3. Open the Guder Bingo Mini App.</p>
@@ -416,24 +385,19 @@ td, th {
         <p>5. Each cartela costs 10 ETB.</p>
         <p>6. Wait for the game to begin.</p>
         <p>7. Watch the numbers being called.</p>
-        <p>8. When you complete a valid winning line, press BINGO.</p>
+        <p>8. When you complete a valid winning pattern, press BINGO.</p>
         <p>9. The server checks your Bingo claim.</p>
     </div>
-
 </section>
-
 
 <!-- SUPPORT PAGE -->
 <section id="page-support" class="hidden">
-
     <div class="panel">
         <h3>☎ Guder Bingo Support</h3>
         <p>For assistance with deposits or playing, contact support.</p>
         <h2 id="supportNumber">0913706670</h2>
     </div>
-
 </section>
-
 
 <!-- MANAGER PAGE -->
 <section id="page-manager" class="hidden">
@@ -445,6 +409,7 @@ td, th {
             type="password"
             id="managerPin"
             placeholder="Enter manager PIN"
+            autocomplete="off"
         >
 
         <button class="primary full" onclick="loadManager()">
@@ -457,15 +422,21 @@ td, th {
     <div class="panel hidden" id="managerDashboard">
         <h3>📊 Dashboard</h3>
         <div id="managerStats"></div>
+
         <h3>💰 Deposit Records</h3>
         <div id="managerDeposits"></div>
     </div>
 
 </section>
 
-
 <script>
-const tg = window.Telegram?.WebApp;
+"use strict";
+
+// ============================================================
+// GUDER BINGO FRONTEND
+// ============================================================
+
+const tg = window.Telegram?.WebApp || null;
 
 if (tg) {
     tg.ready();
@@ -475,56 +446,79 @@ if (tg) {
 const API = "";
 const BOT_URL = "https://t.me/guderbingo_bot";
 
-let initData = tg?.initData || "";
+const initData = tg ? tg.initData : "";
+
 let gameData = null;
 let configData = {};
 let currentBalance = 0;
 let managerPin = "";
 let refreshTimer = null;
+let gameLoading = false;
+
+// ============================================================
+// API REQUESTS
+// ============================================================
 
 function headers(extra = {}) {
-    const h = {
-        "Content-Type": "application/json",
+    const result = {
         ...extra
     };
 
     if (initData) {
-        h["X-Telegram-Init-Data"] = initData;
+        result["X-Telegram-Init-Data"] = initData;
     }
 
-    return h;
+    return result;
 }
 
 async function api(path, options = {}) {
-    const response = await fetch(API + path, {
+
+    const requestOptions = {
         ...options,
         headers: headers(options.headers || {})
-    });
+    };
+
+    const response = await fetch(API + path, requestOptions);
 
     let data;
 
     try {
         data = await response.json();
     } catch {
-        throw new Error("The server returned an invalid response.");
+        throw new Error(
+            "The server returned an invalid response. Check the backend logs."
+        );
     }
 
     if (!response.ok || data.success === false) {
-        throw new Error(data.error || "Request failed.");
+        throw new Error(
+            data.error ||
+            data.message ||
+            "Request failed. HTTP " + response.status
+        );
     }
 
     return data;
 }
 
+// ============================================================
+// PAGE NAVIGATION
+// ============================================================
+
 function showPage(page, button) {
+
     document.querySelectorAll("section").forEach(section => {
         section.classList.add("hidden");
     });
 
-    document.getElementById("page-" + page).classList.remove("hidden");
+    const target = document.getElementById("page-" + page);
 
-    document.querySelectorAll(".menu button").forEach(b => {
-        b.classList.remove("active");
+    if (target) {
+        target.classList.remove("hidden");
+    }
+
+    document.querySelectorAll(".menu button").forEach(item => {
+        item.classList.remove("active");
     });
 
     if (button) {
@@ -536,15 +530,45 @@ function showPage(page, button) {
     }
 }
 
-function setMessage(text, type = "") {
-    const el = document.getElementById("gameMessage");
-    el.textContent = text;
-    el.className = "notice " + type;
+// ============================================================
+// MESSAGES
+// ============================================================
+
+function setMessage(message, type = "") {
+
+    const element = document.getElementById("gameMessage");
+
+    element.textContent = message;
+    element.className = "notice " + type;
 }
 
+// ============================================================
+// HTML SAFETY
+// ============================================================
+
+function escapeHtml(value) {
+
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
+}
+
+// ============================================================
+// BINGO CALLING BOARD
+// ============================================================
+
 function makeCallBoard(calledNumbers) {
+
     const board = document.getElementById("callBoard");
     board.innerHTML = "";
+
+    const called = new Set(
+        (calledNumbers || []).map(Number)
+    );
 
     const ranges = [
         ["B", 1, 15],
@@ -555,22 +579,26 @@ function makeCallBoard(calledNumbers) {
     ];
 
     ranges.forEach(([letter, start, end]) => {
+
         const column = document.createElement("div");
         column.className = "call-column";
 
         const heading = document.createElement("h3");
         heading.textContent = letter;
+
         column.appendChild(heading);
 
-        for (let n = start; n <= end; n++) {
-            const item = document.createElement("span");
-            item.className = "call-number";
+        for (let number = start; number <= end; number++) {
 
-            if (calledNumbers.includes(n)) {
+            const item = document.createElement("span");
+
+            item.className = "call-number";
+            item.textContent = number;
+
+            if (called.has(number)) {
                 item.classList.add("called");
             }
 
-            item.textContent = n;
             column.appendChild(item);
         }
 
@@ -578,23 +606,47 @@ function makeCallBoard(calledNumbers) {
     });
 }
 
+// ============================================================
+// CARTELA DISPLAY
+// ============================================================
+
 function renderCartela(matrix, calledNumbers) {
+
     const container = document.getElementById("myCartela");
+
     container.innerHTML = "";
 
+    const called = new Set(
+        (calledNumbers || []).map(Number)
+    );
+
+    if (!Array.isArray(matrix)) {
+        return;
+    }
+
     matrix.forEach(row => {
+
+        if (!Array.isArray(row)) {
+            return;
+        }
+
         row.forEach(value => {
+
             const cell = document.createElement("div");
             cell.className = "cell";
 
             if (String(value).toUpperCase() === "FREE") {
+
                 cell.classList.add("free");
                 cell.textContent = "FREE";
-            } else {
-                const number = Number(value);
-                cell.textContent = number;
 
-                if (calledNumbers.includes(number)) {
+            } else {
+
+                const number = Number(value);
+
+                cell.textContent = value;
+
+                if (called.has(number)) {
                     cell.classList.add("marked");
                 }
             }
@@ -604,81 +656,140 @@ function renderCartela(matrix, calledNumbers) {
     });
 }
 
+// ============================================================
+// CARTELA PICKER
+// ============================================================
+
 function renderCartelaPicker(data) {
+
     const picker = document.getElementById("cartelaPicker");
+
     picker.innerHTML = "";
 
-    const selections = data.selections || [];
+    const selections = Array.isArray(data.selections)
+        ? data.selections
+        : [];
+
     const taken = new Set(
-        selections.map(s => Number(s.cartela_number || s.cartela_no))
+        selections.map(selection =>
+            Number(
+                selection.cartela_number ??
+                selection.cartela_no ??
+                selection.cartela
+            )
+        )
     );
 
     const ownCartela = data.cartela
-        ? Number(data.cartela.cartela_no)
+        ? Number(
+            data.cartela.cartela_no ??
+            data.cartela.cartela_number ??
+            data.cartela.cartela
+        )
         : null;
 
-    for (let n = 1; n <= 800; n++) {
-        const button = document.createElement("button");
-        button.className = "cartela-choice";
-        button.textContent = n;
+    for (let number = 1; number <= 800; number++) {
 
-        if (ownCartela === n) {
+        const button = document.createElement("button");
+
+        button.className = "cartela-choice";
+        button.textContent = number;
+
+        if (ownCartela === number) {
+
             button.classList.add("mine");
-            button.textContent = "✓ " + n;
+            button.textContent = "✓ " + number;
             button.disabled = true;
-        } else if (taken.has(n)) {
+
+        } else if (taken.has(number)) {
+
             button.classList.add("taken");
             button.disabled = true;
+
         } else {
-            button.onclick = () => selectCartela(n);
+
+            button.onclick = () => selectCartela(number);
         }
 
         picker.appendChild(button);
     }
 }
 
+// ============================================================
+// SELECTED PLAYERS
+// ============================================================
+
 function renderSelections(data) {
-    const selections = data.selections || [];
+
+    const selections = Array.isArray(data.selections)
+        ? data.selections
+        : [];
 
     document.getElementById("playerCount").textContent =
         selections.length + " cartela(s) selected";
 
     document.getElementById("selectedCartelas").textContent =
-        selections.map(s => {
-            const name = s.first_name || s.username || "Player";
-            return name + " — Cartela " + s.cartela_number;
+        selections.map(selection => {
+
+            const name =
+                selection.first_name ||
+                selection.username ||
+                "Player";
+
+            const number =
+                selection.cartela_number ??
+                selection.cartela_no ??
+                "";
+
+            return name + " — Cartela " + number;
+
         }).join(" | ") || "No cartelas selected yet.";
 }
 
+// ============================================================
+// RECENT WINNERS
+// ============================================================
+
 function renderWinners(data) {
-    const winners = data.winners || [];
-    const el = document.getElementById("recentWinners");
+
+    const winners = Array.isArray(data.winners)
+        ? data.winners
+        : [];
+
+    const element = document.getElementById("recentWinners");
 
     if (!winners.length) {
-        el.textContent = "No winners yet.";
+        element.textContent = "No winners yet.";
         return;
     }
 
-    el.innerHTML = winners.map(w => `
-        <div class="notice">
-            🏆 ${escapeHtml(w.winner_name || "Player")}
-            — Cartela ${Number(w.cartela_no || 0)}
-        </div>
-    `).join("");
+    element.innerHTML = winners.map(winner => {
+
+        const name = escapeHtml(
+            winner.winner_name || winner.name || "Player"
+        );
+
+        const cartela = Number(
+            winner.cartela_no || winner.cartela_number || 0
+        );
+
+        return `
+            <div class="notice">
+                🏆 ${name} — Cartela ${cartela}
+            </div>
+        `;
+
+    }).join("");
 }
 
-function escapeHtml(value) {
-    return String(value).replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-    })[char]);
-}
+// ============================================================
+// WALLET
+// ============================================================
 
 async function loadWallet() {
+
     if (!initData) {
+
         document.getElementById("playerStatus").textContent =
             "Open this game through the Guder Bingo Telegram bot.";
 
@@ -686,6 +797,7 @@ async function loadWallet() {
     }
 
     try {
+
         const data = await api("/api/wallet");
 
         currentBalance = Number(data.balance || 0);
@@ -697,98 +809,25 @@ async function loadWallet() {
             "Telegram player connected.";
 
     } catch (error) {
+
         document.getElementById("playerStatus").textContent =
             error.message;
     }
 }
 
-async function loadGame() {
-    try {
-        const data = await api("/api/game/state");
-
-        gameData = data;
-
-        document.getElementById("gameStatus").textContent =
-            statusText(data.game_status);
-
-        document.getElementById("timer").textContent =
-            data.remaining_seconds > 0
-                ? data.remaining_seconds + " seconds"
-                : "";
-
-        document.getElementById("roomNumber").textContent =
-            data.room_id ? "Game Room #" + data.room_id : "";
-
-        const called = data.called_numbers || [];
-
-        const last = called.length
-            ? called[called.length - 1]
-            : null;
-
-        document.getElementById("latestCall").textContent =
-            last ? "Latest Number: " + bingoLetter(last) + "-" + last : "Waiting for numbers...";
-
-        makeCallBoard(called);
-        renderCartelaPicker(data);
-        renderSelections(data);
-        renderWinners(data);
-
-        if (data.cartela) {
-            document.getElementById("myCartelaNumber").textContent =
-                "Your Cartela: " + data.cartela.cartela_no;
-
-            let matrix = [];
-
-            try {
-                matrix = JSON.parse(data.cartela.numbers_json);
-            } catch {
-                matrix = [];
-            }
-
-            if (matrix.length) {
-                renderCartela(matrix, called);
-            }
-
-            document.getElementById("bingoButton").classList.remove("hidden");
-
-        } else {
-            document.getElementById("myCartelaNumber").textContent =
-                "You have not selected a cartela.";
-
-            document.getElementById("myCartela").innerHTML = "";
-            document.getElementById("bingoButton").classList.add("hidden");
-        }
-
-        if (data.game_status === "OPEN") {
-            setMessage(
-                "Cartela selection is open. Choose an available cartela.",
-                "success"
-            );
-        } else if (data.game_status === "PREPARING") {
-            setMessage("Preparing the game. Please wait.");
-        } else if (data.game_status === "RUNNING") {
-            setMessage("The game is running. Watch the called numbers.");
-        } else if (data.game_status === "COMPLETED") {
-            setMessage("This game has ended. Preparing the next game.");
-        }
-
-        if (data.balance !== undefined) {
-            currentBalance = Number(data.balance);
-
-            document.getElementById("balance").textContent =
-                currentBalance.toFixed(2) + " ETB";
-        }
-
-    } catch (error) {
-        setMessage(error.message, "error");
-    }
-}
+// ============================================================
+// GAME STATUS
+// ============================================================
 
 function statusText(status) {
+
     const labels = {
         OPEN: "🟢 Cartela Selection Open",
+        REGISTRATION: "🟢 Cartela Selection Open",
         PREPARING: "🟡 Preparing Game",
+        PREPARATION: "🟡 Preparing Game",
         RUNNING: "🔴 Game in Progress",
+        PLAYING: "🔴 Game in Progress",
         COMPLETED: "🏆 Game Completed",
         WAITING: "Waiting for Game"
     };
@@ -797,27 +836,189 @@ function statusText(status) {
 }
 
 function bingoLetter(number) {
+
+    number = Number(number);
+
     if (number <= 15) return "B";
     if (number <= 30) return "I";
     if (number <= 45) return "N";
     if (number <= 60) return "G";
+
     return "O";
 }
 
+// ============================================================
+// LOAD GAME
+// ============================================================
+
+async function loadGame() {
+
+    if (gameLoading) {
+        return;
+    }
+
+    gameLoading = true;
+
+    try {
+
+        const data = await api("/api/game/state");
+
+        gameData = data;
+
+        const status =
+            data.game_status ||
+            data.status ||
+            "WAITING";
+
+        const called = Array.isArray(data.called_numbers)
+            ? data.called_numbers
+            : [];
+
+        document.getElementById("gameStatus").textContent =
+            statusText(status);
+
+        const remaining = Number(
+            data.remaining_seconds ??
+            data.seconds_remaining ??
+            0
+        );
+
+        document.getElementById("timer").textContent =
+            remaining > 0 ? remaining + " seconds" : "";
+
+        document.getElementById("roomNumber").textContent =
+            data.room_id ? "Game Room #" + data.room_id : "";
+
+        const latest = called.length
+            ? Number(called[called.length - 1])
+            : null;
+
+        document.getElementById("latestCall").textContent =
+            latest
+                ? "Latest Number: " + bingoLetter(latest) + "-" + latest
+                : "Waiting for numbers...";
+
+        makeCallBoard(called);
+
+        renderCartelaPicker(data);
+        renderSelections(data);
+        renderWinners(data);
+
+        if (data.cartela) {
+
+            const cartelaNumber =
+                data.cartela.cartela_no ??
+                data.cartela.cartela_number ??
+                "";
+
+            document.getElementById("myCartelaNumber").textContent =
+                "Your Cartela: " + cartelaNumber;
+
+            let matrix = data.cartela.numbers;
+
+            if (!Array.isArray(matrix) && data.cartela.numbers_json) {
+
+                try {
+                    matrix = JSON.parse(data.cartela.numbers_json);
+                } catch {
+                    matrix = [];
+                }
+            }
+
+            if (Array.isArray(matrix)) {
+                renderCartela(matrix, called);
+            }
+
+            document.getElementById("bingoButton")
+                .classList.remove("hidden");
+
+        } else {
+
+            document.getElementById("myCartelaNumber").textContent =
+                "You have not selected a cartela.";
+
+            document.getElementById("myCartela").innerHTML = "";
+
+            document.getElementById("bingoButton")
+                .classList.add("hidden");
+        }
+
+        if (data.balance !== undefined) {
+
+            currentBalance = Number(data.balance);
+
+            document.getElementById("balance").textContent =
+                currentBalance.toFixed(2) + " ETB";
+        }
+
+        if (
+            status === "OPEN" ||
+            status === "REGISTRATION"
+        ) {
+
+            setMessage(
+                "Cartela selection is open. Choose an available cartela.",
+                "success"
+            );
+
+        } else if (
+            status === "PREPARING" ||
+            status === "PREPARATION"
+        ) {
+
+            setMessage(
+                "Preparing the game. Please wait."
+            );
+
+        } else if (
+            status === "RUNNING" ||
+            status === "PLAYING"
+        ) {
+
+            setMessage(
+                "The game is running. Watch the called numbers."
+            );
+
+        } else if (status === "COMPLETED") {
+
+            setMessage(
+                "This game has ended. Preparing the next game."
+            );
+        }
+
+    } catch (error) {
+
+        setMessage(error.message, "error");
+
+    } finally {
+
+        gameLoading = false;
+    }
+}
+
+// ============================================================
+// SELECT CARTELA
+// ============================================================
+
 async function selectCartela(number) {
+
     if (!initData) {
+
         setMessage(
             "Please open Guder Bingo through the Telegram bot.",
             "error"
         );
+
         return;
     }
 
     if (currentBalance < 10) {
+
         setMessage(
             "Insufficient balance. Please deposit before selecting a cartela.",
             "error"
         );
+
         return;
     }
 
@@ -826,15 +1027,19 @@ async function selectCartela(number) {
     }
 
     try {
+
         const data = await api("/api/cartela/select", {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({
                 cartela_number: number
             })
         });
 
         setMessage(
-            "Cartela " + number + " selected successfully!",
+            data.message || "Cartela " + number + " selected successfully!",
             "success"
         );
 
@@ -842,100 +1047,171 @@ async function selectCartela(number) {
         await loadGame();
 
     } catch (error) {
+
         setMessage(error.message, "error");
     }
 }
 
+// ============================================================
+// BINGO CLAIM
+// ============================================================
+
 async function claimBingo() {
+
+    if (!initData) {
+        alert("Please open Guder Bingo through Telegram.");
+        return;
+    }
+
     if (!confirm("Are you sure you have Bingo?")) {
         return;
     }
 
     try {
+
         const data = await api("/api/game/claim", {
             method: "POST",
             body: JSON.stringify({})
         });
 
         alert(
-            "🏆 BINGO VERIFIED!\n\n" +
-            "Winner: " + (data.winner || "Player") +
-            "\nCartela: " + data.cartela_no
+            "🏆 BINGO CLAIM SUBMITTED!\n\n" +
+            (data.message || "The server has received your claim.")
         );
 
         await loadGame();
 
     } catch (error) {
+
         alert(error.message);
     }
 }
 
+// ============================================================
+// GAME HISTORY
+// ============================================================
+
 async function loadHistory() {
-    const el = document.getElementById("historyList");
-    el.textContent = "Loading history...";
+
+    const element = document.getElementById("historyList");
+
+    element.textContent = "Loading history...";
 
     try {
+
         const data = await api("/api/game/history");
 
-        const winners = data.winners || [];
+        const winners = Array.isArray(data.winners)
+            ? data.winners
+            : [];
 
         if (!winners.length) {
-            el.textContent = "No completed games yet.";
+
+            element.textContent = "No completed games yet.";
             return;
         }
 
-        el.innerHTML = winners.map(w => `
-            <div class="notice">
-                🏆 <strong>${escapeHtml(w.winner_name || "Player")}</strong><br>
-                Room: ${Number(w.room_id)}<br>
-                Cartela: ${Number(w.cartela_no)}<br>
-                Date: ${escapeHtml(w.created_at || "")}
-            </div>
-        `).join("");
+        element.innerHTML = winners.map(winner => {
+
+            return `
+                <div class="notice">
+                    🏆 <strong>${escapeHtml(winner.winner_name || "Player")}</strong><br>
+                    Room: ${Number(winner.room_id || 0)}<br>
+                    Cartela: ${Number(winner.cartela_no || 0)}<br>
+                    Date: ${escapeHtml(winner.created_at || "")}
+                </div>
+            `;
+
+        }).join("");
 
     } catch (error) {
-        el.textContent = error.message;
+
+        element.textContent = error.message;
     }
 }
+
+// ============================================================
+// CONFIGURATION
+// ============================================================
 
 async function loadConfig() {
+
     try {
+
         configData = await api("/api/config");
 
+        const number =
+            configData.telebirr_phone ||
+            configData.telebirr_number ||
+            "0913706670";
+
         document.getElementById("telebirrNumber").textContent =
-            configData.telebirr_phone || "0913706670";
+            number;
+
+        document.getElementById("supportNumber").textContent =
+            configData.support_number || "0913706670";
 
     } catch (error) {
-        console.error(error);
+
+        console.error("Configuration loading error:", error);
     }
 }
 
-function copyTelebirr() {
-    const number =
-        configData.telebirr_phone || "0913706670";
+// ============================================================
+// TELEBIRR
+// ============================================================
 
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(number)
-            .then(() => alert("TeleBirr number copied: " + number))
-            .catch(() => alert("TeleBirr number: " + number));
-    } else {
+async function copyTelebirr() {
+
+    const number =
+        configData.telebirr_phone ||
+        configData.telebirr_number ||
+        "0913706670";
+
+    try {
+
+        await navigator.clipboard.writeText(number);
+
+        alert("TeleBirr number copied: " + number);
+
+    } catch {
+
         alert("TeleBirr number: " + number);
     }
 }
 
 function openTelegramBot() {
-    window.open(BOT_URL, "_blank");
+
+    if (tg) {
+        tg.openTelegramLink(BOT_URL);
+    } else {
+        window.open(BOT_URL, "_blank");
+    }
 }
 
+// ============================================================
+// MANAGER LOGIN
+// ============================================================
+
 async function loadManager() {
-    managerPin = document.getElementById("managerPin").value.trim();
+
+    managerPin = document
+        .getElementById("managerPin")
+        .value
+        .trim();
 
     if (!managerPin) {
-        managerMessage("Please enter the manager PIN.", true);
+
+        managerMessage(
+            "Please enter the manager PIN.",
+            true
+        );
+
         return;
     }
 
     try {
+
         const data = await api("/api/manager/overview", {
             headers: {
                 "X-Manager-PIN": managerPin
@@ -955,55 +1231,107 @@ async function loadManager() {
         `;
 
         renderManagerDeposits(data.deposits || []);
-        managerMessage("Manager login successful.", false);
+
+        managerMessage(
+            "Manager login successful.",
+            false
+        );
 
     } catch (error) {
+
         managerMessage(error.message, true);
+
         document.getElementById("managerDashboard")
             .classList.add("hidden");
     }
 }
 
 function managerMessage(message, error) {
-    const el = document.getElementById("managerMessage");
 
-    el.textContent = message;
-    el.classList.remove("hidden");
-    el.className = "notice " + (error ? "error" : "success");
+    const element = document.getElementById("managerMessage");
+
+    element.textContent = message;
+
+    element.classList.remove("hidden");
+
+    element.className =
+        "notice " + (error ? "error" : "success");
 }
 
-function renderManagerDeposits(deposits) {
-    const el = document.getElementById("managerDeposits");
+// ============================================================
+// MANAGER DEPOSIT RECORDS
+// ============================================================
 
-    if (!deposits.length) {
-        el.textContent = "No deposits submitted yet.";
+function renderManagerDeposits(deposits) {
+
+    const element = document.getElementById("managerDeposits");
+
+    if (!Array.isArray(deposits) || !deposits.length) {
+
+        element.textContent = "No deposits submitted yet.";
         return;
     }
 
-    el.innerHTML = deposits.map(d => `
-        <div class="notice">
-            <strong>${escapeHtml(d.first_name || d.username || "Player")}</strong><br>
-            Amount: ${Number(d.amount).toFixed(2)} ETB<br>
-            Reference: ${escapeHtml(d.payer_reference || "")}<br>
-            Status: ${escapeHtml(d.status || "")}<br>
-            <div class="manager-actions">
-                <button class="green" onclick="reviewDeposit(${Number(d.deposit_id)},'verify')">
-                    Verify
-                </button>
-                <button class="red" onclick="reviewDeposit(${Number(d.deposit_id)},'reject')">
-                    Reject
-                </button>
+    element.innerHTML = deposits.map(deposit => {
+
+        const id = Number(
+            deposit.deposit_id || deposit.id || 0
+        );
+
+        const amount = Number(deposit.amount || 0);
+
+        return `
+            <div class="notice">
+                <strong>${escapeHtml(
+                    deposit.first_name ||
+                    deposit.username ||
+                    "Player"
+                )}</strong><br>
+
+                Amount: ${amount.toFixed(2)} ETB<br>
+
+                Reference: ${escapeHtml(
+                    deposit.payer_reference ||
+                    deposit.reference ||
+                    ""
+                )}<br>
+
+                Status: ${escapeHtml(deposit.status || "")}<br>
+
+                <div class="manager-actions">
+                    <button class="green"
+                        onclick="reviewDeposit(${id},'verify')">
+                        Verify
+                    </button>
+
+                    <button class="red"
+                        onclick="reviewDeposit(${id},'reject')">
+                        Reject
+                    </button>
+                </div>
             </div>
-        </div>
-    `).join("");
+        `;
+
+    }).join("");
 }
 
+// ============================================================
+// MANAGER DEPOSIT REVIEW
+// ============================================================
+
 async function reviewDeposit(id, action) {
+
+    if (!id) {
+        managerMessage("Invalid deposit ID.", true);
+        return;
+    }
+
     if (!confirm("Continue with " + action + " for this deposit?")) {
         return;
     }
 
     try {
+
         await api(
             "/api/manager/deposit/" + id + "/" + action,
             {
@@ -1018,11 +1346,17 @@ async function reviewDeposit(id, action) {
         await loadManager();
 
     } catch (error) {
+
         managerMessage(error.message, true);
     }
 }
 
+// ============================================================
+// INITIALIZE APPLICATION
+// ============================================================
+
 async function loadAll() {
+
     await loadConfig();
     await loadWallet();
     await loadGame();
@@ -1030,14 +1364,31 @@ async function loadAll() {
 
 loadAll();
 
+// Refresh live game and wallet every 2.5 seconds.
+
 if (refreshTimer) {
     clearInterval(refreshTimer);
 }
 
 refreshTimer = setInterval(async () => {
+
     await loadGame();
-    await loadWallet();
+
+    if (initData) {
+        await loadWallet();
+    }
+
 }, 2500);
+
+// Stop automatic refresh when the page is hidden.
+
+document.addEventListener("visibilitychange", () => {
+
+    if (!document.hidden) {
+        loadAll();
+    }
+
+});
 
 </script>
 
