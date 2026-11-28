@@ -750,7 +750,7 @@ def deposit_status(deposit_id):
 # ============================================================
 
 def manager_authorized():
-    supplied = request.headers.get("X-Manager-PIN", "")
+    supplied = request.headers.get("X-Manager-PIN", request.headers.get("X-Admin-Pin", ""))
     return bool(ADMIN_PIN) and hmac.compare_digest(supplied, ADMIN_PIN)
 
 
@@ -1005,13 +1005,20 @@ def game_state():
         room_id=rid,
         room=dict(latest),
         remaining_seconds=remaining,
+        time_remaining=remaining,
         selections=selection_data,
+        selected_cartelas=selection_data,
+        taken_cartelas=sorted(taken),
         called_numbers=[row["number"] for row in calls],
         winners=winner_data,
         balance=balance,
         cartela={
             "cartela_no": own["cartela_no"],
             "numbers_json": own["numbers_json"],
+            "numbers": json.loads(own["numbers_json"]),
+        } if own else None,
+        my_cartela={
+            "cartela_no": own["cartela_no"],
             "numbers": json.loads(own["numbers_json"]),
         } if own else None,
         can_play=bool(user and balance >= MIN_PLAY_BALANCE),
@@ -1046,6 +1053,11 @@ def available_cartelas():
 # ============================================================
 # CARTELA SELECTION
 # ============================================================
+
+def balance_for_after_selection(user_id):
+    with db_read() as conn:
+        return balance_for(conn, user_id)
+
 
 @app.post("/api/cartela/select")
 def select_cartela():
@@ -1116,6 +1128,7 @@ def select_cartela():
         cartela_number=cartela_no,
         numbers=matrix,
         room_id=room["room_id"],
+        balance=balance_for_after_selection(user["user_id"]),
         selection_color="green",
     )
 
@@ -1244,6 +1257,39 @@ def not_found(error):
 def internal_error(error):
     log.exception("Internal server error")
     return jsonify(success=False, error="Internal server error."), 500
+
+
+# Backward-compatible manager API aliases used by older Mini App builds.
+@app.get("/api/admin/dashboard")
+def admin_dashboard_alias():
+    denied = manager_guard()
+    if denied:
+        return denied
+    return manager_overview()
+
+@app.get("/api/admin/winners")
+def admin_winners_alias():
+    denied = manager_guard()
+    if denied:
+        return denied
+    return manager_winners()
+
+@app.post("/api/admin/deposits/review")
+def admin_review_deposit_alias():
+    denied = manager_guard()
+    if denied:
+        return denied
+    data = request.get_json(silent=True) or {}
+    try:
+        deposit_id = int(data.get("deposit_id"))
+    except (TypeError, ValueError):
+        return jsonify(success=False, error="Invalid deposit ID."), 400
+    action = str(data.get("action", "")).upper()
+    if action == "APPROVE":
+        return manager_verify_deposit(deposit_id)
+    if action == "REJECT":
+        return manager_reject_deposit(deposit_id)
+    return jsonify(success=False, error="Action must be APPROVE or REJECT."), 400
 
 
 init_db()
