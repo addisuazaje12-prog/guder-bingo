@@ -1,2496 +1,606 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#101426">
-
 <title>Guder Bingo | ጉደር ቢንጎ</title>
-
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
 <style>
-
-:root {
-    --bg:#101426;
-    --panel:#1b2340;
-    --panel2:#252f50;
-    --gold:#f5bd42;
-    --green:#16b86a;
-    --red:#e64b4b;
-    --white:#fff;
-    --muted:#b8c0d8;
+:root{--bg:#101426;--panel:#1b2340;--panel2:#252f50;--gold:#f5bd42;--green:#16b86a;--red:#e64b4b;--text:#f7f8fc;--muted:#b5bfd2;--line:#394766}
+*{box-sizing:border-box}
+body{margin:0;padding:12px;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+.wrap{max-width:850px;margin:auto}
+.top{text-align:center;padding:12px 6px}
+.logo{font-size:29px;font-weight:900;color:var(--gold)}
+.sub,.small{color:var(--muted);font-size:12px;line-height:1.55}
+.balance{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;text-align:center;margin:8px 0}
+.balance strong{display:block;color:var(--green);font-size:24px;margin-top:4px}
+.nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+button{border:0;border-radius:10px;padding:12px 9px;font-weight:800;font-size:13px;cursor:pointer;background:var(--gold);color:#182033}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+button.danger{background:var(--red);color:white}
+button:disabled{opacity:.38;cursor:not-allowed}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin:11px 0}
+h2{font-size:18px;color:var(--gold);margin:0 0 11px}
+h3{font-size:14px;margin:13px 0 8px}
+.hidden{display:none!important}
+.status{background:#26314e;border-radius:9px;padding:10px;margin:8px 0;font-size:13px;line-height:1.5}
+.good{border-left:4px solid var(--green)}
+.bad{border-left:4px solid var(--red)}
+.row{display:flex;gap:8px}
+.row>div{flex:1;min-width:0}
+.metric{background:var(--panel2);padding:9px;border-radius:9px;font-size:12px}
+.metric b{display:block;color:var(--gold);font-size:16px;margin-top:4px}
+.cartelas{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;max-height:280px;overflow:auto;padding:2px}
+.cartela{padding:10px 2px;border-radius:7px;font-size:12px}
+.cartela.taken{background:#596579;color:#e0e5ed}
+.cartela.mine{background:var(--green);color:#052a19}
+.bingo-head,.bingo-board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.bingo-head div{background:var(--gold);color:#182033;text-align:center;font-weight:900;padding:8px;border-radius:6px}
+.bingo-cell{background:#2b3a59;border-radius:6px;text-align:center;padding:8px 1px;font-weight:800;font-size:12px}
+.bingo-cell.called{background:var(--green);color:#052a19}
+.current{text-align:center;color:var(--gold);font-size:25px;font-weight:900;padding:10px}
+.card{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.card div{background:#2b3a59;text-align:center;padding:8px 2px;border-radius:5px;font-size:12px}
+.card .free{background:var(--gold);color:#172033}
+.card .hit{background:var(--green);color:#052a19}
+input,textarea{width:100%;padding:11px;border-radius:8px;border:1px solid var(--line);background:#111a30;color:white;margin:6px 0 10px;font-size:15px}
+label{font-size:12px;color:var(--muted)}
+.list-item{padding:9px;border-bottom:1px solid var(--line);font-size:12px;line-height:1.5}
+.list-item:last-child{border:0}
+.full{width:100%}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
+@media(max-width:390px){
+.cartelas{grid-template-columns:repeat(4,minmax(0,1fr))}
+.bingo-cell{padding:7px 1px;font-size:11px}
 }
-
-* {
-    box-sizing:border-box;
-}
-
-body {
-    margin:0;
-    padding:12px;
-    background:var(--bg);
-    color:var(--white);
-    font-family:Arial,sans-serif;
-}
-
-button,input {
-    font:inherit;
-}
-
-button {
-    border:0;
-    border-radius:9px;
-    padding:11px 14px;
-    cursor:pointer;
-    font-weight:bold;
-}
-
-button:disabled {
-    opacity:.5;
-    cursor:not-allowed;
-}
-
-.header {
-    text-align:center;
-    padding:12px 5px;
-}
-
-.header h1 {
-    color:var(--gold);
-    margin:4px 0;
-    font-size:27px;
-}
-
-.header p {
-    color:var(--muted);
-}
-
-.panel {
-    background:var(--panel);
-    border-radius:13px;
-    padding:13px;
-    margin-bottom:12px;
-    border:1px solid #303b60;
-}
-
-.menu {
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:8px;
-    margin-bottom:12px;
-}
-
-.menu button {
-    background:var(--panel2);
-    color:white;
-    line-height:1.5;
-}
-
-.menu button.active {
-    background:var(--gold);
-    color:#171717;
-}
-
-.primary {
-    background:var(--gold);
-    color:#171717;
-}
-
-.green {
-    background:var(--green);
-    color:white;
-}
-
-.red {
-    background:var(--red);
-    color:white;
-}
-
-.full {
-    width:100%;
-}
-
-.balance {
-    color:var(--gold);
-    font-size:21px;
-    font-weight:bold;
-}
-
-.status {
-    text-align:center;
-    padding:10px;
-    background:#111a31;
-    border-radius:10px;
-    margin:8px 0;
-}
-
-.timer {
-    color:var(--gold);
-    font-size:26px;
-    font-weight:bold;
-}
-
-.muted {
-    color:var(--muted);
-    font-size:13px;
-}
-
-.call-board {
-    display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:5px;
-    text-align:center;
-}
-
-.call-column {
-    background:var(--panel2);
-    border-radius:8px;
-    padding:6px 2px;
-    min-width:0;
-}
-
-.call-column h3 {
-    color:var(--gold);
-    margin:3px 0 8px;
-}
-
-.call-number {
-    display:block;
-    padding:5px 1px;
-    margin:3px 0;
-    border-radius:5px;
-    background:#11182c;
-    font-size:13px;
-}
-
-.call-number.called {
-    background:var(--green);
-    color:white;
-    font-weight:bold;
-}
-
-.latest-call {
-    font-size:28px;
-    font-weight:bold;
-    color:var(--gold);
-    text-align:center;
-    padding:10px;
-}
-
-.cartela-grid {
-    display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:5px;
-    margin-top:10px;
-}
-
-.cell {
-    background:#f0b93e;
-    color:#171717;
-    padding:10px 2px;
-    text-align:center;
-    border-radius:5px;
-    font-weight:bold;
-    min-height:38px;
-    overflow:hidden;
-}
-
-.cell.marked {
-    background:var(--green);
-    color:white;
-}
-
-.cell.free {
-    background:#d7d7d7;
-}
-
-.cartela-picker {
-    display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:6px;
-    max-height:270px;
-    overflow-y:auto;
-    margin-top:10px;
-}
-
-.cartela-choice {
-    background:#d99e27;
-    color:#171717;
-    padding:9px 2px;
-    border-radius:6px;
-}
-
-.cartela-choice.taken {
-    background:#555d70;
-    color:#ddd;
-}
-
-.cartela-choice.mine {
-    background:var(--green);
-    color:white;
-}
-
-input {
-    width:100%;
-    padding:12px;
-    border-radius:8px;
-    border:1px solid #58617b;
-    background:#11182c;
-    color:white;
-    margin:7px 0;
-}
-
-.hidden {
-    display:none !important;
-}
-
-.notice {
-    padding:10px;
-    border-radius:8px;
-    background:#303b60;
-    margin:8px 0;
-    line-height:1.5;
-    overflow-wrap:anywhere;
-}
-
-.notice.error {
-    background:#612b37;
-}
-
-.notice.success {
-    background:#145b3b;
-}
-
-table {
-    width:100%;
-    border-collapse:collapse;
-    font-size:13px;
-}
-
-td,th {
-    border-bottom:1px solid #3c4666;
-    padding:8px 4px;
-    text-align:left;
-}
-
-.manager-actions {
-    display:flex;
-    gap:5px;
-    flex-wrap:wrap;
-}
-
-.manager-actions button {
-    padding:7px;
-    font-size:12px;
-}
-
-.winner-box {
-    background:#145b3b;
-    border:2px solid var(--gold);
-    border-radius:12px;
-    padding:15px;
-    text-align:center;
-    margin:10px 0;
-}
-
-.winner-box h2 {
-    color:var(--gold);
-}
-
-.am {
-    display:block;
-    font-size:12px;
-    opacity:.9;
-}
-
-@media(max-width:360px) {
-
-    body {
-        padding:7px;
-    }
-
-    .call-number {
-        font-size:11px;
-    }
-
-    .cell {
-        font-size:12px;
-        min-height:32px;
-    }
-
-    .menu button {
-        font-size:12px;
-        padding:9px 5px;
-    }
-
-}
-
 </style>
-
 </head>
-
 <body>
+<div class="wrap">
 
-<!-- ======================================================
-     HEADER
-====================================================== -->
+<header class="top">
+<div class="logo">🎱 GUDER BINGO</div>
+<div class="sub">ጉደር ቢንጎ | Connecting Players · ተጫዋቾችን ማገናኘት</div>
+<div class="sub" id="playerName">Welcome, Player | እንኳን ደህና መጡ</div>
+</header>
 
-<div class="header">
-
-    <h1>🎱 GUDER BINGO</h1>
-
-    <p>
-        ጉደር ቢንጎ
-        <br>
-        Connecting Players • Play and Win
-    </p>
-
+<div class="balance">
+WALLET BALANCE | የኪስ ቦርሳ ሂሳብ
+<strong id="balance">-- ETB</strong>
 </div>
 
+<nav class="nav">
+<button onclick="showPage('play')">🎮 Play a Game | ተጫወት</button>
+<button onclick="showPage('deposit')">💰 Deposit | ገንዘብ አስገባ</button>
+<button class="secondary" onclick="showPage('wallet')">👛 Balance | ሂሳብ</button>
+<button class="secondary" onclick="showPage('history')">🏆 History | ታሪክ</button>
+<button class="secondary" onclick="inviteFriends()">👥 Invite Friends | ጋብዝ</button>
+<button class="secondary" onclick="showPage('help')">📖 Instructions | መመሪያ</button>
+<button class="secondary" onclick="showPage('support')">☎ Support | ድጋፍ</button>
+<button class="secondary" onclick="showPage('manager')">🔐 Manager | አስተዳዳሪ</button>
+</nav>
 
-<!-- ======================================================
-     WALLET
-====================================================== -->
+<section id="home" class="panel">
+<h2>Welcome to Guder Bingo | እንኳን ወደ ጉደር ቢንጎ በደህና መጡ</h2>
+<p>Deposit before selecting a cartela. Everyone can watch the public live game.</p>
+<p>ካርቴላ ከመምረጥዎ በፊት ገንዘብ ያስገቡ። ሁሉም ሰው ቀጥታ ጨዋታውን መመልከት ይችላል።</p>
+<div class="status">One cartela costs 10 ETB | አንድ ካርቴላ 10 ብር ነው።</div>
+</section>
 
-<div class="panel">
+<section id="play" class="panel hidden">
+<h2>🎮 LIVE GAME | ቀጥታ ጨዋታ</h2>
+<div id="gameStatus" class="status">Connecting… በመገናኘት ላይ…</div>
 
-    <div>
-        💰 Wallet Balance / የኪስ ቦርሳ ቀሪ ሂሳብ
-    </div>
-
-    <div class="balance" id="balance">
-        0.00 ETB
-    </div>
-
-    <div class="muted" id="playerStatus">
-        Connecting to Guder Bingo...
-        <br>
-        ከጉደር ቢንጎ ጋር በመገናኘት ላይ...
-    </div>
-
+<div class="row">
+<div class="metric">PHASE | ደረጃ<b id="phase">--</b></div>
+<div class="metric">TIME | ጊዜ<b id="timeLeft">--</b></div>
+<div class="metric">ROOM | ዙር<b id="roomId">--</b></div>
 </div>
 
+<h3>Choose a cartela 1–800 | ካርቴላ ይምረጡ</h3>
+<div class="small">Gold: available | ወርቃማ፦ ክፍት · Green: yours | አረንጓዴ፦ የእርስዎ · Grey: taken | ግራጫ፦ የተያዘ</div>
 
-<!-- ======================================================
-     MAIN MENU
-====================================================== -->
-
-<div class="menu">
-
-    <button class="active"
-    onclick="showPage('game',this)">
-
-        🎮 Play / ተጫወት
-
-    </button>
-
-    <button
-    onclick="showPage('deposit',this)">
-
-        💰 Deposit / ገንዘብ አስገባ
-
-    </button>
-
-    <button
-    onclick="showPage('history',this)">
-
-        🏆 History / ታሪክ
-
-    </button>
-
-    <button
-    onclick="showPage('instructions',this)">
-
-        📖 Instructions / መመሪያ
-
-    </button>
-
-    <button
-    onclick="showPage('support',this)">
-
-        ☎ Support / ድጋፍ
-
-    </button>
-
-    <button
-    onclick="showPage('manager',this)">
-
-        🔐 Manager / አስተዳዳሪ
-
-    </button>
-
+<div id="lowBalance" class="status bad hidden">
+Insufficient balance. Deposit at least 10 ETB to select a cartela. | በቂ ሂሳብ የለም። ካርቴላ ለመምረጥ ቢያንስ 10 ብር ያስገቡ።
 </div>
 
+<div id="cartelas" class="cartelas"></div>
 
-<!-- ======================================================
-     GAME PAGE
-====================================================== -->
+<div id="selectionMessage" class="status">
+Selection opens for 30 seconds. | የካርቴላ ምርጫ ለ30 ሰከንድ ይከፈታል።
+</div>
 
-<section id="page-game">
+<h3>NUMBER CALLING BOARD | የቁጥር መጥሪያ ሰሌዳ</h3>
+<div class="current" id="lastCall">Waiting for first number | የመጀመሪያ ቁጥርን በመጠበቅ ላይ</div>
 
-    <div class="panel">
+<div class="bingo-head">
+<div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+</div>
+<div id="calledBoard" class="bingo-board" style="margin-top:5px"></div>
 
-        <h3>
-            🎮 Live Game / የቀጥታ ጨዋታ
-        </h3>
+<h3>YOUR CARTELA | የእርስዎ ካርቴላ</h3>
+<div id="myCard" class="status">No cartela selected yet. | እስካሁን ካርቴላ አልመረጡም።</div>
 
-        <div class="status">
+<button class="full" onclick="claimBingo()">🏆 BINGO CLAIM | ቢንጎ አሸንፌያለሁ</button>
 
-            <div id="gameStatus">
-                Loading game...
-            </div>
-
-            <div class="timer" id="timer">
-                --
-            </div>
-
-            <div class="muted" id="roomNumber">
-            </div>
-
-        </div>
-
-        <div class="latest-call" id="latestCall">
-            Waiting for numbers...
-        </div>
-
-        <div class="call-board" id="callBoard">
-        </div>
-
-        <div id="winnerDisplay">
-        </div>
-
-    </div>
-
-
-    <!-- CARTELA SELECTION -->
-
-    <div class="panel">
-
-        <h3>
-            🎟 Select Your Cartela
-            <br>
-            ካርቴላዎን ይምረጡ
-        </h3>
-
-        <div class="muted">
-
-            Each cartela costs 10 ETB.
-            <br>
-            እያንዳንዱ ካርቴላ 10 ብር ያስከፍላል።
-
-            <br><br>
-
-            Select an available cartela during the selection period.
-            <br>
-            በምርጫ ጊዜ ያልተያዘ ካርቴላ ይምረጡ።
-
-        </div>
-
-        <div id="gameMessage" class="notice">
-
-            Loading available cartelas...
-
-        </div>
-
-        <div class="cartela-picker"
-        id="cartelaPicker">
-        </div>
-
-    </div>
-
-
-    <!-- MY CARTELA -->
-
-    <div class="panel" id="myCartelaPanel">
-
-        <h3>
-            🎟 Your Playing Cartela
-            <br>
-            የእርስዎ ካርቴላ
-        </h3>
-
-        <div id="myCartelaNumber" class="muted">
-
-            You have not selected a cartela.
-
-        </div>
-
-        <div id="myCartela" class="cartela-grid">
-        </div>
-
-        <div class="muted">
-
-            Green numbers indicate numbers already called.
-            <br>
-            አረንጓዴ ቁጥሮች የተጠሩ ቁጥሮችን ያመለክታሉ።
-
-        </div>
-
-    </div>
-
-
-    <!-- PLAYERS -->
-
-    <div class="panel">
-
-        <h3>
-            👥 Players in This Game
-            <br>
-            በዚህ ጨዋታ የተሳተፉ
-        </h3>
-
-        <div id="playerCount">
-            0 cartelas selected
-        </div>
-
-        <div id="selectedCartelas" class="muted">
-        </div>
-
-    </div>
-
-
-    <!-- RECENT WINNERS -->
-
-    <div class="panel">
-
-        <h3>
-            🏆 Recent Winners / የቅርብ ጊዜ አሸናፊዎች
-        </h3>
-
-        <div id="recentWinners" class="muted">
-            No winners yet.
-        </div>
-
-    </div>
-
+<h3>RECENT WINNERS | የቅርብ ጊዜ አሸናፊዎች</h3>
+<div id="recentWinners" class="status">No recorded winners yet. | እስካሁን አሸናፊ አልተመዘገበም።</div>
 </section>
 
+<section id="deposit" class="panel hidden">
+<h2>💰 Deposit | ገንዘብ ማስገባት</h2>
+<div class="status">
+<b>TeleBirr | ቴሌብር</b><br>
+0913706670<br>
+<button class="secondary" onclick="copyText('0913706670')">Copy number | ቁጥሩን ቅዳ</button>
+</div>
 
-<!-- ======================================================
-     DEPOSIT PAGE
-====================================================== -->
+<p>1. Transfer using TeleBirr. 2. Open the receipt and copy its complete text. 3. Press the button below and send the receipt to the Guder Bingo bot.</p>
+<p>1. በቴሌብር ያስተላልፉ። 2. ደረሰኙን ከፍተው ሙሉ ጽሑፉን ይቅዱ። 3. ከታች ያለውን ቁልፍ በመጫን ደረሰኙን ለቦቱ ይላኩ።</p>
 
-<section id="page-deposit" class="hidden">
+<button class="full" onclick="openBotDeposit()">Open Telegram Deposit | በቴሌግራም ገንዘብ አስገባ</button>
 
-    <div class="panel">
-
-        <h3>
-            💰 Deposit Money
-            <br>
-            ገንዘብ ያስገቡ
-        </h3>
-
-        <div class="notice">
-
-            <strong>
-                TeleBirr Payment / የቴሌብር ክፍያ
-            </strong>
-
-            <br><br>
-
-            Transfer your payment to the TeleBirr number below.
-
-            <br>
-
-            ክፍያዎን ከታች ወዳለው የቴሌብር ቁጥር ይላኩ።
-
-            <br><br>
-
-            After payment, open Telegram and press Deposit in the bot.
-
-            <br>
-
-            ከክፍያ በኋላ ወደ ቴሌግራም በመመለስ የDeposit ቁልፍን ይጫኑ።
-
-            <br><br>
-
-            Copy the complete transaction receipt and send it to the bot.
-
-            <br>
-
-            ሙሉ የክፍያ ደረሰኙን በመቅዳት ለቦቱ ይላኩ።
-
-        </div>
-
-
-        <h2 id="telebirrNumber">
-            0913706670
-        </h2>
-
-        <button class="primary full"
-        onclick="copyTelebirr()">
-
-            📋 Copy TeleBirr Number
-            <br>
-            የቴሌብር ቁጥር ቅዳ
-
-        </button>
-
-
-        <div class="notice">
-
-            Playing credit is added when the backend successfully processes the submitted receipt.
-
-            <br><br>
-
-            ሰርቨሩ የቀረበውን ደረሰኝ ሲያስተናግድ የመጫወቻ ሂሳብ ይጨመራል።
-
-            <br><br>
-
-            Important: Provisional credit does not mean the payment has been independently verified.
-
-            <br>
-
-            ማስታወሻ፦ ጊዜያዊ የመጫወቻ ሂሳብ መጨመር ክፍያው በባንክ ወይም በቴሌብር ተረጋግጧል ማለት አይደለም።
-
-        </div>
-
-
-        <button class="green full"
-        onclick="openTelegramBot()">
-
-            📲 Open Telegram Deposit
-            <br>
-            የቴሌግራም የክፍያ ገጽ ክፈት
-
-        </button>
-
-    </div>
-
+<div class="small">
+Credit is provisional after the server accepts the receipt. The manager may review it later. | ሰርቨሩ ደረሰኙን ከተቀበለ በኋላ ጊዜያዊ ሂሳብ ይጨመራል፤ አስተዳዳሪው በኋላ ሊመረምረው ይችላል።
+</div>
 </section>
 
-
-<!-- ======================================================
-     HISTORY PAGE
-====================================================== -->
-
-<section id="page-history" class="hidden">
-
-    <div class="panel">
-
-        <h3>
-            🏆 Game History / የጨዋታ ታሪክ
-        </h3>
-
-        <div id="historyList">
-            Loading history...
-        </div>
-
-    </div>
-
+<section id="wallet" class="panel hidden">
+<h2>👛 My Wallet | የእኔ ሂሳብ</h2>
+<div id="walletDetails" class="status">Loading…</div>
+<button class="secondary full" onclick="refreshWallet()">Refresh | አድስ</button>
 </section>
 
-
-<!-- ======================================================
-     INSTRUCTIONS PAGE
-====================================================== -->
-
-<section id="page-instructions" class="hidden">
-
-    <div class="panel">
-
-        <h3>
-            📖 How to Play Guder Bingo
-            <br>
-            ጉደር ቢንጎን እንዴት መጫወት ይቻላል?
-        </h3>
-
-        <p>
-            1. Deposit money using TeleBirr.
-            <br>
-            በቴሌብር ገንዘብ ያስገቡ።
-        </p>
-
-        <p>
-            2. Submit your complete receipt through the Telegram bot.
-            <br>
-            ደረሰኝዎን በቴሌግራም ቦት ይላኩ።
-        </p>
-
-        <p>
-            3. Open the Guder Bingo Mini App.
-            <br>
-            የጉደር ቢንጎ መተግበሪያን ይክፈቱ።
-        </p>
-
-        <p>
-            4. Select an available cartela during the selection period.
-            <br>
-            በምርጫ ጊዜ ነፃ ካርቴላ ይምረጡ።
-        </p>
-
-        <p>
-            5. Each cartela costs 10 ETB.
-            <br>
-            እያንዳንዱ ካርቴላ 10 ብር ነው።
-        </p>
-
-        <p>
-            6. Wait for the game to begin.
-            <br>
-            ጨዋታው እስኪጀምር ይጠብቁ።
-        </p>
-
-        <p>
-            7. Watch the numbers being called.
-            <br>
-            የሚጠሩትን ቁጥሮች ይከታተሉ።
-        </p>
-
-        <p>
-            8. Complete a valid Bingo pattern.
-            <br>
-            ትክክለኛ የቢንጎ ቅርጽ ያሟሉ።
-        </p>
-
-        <p>
-            9. The system automatically checks completed patterns and announces a winner.
-            <br>
-            ስርዓቱ የተሟላውን የቢንጎ ቅርጽ በራሱ ይፈትሻል እና አሸናፊውን ያሳውቃል።
-        </p>
-
-    </div>
-
+<section id="history" class="panel hidden">
+<h2>🏆 Game History | የጨዋታ ታሪክ</h2>
+<div id="historyList" class="status">Loading…</div>
 </section>
 
-
-<!-- ======================================================
-     SUPPORT PAGE
-====================================================== -->
-
-<section id="page-support" class="hidden">
-
-    <div class="panel">
-
-        <h3>
-            ☎ Guder Bingo Support
-            <br>
-            የጉደር ቢንጎ ድጋፍ
-        </h3>
-
-        <p>
-            For assistance with deposits or playing, contact support.
-
-            <br>
-
-            በክፍያ ወይም በጨዋታ ላይ እገዛ ከፈለጉ ያግኙን።
-
-        </p>
-
-        <h2 id="supportNumber">
-            0913706670
-        </h2>
-
-    </div>
-
+<section id="help" class="panel hidden">
+<h2>📖 Instructions | መመሪያ</h2>
+<p>1. Deposit using TeleBirr. | በቴሌብር ገንዘብ ያስገቡ።</p>
+<p>2. Send the full receipt text to the bot. | ሙሉ ደረሰኙን ለቦቱ ይላኩ።</p>
+<p>3. Select one available cartela during the 30-second selection period. | በ30 ሰከንድ ውስጥ አንድ ክፍት ካርቴላ ይምረጡ።</p>
+<p>4. Wait 5 seconds for preparation. | ለዝግጅት 5 ሰከንድ ይጠብቁ።</p>
+<p>5. Watch numbers and claim only when you have a valid line. | ቁጥሮቹን ይከታተሉ፤ ትክክለኛ መስመር ሲሞላ ብቻ ቢንጎ ይጫኑ።</p>
+<div class="small">B 1–15 · I 16–30 · N 31–45 · G 46–60 · O 61–75</div>
 </section>
 
-
-<!-- ======================================================
-     MANAGER PAGE
-====================================================== -->
-
-<section id="page-manager" class="hidden">
-
-    <div class="panel">
-
-        <h3>
-            🔐 Manager Panel
-            <br>
-            የአስተዳዳሪ ገጽ
-        </h3>
-
-        <input
-            type="password"
-            id="managerPin"
-            placeholder="Manager PIN / የአስተዳዳሪ ሚስጥር ቁጥር"
-            autocomplete="off"
-        >
-
-        <button class="primary full"
-        onclick="loadManager()">
-
-            🔓 Login / ግባ
-
-        </button>
-
-        <div id="managerMessage"
-        class="notice hidden">
-        </div>
-
-    </div>
-
-
-    <div class="panel hidden"
-    id="managerDashboard">
-
-        <h3>
-            📊 Dashboard / አጠቃላይ መረጃ
-        </h3>
-
-        <div id="managerStats">
-        </div>
-
-
-        <h3>
-            💰 Deposit Records
-            <br>
-            የክፍያ መዝገቦች
-        </h3>
-
-        <div id="managerDeposits">
-        </div>
-
-
-        <h3>
-            🏆 Recent Winners
-            <br>
-            የቅርብ ጊዜ አሸናፊዎች
-        </h3>
-
-        <div id="managerWinners">
-        </div>
-
-
-        <button class="primary full"
-        onclick="loadManager()">
-
-            🔄 Refresh Dashboard / አድስ
-
-        </button>
-
-    </div>
-
+<section id="support" class="panel hidden">
+<h2>☎ Support | ድጋፍ</h2>
+<p>Support number | የድጋፍ ቁጥር: <b>0913706670</b></p>
+<button class="secondary full" onclick="contactSupport()">Contact support | ድጋፍን ያነጋግሩ</button>
 </section>
 
+<section id="manager" class="panel hidden">
+<h2>🔐 Manager Panel | የአስተዳዳሪ ፓነል</h2>
 
-<!-- ======================================================
-     JAVASCRIPT
-====================================================== -->
+<div id="managerLogin">
+<label>Manager PIN | የአስተዳዳሪ ፒን</label>
+<input id="managerPin" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter manager PIN">
+<button class="full" onclick="managerLogin()">Login | ግባ</button>
+</div>
+
+<div id="managerData" class="hidden">
+<div class="row">
+<div class="metric">Players | ተጫዋቾች<b id="mPlayers">0</b></div>
+<div class="metric">Deposits | ገቢ<b id="mDeposits">0</b></div>
+</div>
+
+<div class="status" id="mRoom">Current game | የአሁኑ ጨዋታ</div>
+
+<h3>Provisional deposits | ጊዜያዊ ገቢዎች</h3>
+<div id="mDepositList" class="status">No deposits</div>
+
+<h3>Recent winners | የቅርብ አሸናፊዎች</h3>
+<div id="mWinnerList" class="status">No winners</div>
+
+<button class="secondary full" onclick="loadManager()">Refresh dashboard | ዳሽቦርዱን አድስ</button>
+<button class="danger full" style="margin-top:8px" onclick="managerLogout()">Logout | ውጣ</button>
+</div>
+
+<div id="managerMessage" class="status hidden"></div>
+</section>
+
+<footer>Guder Bingo · Play responsibly | በኃላፊነት ይጫወቱ</footer>
+</div>
 
 <script>
+'use strict';
 
-"use strict";
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
 
+const API='';
+const BOT='https://t.me/guderbingo_bot';
 
-// ============================================================
-// TELEGRAM
-// ============================================================
+const $=id=>document.getElementById(id);
+let game={},walletBalance=0,managerPin='',selectedCartela=null;
 
-const tg = window.Telegram?.WebApp || null;
-
-if (tg) {
-
-    tg.ready();
-
-    tg.expand();
-
-    tg.setHeaderColor("#101426");
-
-    tg.setBackgroundColor("#101426");
-
+function headers(extra={}){
+const h={'Content-Type':'application/json',...extra};
+if(tg?.initData)h['X-Telegram-Init-Data']=tg.initData;
+return h;
 }
 
-
-// ============================================================
-// CONFIGURATION
-// ============================================================
-
-const API = "";
-
-const BOT_URL = "https://t.me/guderbingo_bot";
-
-const initData = tg ? tg.initData : "";
-
-let gameData = null;
-
-let configData = {};
-
-let currentBalance = 0;
-
-let managerPin = "";
-
-let gameLoading = false;
-
-let refreshTimer = null;
-
-let lastWinnerRoom = null;
-
-
-// ============================================================
-// API HEADERS
-// ============================================================
-
-function headers(extra = {}) {
-
-    const result = {
-        ...extra
-    };
-
-    if (initData) {
-
-        result["X-Telegram-Init-Data"] = initData;
-
-    }
-
-    return result;
-
+async function api(path,opts={}){
+const r=await fetch(API+path,{...opts,headers:headers(opts.headers||{})});
+let d={};
+try{d=await r.json()}catch(e){}
+if(!r.ok||d.success===false)throw new Error(d.error||d.message||('HTTP '+r.status));
+return d;
 }
 
-
-// ============================================================
-// API REQUEST
-// ============================================================
-
-async function api(path, options = {}) {
-
-    const requestOptions = {
-
-        ...options,
-
-        headers: headers(
-            options.headers || {}
-        )
-
-    };
-
-    const response = await fetch(
-        API + path,
-        requestOptions
-    );
-
-    let data;
-
-    try {
-
-        data = await response.json();
-
-    } catch {
-
-        throw new Error(
-            "Invalid server response. / የሰርቨር ምላሽ ስህተት።"
-        );
-
-    }
-
-    if (!response.ok || data.success === false) {
-
-        throw new Error(
-
-            data.error ||
-
-            data.message ||
-
-            "Request failed. HTTP " + response.status
-
-        );
-
-    }
-
-    return data;
-
+function showPage(name){
+['home','play','deposit','wallet','history','help','support','manager'].forEach(x=>$(x).classList.toggle('hidden',x!==name));
+if(name==='play')refreshGame();
+if(name==='wallet')refreshWallet();
+if(name==='history')refreshHistory();
+if(name==='manager'&&managerPin)loadManager();
 }
 
+function money(n){return (Number(n)||0).toFixed(2)}
 
-// ============================================================
-// PAGE NAVIGATION
-// ============================================================
-
-function showPage(page, button) {
-
-    document.querySelectorAll("section").forEach(section => {
-
-        section.classList.add("hidden");
-
-    });
-
-    const target = document.getElementById(
-        "page-" + page
-    );
-
-    if (target) {
-
-        target.classList.remove("hidden");
-
-    }
-
-    document.querySelectorAll(".menu button").forEach(item => {
-
-        item.classList.remove("active");
-
-    });
-
-    if (button) {
-
-        button.classList.add("active");
-
-    }
-
-    if (page === "history") {
-
-        loadHistory();
-
-    }
-
+function notify(msg){
+if(tg?.showAlert)tg.showAlert(msg);
+else alert(msg);
 }
 
-
-// ============================================================
-// MESSAGE
-// ============================================================
-
-function setMessage(message, type = "") {
-
-    const element = document.getElementById(
-        "gameMessage"
-    );
-
-    element.textContent = message;
-
-    element.className = "notice " + type;
-
+async function refreshWallet(){
+try{
+const d=await api('/api/wallet');
+walletBalance=Number(d.balance||0);
+$('balance').textContent=money(walletBalance)+' ETB';
+$('walletDetails').textContent='Available balance | ያለው ሂሳብ: '+money(walletBalance)+' ETB';
+}catch(e){
+$('balance').textContent='-- ETB';
+$('walletDetails').textContent='Wallet unavailable | ሂሳቡ አልተገኘም: '+e.message;
+}
 }
 
+function renderCartelas(){
+const el=$('cartelas');
+el.innerHTML='';
+const available=new Set((game.available_cartelas||[]).map(Number));
+const taken=new Set((game.taken_cartelas||[]).map(Number));
+const own=Number(game.cartela?.cartela_no||0);
+const open=game.game_status==='OPEN';
+const can=!!game.can_play;
 
-// ============================================================
-// HTML ESCAPE
-// ============================================================
+for(let i=1;i<=800;i++){
+const b=document.createElement('button');
+b.className='cartela';
+b.textContent=i;
 
-function escapeHtml(value) {
+if(taken.has(i))b.classList.add('taken');
+if(i===own)b.classList.add('mine');
 
-    return String(value ?? "").replace(
-        /[&<>"']/g,
-        character => ({
-
-            "&": "&amp;",
-
-            "<": "&lt;",
-
-            ">": "&gt;",
-
-            '"': "&quot;",
-
-            "'": "&#39;"
-
-        })[character]
-    );
-
+const free=available.size?available.has(i):!taken.has(i);
+b.disabled=!open||!free||!can||!!own;
+b.onclick=()=>selectCartela(i);
+el.appendChild(b);
 }
 
-
-// ============================================================
-// BINGO LETTER
-// ============================================================
-
-function bingoLetter(number) {
-
-    number = Number(number);
-
-    if (number <= 15) return "B";
-
-    if (number <= 30) return "I";
-
-    if (number <= 45) return "N";
-
-    if (number <= 60) return "G";
-
-    return "O";
-
+if(game.insufficient_balance)$('lowBalance').classList.remove('hidden');
+else $('lowBalance').classList.add('hidden');
 }
 
+function renderCalls(nums){
+const el=$('calledBoard');
+el.innerHTML='';
+const called=new Set(nums.map(Number));
 
-// ============================================================
-// CALLING BOARD
-// ============================================================
-
-function makeCallBoard(calledNumbers) {
-
-    const board = document.getElementById(
-        "callBoard"
-    );
-
-    board.innerHTML = "";
-
-    const called = new Set(
-        (calledNumbers || []).map(Number)
-    );
-
-    const ranges = [
-
-        ["B",1,15],
-
-        ["I",16,30],
-
-        ["N",31,45],
-
-        ["G",46,60],
-
-        ["O",61,75]
-
-    ];
-
-    ranges.forEach(([letter,start,end]) => {
-
-        const column = document.createElement("div");
-
-        column.className = "call-column";
-
-        const heading = document.createElement("h3");
-
-        heading.textContent = letter;
-
-        column.appendChild(heading);
-
-        for (
-            let number = start;
-            number <= end;
-            number++
-        ) {
-
-            const item = document.createElement("span");
-
-            item.className = "call-number";
-
-            item.textContent = number;
-
-            if (called.has(number)) {
-
-                item.classList.add("called");
-
-            }
-
-            column.appendChild(item);
-
-        }
-
-        board.appendChild(column);
-
-    });
-
+for(let n=1;n<=75;n++){
+const c=document.createElement('div');
+c.className='bingo-cell'+(called.has(n)?' called':'');
+c.textContent=n;
+el.appendChild(c);
 }
 
-
-// ============================================================
-// CARTELA DISPLAY
-// ============================================================
-
-function renderCartela(matrix, calledNumbers) {
-
-    const container = document.getElementById(
-        "myCartela"
-    );
-
-    container.innerHTML = "";
-
-    const called = new Set(
-        (calledNumbers || []).map(Number)
-    );
-
-    if (!Array.isArray(matrix)) {
-
-        return;
-
-    }
-
-    matrix.forEach(row => {
-
-        row.forEach(value => {
-
-            const cell = document.createElement("div");
-
-            cell.className = "cell";
-
-            if (
-                String(value).toUpperCase() === "FREE"
-            ) {
-
-                cell.classList.add("free");
-
-                cell.textContent = "FREE";
-
-            } else {
-
-                const number = Number(value);
-
-                cell.textContent = value;
-
-                if (called.has(number)) {
-
-                    cell.classList.add("marked");
-
-                }
-
-            }
-
-            container.appendChild(cell);
-
-        });
-
-    });
-
+if(nums.length){
+const n=Number(nums[nums.length-1]);
+$('lastCall').textContent='LAST CALL | የመጨረሻ ጥሪ: '+(n<=15?'B':n<=30?'I':n<=45?'N':n<=60?'G':'O')+' '+n;
+}else{
+$('lastCall').textContent='Waiting for first number | የመጀመሪያ ቁጥርን በመጠበቅ ላይ';
+}
 }
 
-
-// ============================================================
-// CARTELA PICKER
-// ============================================================
-
-function renderCartelaPicker(game) {
-
-    const picker = document.getElementById(
-        "cartelaPicker"
-    );
-
-    picker.innerHTML = "";
-
-    const selections = Array.isArray(
-        game.selected_cartelas
-    )
-        ? game.selected_cartelas
-        : [];
-
-    const taken = new Set(
-
-        selections.map(selection =>
-
-            Number(selection.cartela_no)
-
-        )
-
-    );
-
-    const ownCartela = game.own_cartela
-
-        ? Number(game.own_cartela.cartela_no)
-
-        : null;
-
-    const selectionOpen =
-        game.status === "OPEN";
-
-    for (
-        let number = 1;
-        number <= 800;
-        number++
-    ) {
-
-        const button = document.createElement("button");
-
-        button.className = "cartela-choice";
-
-        button.textContent = number;
-
-        if (ownCartela === number) {
-
-            button.classList.add("mine");
-
-            button.textContent = "✓ " + number;
-
-            button.disabled = true;
-
-        } else if (taken.has(number)) {
-
-            button.classList.add("taken");
-
-            button.disabled = true;
-
-        } else if (!selectionOpen) {
-
-            button.disabled = true;
-
-        } else {
-
-            button.onclick = () => selectCartela(number);
-
-        }
-
-        picker.appendChild(button);
-
-    }
-
+function renderMyCard(card,calls){
+if(!card){
+$('myCard').textContent='No cartela selected yet. | እስካሁን ካርቴላ አልመረጡም።';
+selectedCartela=null;
+return;
 }
 
+selectedCartela=Number(card.cartela_no);
+const nums=card.numbers||[];
+const called=new Set(calls.map(Number));
+const box=document.createElement('div');
+box.innerHTML='<b>Cartela | ካርቴላ #'+selectedCartela+'</b>';
 
-// ============================================================
-// SELECTED PLAYERS
-// ============================================================
+const grid=document.createElement('div');
+grid.className='card';
 
-function renderSelections(game) {
+(Array.isArray(nums)?nums:[]).forEach(row=>row.forEach(v=>{
+const cell=document.createElement('div');
+cell.textContent=v;
+if(String(v).toUpperCase()==='FREE')cell.classList.add('free');
+else if(called.has(Number(v)))cell.classList.add('hit');
+grid.appendChild(cell);
+}));
 
-    const selections = Array.isArray(
-        game.selected_cartelas
-    )
-        ? game.selected_cartelas
-        : [];
-
-    document.getElementById(
-        "playerCount"
-    ).textContent =
-
-        selections.length +
-        " cartela(s) selected / ካርቴላ ተመርጧል";
-
-    document.getElementById(
-        "selectedCartelas"
-    ).textContent =
-
-        selections.map(selection => {
-
-            const name =
-                selection.first_name ||
-                selection.username ||
-                "Player";
-
-            return (
-
-                name +
-
-                " — Cartela " +
-
-                selection.cartela_no
-
-            );
-
-        }).join(" | ") ||
-
-        "No cartelas selected yet. / እስካሁን ካርቴላ አልተመረጠም።";
-
+box.appendChild(grid);
+$('myCard').replaceChildren(box);
 }
 
+function renderWinners(list){
+const el=$('recentWinners');
+el.innerHTML='';
 
-// ============================================================
-// WINNER DISPLAY
-// ============================================================
-
-function renderWinner(game) {
-
-    const element = document.getElementById(
-        "winnerDisplay"
-    );
-
-    element.innerHTML = "";
-
-    if (
-        game.status !== "WINNER" ||
-        !game.winner
-    ) {
-
-        return;
-
-    }
-
-    const winner = game.winner;
-
-    const name = escapeHtml(
-        winner.first_name ||
-        winner.username ||
-        "Player"
-    );
-
-    const cartela = Number(
-        winner.cartela_no || 0
-    );
-
-    const prize = Number(
-        winner.prize_amount || 0
-    );
-
-    element.innerHTML = `
-
-        <div class="winner-box">
-
-            <h2>🏆 BINGO WINNER!</h2>
-
-            <h2>አሸናፊ!</h2>
-
-            <strong>${name}</strong>
-
-            <p>
-                Cartela: ${cartela}
-            </p>
-
-            <h3>
-                Prize: ${prize.toFixed(2)} ETB
-            </h3>
-
-            <p>
-                Congratulations! / እንኳን ደስ አለዎት!
-            </p>
-
-        </div>
-
-    `;
-
+if(!list?.length){
+el.textContent='No recorded winners yet. | እስካሁን አሸናፊ አልተመዘገበም።';
+return;
 }
 
-
-// ============================================================
-// RECENT WINNERS
-// ============================================================
-
-async function loadRecentWinners() {
-
-    const element = document.getElementById(
-        "recentWinners"
-    );
-
-    try {
-
-        const data = await api(
-            "/api/admin/winners",
-            {
-                headers: {
-                    "X-Admin-Pin": ""
-                }
-            }
-        );
-
-        if (!data.success) {
-
-            throw new Error("Unable to load winners");
-
-        }
-
-        renderRecentWinnerList(data.winners || []);
-
-    } catch {
-
-        // Public winner list is not exposed by the
-        // current backend. The manager can view it
-        // from the protected manager dashboard.
-
-        element.textContent =
-            "Recent winners are available in the Manager Panel. / የአሸናፊዎች መረጃ በአስተዳዳሪ ገጽ ይገኛል።";
-
-    }
-
+list.forEach(w=>{
+const d=document.createElement('div');
+d.className='list-item';
+d.textContent=(w.winner_name||'Player')+' · Cartela '+w.cartela_no+' · '+money(w.prize_amount)+' ETB · '+(w.created_at||'');
+el.appendChild(d);
+});
 }
 
+async function refreshGame(){
+try{
+const d=await api('/api/game/state');
+game=d;
 
-function renderRecentWinnerList(winners) {
+const phase=d.game_status||'WAITING';
+$('phase').textContent=phase;
+$('roomId').textContent=d.room_id??'--';
+$('timeLeft').textContent=(d.remaining_seconds??0)+' sec';
 
-    const element = document.getElementById(
-        "recentWinners"
-    );
+$('gameStatus').textContent=
+phase==='OPEN'?'Selection is open | ምርጫ ክፍት ነው':
+phase==='PREPARING'?'Preparing game | ጨዋታው በመዘጋጀት ላይ':
+phase==='RUNNING'?'Numbers are being called | ቁጥሮች እየተጠሩ ነው':
+'Game status | የጨዋታ ሁኔታ: '+phase;
 
-    if (!winners.length) {
+renderCartelas();
+renderCalls(d.called_numbers||[]);
+renderMyCard(d.cartela,d.called_numbers||[]);
+renderWinners(d.winners||[]);
 
-        element.textContent = "No winners yet.";
-
-        return;
-
-    }
-
-    element.innerHTML = winners.map(winner => `
-
-        <div class="notice">
-
-            🏆 ${escapeHtml(winner.first_name || "Player")}
-
-            — Cartela ${Number(winner.cartela_no || 0)}
-
-            <br>
-
-            Prize: ${Number(winner.prize_amount || 0).toFixed(2)} ETB
-
-        </div>
-
-    `).join("");
-
+if(d.balance!==undefined){
+walletBalance=Number(d.balance);
+$('balance').textContent=money(walletBalance)+' ETB';
+}
+}catch(e){
+$('gameStatus').textContent='Cannot load game | ጨዋታውን ማግኘት አልተቻለም: '+e.message;
+}
 }
 
-
-// ============================================================
-// WALLET
-// ============================================================
-
-async function loadWallet() {
-
-    if (!initData) {
-
-        document.getElementById(
-            "playerStatus"
-        ).textContent =
-
-            "Open Guder Bingo through Telegram. / ከቴሌግራም ይክፈቱ።";
-
-        return;
-
-    }
-
-    try {
-
-        const data = await api(
-            "/api/wallet"
-        );
-
-        currentBalance = Number(
-            data.balance || 0
-        );
-
-        document.getElementById(
-            "balance"
-        ).textContent =
-
-            currentBalance.toFixed(2) + " ETB";
-
-        document.getElementById(
-            "playerStatus"
-        ).textContent =
-
-            "Telegram player connected. / ተገናኝተዋል።";
-
-    } catch(error) {
-
-        document.getElementById(
-            "playerStatus"
-        ).textContent = error.message;
-
-    }
-
+async function selectCartela(n){
+if(walletBalance<10){
+$('lowBalance').classList.remove('hidden');
+$('selectionMessage').textContent='Please deposit at least 10 ETB first. | እባክዎ መጀመሪያ ቢያንስ 10 ብር ያስገቡ።';
+return;
 }
 
+if(!confirm('Select cartela '+n+'? | ካርቴላ '+n+' ይምረጡ?'))return;
 
-// ============================================================
-// GAME STATUS
-// ============================================================
+try{
+const d=await api('/api/cartela/select',{
+method:'POST',
+body:JSON.stringify({cartela_no:n,cartela_number:n,room_id:game.room_id})
+});
 
-function statusText(status) {
+$('selectionMessage').textContent=d.message+' | '+(d.message_am||'');
+await refreshWallet();
+await refreshGame();
 
-    const labels = {
-
-        OPEN:
-        "🟢 Cartela Selection Open / የካርቴላ ምርጫ ክፍት ነው",
-
-        PREPARING:
-        "🟡 Preparing Game / ጨዋታው እየተዘጋጀ ነው",
-
-        RUNNING:
-        "🔴 Game in Progress / ጨዋታው በመካሄድ ላይ ነው",
-
-        WINNER:
-        "🏆 Winner Announced / አሸናፊ ታውቋል",
-
-        COMPLETED:
-        "🏆 Game Completed / ጨዋታው ተጠናቋል"
-
-    };
-
-    return labels[status] || "Waiting / በመጠባበቅ ላይ";
-
+}catch(e){
+$('selectionMessage').textContent=e.message;
+}
 }
 
-
-// ============================================================
-// LOAD GAME
-// ============================================================
-
-async function loadGame() {
-
-    if (gameLoading) {
-
-        return;
-
-    }
-
-    gameLoading = true;
-
-    try {
-
-        // Correct backend endpoint and response structure.
-
-        const response = await api(
-            "/api/game/state"
-        );
-
-        const game = response.game;
-
-        if (!game) {
-
-            throw new Error(
-                "Game information unavailable."
-            );
-
-        }
-
-        gameData = game;
-
-        const status = game.status || "OPEN";
-
-        const called = Array.isArray(
-            game.called_numbers
-        )
-            ? game.called_numbers
-            : [];
-
-        // Game status.
-
-        document.getElementById(
-            "gameStatus"
-        ).textContent = statusText(status);
-
-        // Countdown.
-
-        const remaining = Number(
-            game.remaining_seconds || 0
-        );
-
-        document.getElementById(
-            "timer"
-        ).textContent =
-
-            remaining > 0
-                ? remaining + " seconds"
-                : "";
-
-        // Room.
-
-        document.getElementById(
-            "roomNumber"
-        ).textContent =
-
-            "Game Room #" + game.room_id;
-
-        // Latest number.
-
-        const latest = game.last_number;
-
-        document.getElementById(
-            "latestCall"
-        ).textContent =
-
-            latest
-
-                ? "Latest Number: " +
-                  bingoLetter(latest) +
-                  "-" +
-                  latest
-
-                : "Waiting for numbers...";
-
-        // Calling board.
-
-        makeCallBoard(called);
-
-        // Cartela picker.
-
-        renderCartelaPicker(game);
-
-        // Selected players.
-
-        renderSelections(game);
-
-        // Winner.
-
-        renderWinner(game);
-
-        // My cartela.
-
-        if (game.own_cartela) {
-
-            const cartela = game.own_cartela;
-
-            document.getElementById(
-                "myCartelaNumber"
-            ).textContent =
-
-                "Your Cartela: " +
-                cartela.cartela_no;
-
-            renderCartela(
-                cartela.numbers,
-                called
-            );
-
-        } else {
-
-            document.getElementById(
-                "myCartelaNumber"
-            ).textContent =
-
-                "You have not selected a cartela. / ካርቴላ አልመረጡም።";
-
-            document.getElementById(
-                "myCartela"
-            ).innerHTML = "";
-
-        }
-
-        // Wallet.
-
-        if (game.balance !== undefined) {
-
-            currentBalance = Number(
-                game.balance
-            );
-
-            document.getElementById(
-                "balance"
-            ).textContent =
-
-                currentBalance.toFixed(2) + " ETB";
-
-        }
-
-        // Individual balance protection.
-
-        if (
-            game.status === "OPEN" &&
-            currentBalance < 10 &&
-            !game.own_cartela
-        ) {
-
-            setMessage(
-
-                "Insufficient balance. Please deposit at least 10 ETB before selecting a cartela. / ካርቴላ ለመምረጥ ቢያንስ 10 ብር ያስገቡ።",
-
-                "error"
-
-            );
-
-        } else if (status === "OPEN") {
-
-            setMessage(
-
-                "Selection is open. Choose an available cartela. / ካርቴላ ይምረጡ።",
-
-                "success"
-
-            );
-
-        } else if (status === "PREPARING") {
-
-            setMessage(
-                "Preparing the game. Please wait. / ይጠብቁ።"
-            );
-
-        } else if (status === "RUNNING") {
-
-            setMessage(
-                "The game is running. Watch the numbers. / ቁጥሮቹን ይከታተሉ።"
-            );
-
-        } else if (status === "WINNER") {
-
-            setMessage(
-                "Congratulations to the winner! / እንኳን ለአሸናፊው ደስ አለው!"
-            );
-
-        } else if (status === "COMPLETED") {
-
-            setMessage(
-                "Game completed. Preparing the next game. / ቀጣዩ ጨዋታ እየተዘጋጀ ነው።"
-            );
-
-        }
-
-    } catch(error) {
-
-        setMessage(
-            error.message,
-            "error"
-        );
-
-    } finally {
-
-        gameLoading = false;
-
-    }
-
+async function claimBingo(){
+if(!selectedCartela){
+notify('Select a cartela first. | መጀመሪያ ካርቴላ ይምረጡ።');
+return;
 }
 
+try{
+const d=await api('/api/game/claim',{
+method:'POST',
+body:JSON.stringify({cartela_no:selectedCartela,room_id:game.room_id})
+});
 
-// ============================================================
-// SELECT CARTELA
-// ============================================================
+notify((d.message||'Bingo verified!')+' | '+(d.message_am||''));
+await refreshGame();
 
-async function selectCartela(number) {
-
-    if (!initData) {
-
-        setMessage(
-            "Open Guder Bingo through Telegram. / ከቴሌግራም ይክፈቱ።",
-            "error"
-        );
-
-        return;
-
-    }
-
-    if (currentBalance < 10) {
-
-        setMessage(
-            "Insufficient balance. Deposit before playing. / በቂ ሂሳብ የለም።",
-            "error"
-        );
-
-        return;
-
-    }
-
-    if (
-        !confirm(
-            "Select Cartela " +
-            number +
-            " for 10 ETB?\n\n" +
-            "ለ10 ብር ካርቴላውን ይምረጡ?"
-        )
-    ) {
-
-        return;
-
-    }
-
-    try {
-
-        const data = await api(
-            "/api/cartela/select",
-            {
-
-                method:"POST",
-
-                headers:{
-                    "Content-Type":"application/json"
-                },
-
-                body:JSON.stringify({
-
-                    // Correct backend field.
-
-                    cartela_no:number
-
-                })
-
-            }
-        );
-
-        setMessage(
-
-            data.message_am
-                ? data.message + " / " + data.message_am
-                : "Cartela selected successfully! / ካርቴላ ተመርጧል።",
-
-            "success"
-
-        );
-
-        currentBalance = Number(
-            data.balance
-        );
-
-        document.getElementById(
-            "balance"
-        ).textContent =
-
-            currentBalance.toFixed(2) + " ETB";
-
-        await loadGame();
-
-    } catch(error) {
-
-        setMessage(
-            error.message,
-            "error"
-        );
-
-    }
-
+}catch(e){
+notify('Claim failed | ማረጋገጥ አልተሳካም: '+e.message);
+}
 }
 
-
-// ============================================================
-// HISTORY
-// ============================================================
-
-async function loadHistory() {
-
-    const element = document.getElementById(
-        "historyList"
-    );
-
-    element.textContent = "Loading history...";
-
-    if (!initData) {
-
-        element.textContent =
-            "Open the Mini App through Telegram.";
-
-        return;
-
-    }
-
-    try {
-
-        const data = await api(
-            "/api/game/history"
-        );
-
-        // Correct backend field: history.
-
-        const history = Array.isArray(
-            data.history
-        )
-            ? data.history
-            : [];
-
-        if (!history.length) {
-
-            element.textContent =
-                "No winning history yet. / እስካሁን የአሸናፊነት ታሪክ የለም።";
-
-            return;
-
-        }
-
-        element.innerHTML = history.map(item => `
-
-            <div class="notice">
-
-                🏆 Room: ${Number(item.room_id)}
-
-                <br>
-
-                Cartela: ${Number(item.cartela_no)}
-
-                <br>
-
-                Prize: ${Number(item.prize_amount || 0).toFixed(2)} ETB
-
-                <br>
-
-                Pattern: ${escapeHtml(item.winning_pattern || "")}
-
-                <br>
-
-                Date: ${escapeHtml(item.created_at || "")}
-
-            </div>
-
-        `).join("");
-
-    } catch(error) {
-
-        element.textContent = error.message;
-
-    }
-
+function openBotDeposit(){
+if(tg?.openTelegramLink)tg.openTelegramLink(BOT);
+else window.open(BOT,'_blank');
 }
 
-
-// ============================================================
-// LOAD CONFIGURATION
-// ============================================================
-
-async function loadConfig() {
-
-    try {
-
-        configData = await api(
-            "/api/config"
-        );
-
-        const number =
-            configData.telebirr_number ||
-            "0913706670";
-
-        document.getElementById(
-            "telebirrNumber"
-        ).textContent = number;
-
-        document.getElementById(
-            "supportNumber"
-        ).textContent =
-            "0913706670";
-
-    } catch(error) {
-
-        console.error(
-            "Configuration error:",
-            error
-        );
-
-    }
-
+function copyText(s){
+if(navigator.clipboard?.writeText){
+navigator.clipboard.writeText(s).then(()=>notify('Copied | ተቀድቷል'));
+}else{
+prompt('Copy | ቅዳ',s);
+}
 }
 
-
-// ============================================================
-// COPY TELEBIRR
-// ============================================================
-
-async function copyTelebirr() {
-
-    const number =
-        configData.telebirr_number ||
-        "0913706670";
-
-    try {
-
-        await navigator.clipboard.writeText(
-            number
-        );
-
-        alert(
-            "TeleBirr number copied. / ቁጥሩ ተቀድቷል።"
-        );
-
-    } catch {
-
-        alert(
-            "TeleBirr Number: " + number
-        );
-
-    }
-
+function inviteFriends(){
+const link=BOT;
+if(tg?.openTelegramLink)tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link));
+else copyText(link);
 }
 
-
-// ============================================================
-// OPEN TELEGRAM BOT
-// ============================================================
-
-function openTelegramBot() {
-
-    if (tg) {
-
-        tg.openTelegramLink(BOT_URL);
-
-    } else {
-
-        window.open(
-            BOT_URL,
-            "_blank"
-        );
-
-    }
-
+function contactSupport(){
+if(tg?.openTelegramLink)tg.openTelegramLink('https://t.me/guderbingo_bot');
+else window.open(BOT,'_blank');
 }
 
+async function refreshHistory(){
+try{
+const d=await api('/api/game/history');
+const list=d.history||d.winners||[];
+const el=$('historyList');
+el.innerHTML='';
 
-// ============================================================
-// MANAGER MESSAGE
-// ============================================================
-
-function managerMessage(message, error = false) {
-
-    const element = document.getElementById(
-        "managerMessage"
-    );
-
-    element.textContent = message;
-
-    element.classList.remove("hidden");
-
-    element.className =
-        "notice " +
-        (error ? "error" : "success");
-
+if(!list.length){
+el.textContent='No history yet. | ገና ታሪክ የለም።';
+return;
 }
 
+list.forEach(w=>{
+const x=document.createElement('div');
+x.className='list-item';
+x.textContent='Room '+w.room_id+' · '+w.winner_name+' · Cartela '+w.cartela_no+' · '+money(w.prize_amount)+' ETB · '+w.created_at;
+el.appendChild(x);
+});
 
-// ============================================================
-// MANAGER LOGIN
-// ============================================================
-
-async function loadManager() {
-
-    managerPin = document.getElementById(
-        "managerPin"
-    ).value.trim();
-
-    if (!managerPin) {
-
-        managerMessage(
-            "Enter manager PIN. / የአስተዳዳሪ ቁጥር ያስገቡ።",
-            true
-        );
-
-        return;
-
-    }
-
-    try {
-
-        const data = await api(
-            "/api/admin/dashboard",
-            {
-
-                headers:{
-
-                    "X-Admin-Pin":managerPin
-
-                }
-
-            }
-        );
-
-        document.getElementById(
-            "managerDashboard"
-        ).classList.remove("hidden");
-
-        const room = data.current_room || {};
-
-        document.getElementById(
-            "managerStats"
-        ).innerHTML = `
-
-            <div class="notice">
-
-                👥 Total Players:
-                ${Number(data.total_users || 0)}
-
-                <br>
-
-                💰 Total Deposits:
-                ${Number(data.total_deposits || 0).toFixed(2)} ETB
-
-                <br>
-
-                🎮 Current Room:
-                ${Number(room.room_id || 0)}
-
-                <br>
-
-                Status:
-                ${escapeHtml(room.status || "")}
-
-            </div>
-
-        `;
-
-        renderManagerDeposits(
-            data.provisional_deposits || []
-        );
-
-        renderManagerWinners(
-            data.recent_winners || []
-        );
-
-        managerMessage(
-            "Manager login successful. / በተሳካ ሁኔታ ገብተዋል።"
-        );
-
-    } catch(error) {
-
-        managerMessage(
-            error.message,
-            true
-        );
-
-        document.getElementById(
-            "managerDashboard"
-        ).classList.add("hidden");
-
-    }
-
+}catch(e){
+$('historyList').textContent=e.message;
+}
 }
 
+async function managerLogin(){
+managerPin=$('managerPin').value.trim();
 
-// ============================================================
-// MANAGER DEPOSITS
-// ============================================================
-
-function renderManagerDeposits(deposits) {
-
-    const element = document.getElementById(
-        "managerDeposits"
-    );
-
-    if (
-        !Array.isArray(deposits) ||
-        !deposits.length
-    ) {
-
-        element.textContent =
-            "No provisional deposits. / ጊዜያዊ ክፍያ የለም።";
-
-        return;
-
-    }
-
-    element.innerHTML = deposits.map(deposit => {
-
-        const id = Number(
-            deposit.deposit_id
-        );
-
-        const amount = Number(
-            deposit.amount || 0
-        );
-
-        return `
-
-            <div class="notice">
-
-                <strong>
-
-                    ${escapeHtml(
-                        deposit.first_name ||
-                        deposit.username ||
-                        "Player"
-                    )}
-
-                </strong>
-
-                <br>
-
-                Amount: ${amount.toFixed(2)} ETB
-
-                <br>
-
-                Reference:
-                ${escapeHtml(
-                    deposit.payer_reference || ""
-                )}
-
-                <br>
-
-                Status:
-                ${escapeHtml(deposit.status || "")}
-
-                <br>
-
-                Date:
-                ${escapeHtml(deposit.created_at || "")}
-
-                <div class="manager-actions">
-
-                    <button class="green"
-                    onclick="reviewDeposit(${id},'APPROVE')">
-
-                        Verify / አረጋግጥ
-
-                    </button>
-
-                    <button class="red"
-                    onclick="reviewDeposit(${id},'REJECT')">
-
-                        Reject / አትቀበል
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        `;
-
-    }).join("");
-
+if(!managerPin){
+notify('Enter manager PIN | የአስተዳዳሪ ፒን ያስገቡ');
+return;
 }
 
-
-// ============================================================
-// MANAGER WINNERS
-// ============================================================
-
-function renderManagerWinners(winners) {
-
-    const element = document.getElementById(
-        "managerWinners"
-    );
-
-    if (!Array.isArray(winners) || !winners.length) {
-
-        element.textContent =
-            "No winners recorded yet.";
-
-        return;
-
-    }
-
-    element.innerHTML = winners.map(winner => `
-
-        <div class="notice">
-
-            🏆 ${escapeHtml(winner.first_name || "Player")}
-
-            <br>
-
-            Room: ${Number(winner.room_id)}
-
-            <br>
-
-            Cartela: ${Number(winner.cartela_no)}
-
-            <br>
-
-            Prize: ${Number(winner.prize_amount || 0).toFixed(2)} ETB
-
-            <br>
-
-            Phone: ${escapeHtml(winner.phone_number || "Not provided")}
-
-            <br>
-
-            Date: ${escapeHtml(winner.created_at || "")}
-
-        </div>
-
-    `).join("");
-
+await loadManager();
 }
 
+async function loadManager(){
+try{
+const d=await api('/api/manager/overview',{
+headers:{'X-Manager-PIN':managerPin}
+});
 
-// ============================================================
-// MANAGER DEPOSIT REVIEW
-// ============================================================
+$('managerLogin').classList.add('hidden');
+$('managerData').classList.remove('hidden');
+$('managerMessage').classList.add('hidden');
 
-async function reviewDeposit(id, action) {
+$('mPlayers').textContent=d.players??0;
+$('mDeposits').textContent=d.deposit_count??0;
 
-    if (!id) {
+$('mRoom').textContent='Room | ዙር: '+(d.current_room??'--')+
+' · Status | ሁኔታ: '+(d.game_status||'--')+
+' · Total deposits | ጠቅላላ ገቢ: '+money(d.total_deposits)+' ETB;';
 
-        managerMessage(
-            "Invalid deposit ID.",
-            true
-        );
+renderManagerDeposits(d.deposits||[]);
+renderManagerWinners(d.winners||[]);
 
-        return;
-
-    }
-
-    const actionText =
-        action === "APPROVE"
-            ? "VERIFY"
-            : "REJECT";
-
-    if (
-        !confirm(
-            "Are you sure you want to " +
-            actionText +
-            " this deposit?"
-        )
-    ) {
-
-        return;
-
-    }
-
-    try {
-
-        await api(
-            "/api/admin/deposits/review",
-            {
-
-                method:"POST",
-
-                headers:{
-
-                    "X-Admin-Pin":managerPin,
-
-                    "Content-Type":"application/json"
-
-                },
-
-                body:JSON.stringify({
-
-                    deposit_id:id,
-
-                    action:action,
-
-                    note:"Reviewed through Guder Bingo Manager Panel"
-
-                })
-
-            }
-        );
-
-        managerMessage(
-            "Deposit review completed successfully."
-        );
-
-        await loadManager();
-
-    } catch(error) {
-
-        managerMessage(
-            error.message,
-            true
-        );
-
-    }
-
+}catch(e){
+$('managerMessage').classList.remove('hidden');
+$('managerMessage').textContent='Manager login or dashboard failed | የአስተዳዳሪ መግቢያ አልተሳካም: '+e.message;
+}
 }
 
+function renderManagerDeposits(rows){
+const el=$('mDepositList');
+el.innerHTML='';
+const pending=rows.filter(x=>x.status==='PROVISIONAL');
 
-// ============================================================
-// INITIALIZATION
-// ============================================================
-
-async function loadAll() {
-
-    await loadConfig();
-
-    await loadWallet();
-
-    await loadGame();
-
-    loadRecentWinners();
-
+if(!pending.length){
+el.textContent='No provisional deposits. | ጊዜያዊ ገቢ የለም።';
+return;
 }
 
+pending.forEach(x=>{
+const box=document.createElement('div');
+box.className='list-item';
 
-// ============================================================
-// START APPLICATION
-// ============================================================
+const info=document.createElement('div');
+info.textContent='#'+x.deposit_id+' · '+(x.first_name||x.username||x.telegram_id)+' · '+money(x.amount)+' ETB · Ref: '+x.payer_reference+' · '+x.created_at;
 
-loadAll();
+const row=document.createElement('div');
+row.className='row';
 
+const yes=document.createElement('button');
+yes.textContent='Verify | አረጋግጥ';
+yes.onclick=()=>reviewDeposit(x.deposit_id,'verify');
 
-// ============================================================
-// AUTOMATIC GAME REFRESH
-// ============================================================
+const no=document.createElement('button');
+no.className='danger';
+no.textContent='Reject | አትቀበል';
+no.onclick=()=>reviewDeposit(x.deposit_id,'reject');
 
-if (refreshTimer) {
-
-    clearInterval(refreshTimer);
-
+row.append(yes,no);
+box.append(info,row);
+el.append(box);
+});
 }
 
-refreshTimer = setInterval(async () => {
+function renderManagerWinners(rows){
+const el=$('mWinnerList');
+el.innerHTML='';
 
-    if (document.hidden) {
+if(!rows.length){
+el.textContent='No winners yet. | አሸናፊ የለም။';
+return;
+}
 
-        return;
+rows.forEach(w=>{
+const d=document.createElement('div');
+d.className='list-item';
+d.textContent=(w.winner_name||'Player')+' · Room '+w.room_id+' · Cartela '+w.cartela_no+' · '+money(w.prize_amount)+' ETB';
+el.append(d);
+});
+}
 
-    }
+async function reviewDeposit(id,action){
+const label=action==='verify'?'verify':'reject';
 
-    await loadGame();
+if(!confirm(label+' deposit #'+id+'?'))return;
 
-    if (initData) {
+try{
+await api('/api/manager/deposit/'+id+'/'+action,{
+method:'POST',
+headers:{'X-Manager-PIN':managerPin},
+body:JSON.stringify({})
+});
 
-        await loadWallet();
+await loadManager();
 
-    }
+}catch(e){
+notify(e.message);
+}
+}
 
-}, 2500);
+function managerLogout(){
+managerPin='';
+$('managerPin').value='';
+$('managerData').classList.add('hidden');
+$('managerLogin').classList.remove('hidden');
+}
 
+const user=tg?.initDataUnsafe?.user;
+if(user){
+$('playerName').textContent='Welcome, '+(user.first_name||'Player')+' | እንኳን ደህና መጡ';
+}
 
-// ============================================================
-// PAGE VISIBILITY
-// ============================================================
+refreshWallet();
+refreshGame();
 
-document.addEventListener(
-    "visibilitychange",
-    () => {
-
-        if (!document.hidden) {
-
-            loadAll();
-
-        }
-
-    }
-);
-
+setInterval(()=>{
+refreshGame();
+if(!$('wallet').classList.contains('hidden'))refreshWallet();
+},2500);
 </script>
-
 </body>
-
 </html>
