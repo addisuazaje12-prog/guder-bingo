@@ -28,12 +28,12 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 APP_URL = os.environ.get(
     "APP_URL",
     "https://guder-bingo.ethiodeploy.app"
-).rstrip("/")
+).strip().rstrip("/")
 
 BACKEND_URL = os.environ.get(
     "BACKEND_URL",
     APP_URL
-).rstrip("/")
+).strip().rstrip("/")
 
 BOT_API_SECRET = os.environ.get(
     "BOT_API_SECRET",
@@ -63,6 +63,7 @@ logger = logging.getLogger("guder-bingo-bot")
 # ============================================================
 
 def main_keyboard():
+
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
@@ -82,11 +83,17 @@ def main_keyboard():
         ],
         [
             InlineKeyboardButton(
-                "🏆 History",
-                callback_data="history"
+                "📤 Withdraw",
+                callback_data="withdraw"
             ),
             InlineKeyboardButton(
-                "📤 Invite Friends",
+                "🏆 History",
+                callback_data="history"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "👥 Invite Friends",
                 callback_data="invite"
             )
         ],
@@ -104,10 +111,14 @@ def main_keyboard():
 
 
 # ============================================================
-# START
+# START COMMAND
 # ============================================================
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
     context.user_data["waiting_for_receipt"] = False
 
     welcome = (
@@ -133,6 +144,7 @@ async def deposit_instructions(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
+
     context.user_data["waiting_for_receipt"] = True
 
     message = (
@@ -142,24 +154,26 @@ async def deposit_instructions(
         "2. Open your TeleBirr transaction receipt.\n"
         "3. Copy the complete receipt text.\n"
         "4. Return here and send the receipt as a text message.\n\n"
-        "After the system reads the payment amount and transaction "
-        "number, playing credit is added immediately.\n\n"
-        "🎮 You can then open Guder Bingo and select an available "
-        "cartela during the selection period.\n\n"
-        "Send your complete receipt now. Send /cancel to stop."
+        "After the system processes your receipt, it will "
+        "return the deposit status and playing credit.\n\n"
+        "🎮 You can then open Guder Bingo and select an "
+        "available cartela during the selection period.\n\n"
+        "Send your complete receipt now.\n"
+        "Send /cancel to stop."
     )
 
     await update.effective_message.reply_text(message)
 
 
 # ============================================================
-# CANCEL
+# CANCEL RECEIPT SUBMISSION
 # ============================================================
 
 async def cancel(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
+
     context.user_data["waiting_for_receipt"] = False
 
     await update.effective_message.reply_text(
@@ -177,6 +191,7 @@ async def receive_receipt(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
+
     user = update.effective_user
     message = update.effective_message
 
@@ -186,6 +201,7 @@ async def receive_receipt(
     receipt = message.text.strip()
 
     if not context.user_data.get("waiting_for_receipt"):
+
         await message.reply_text(
             "I received your message, but you have not started "
             "the deposit process.\n\n"
@@ -193,26 +209,32 @@ async def receive_receipt(
             "TeleBirr receipt.",
             reply_markup=main_keyboard()
         )
+
         return
 
     if len(receipt) < 10:
+
         await message.reply_text(
-            "❌ The receipt appears incomplete. Please copy and "
-            "send the complete TeleBirr transaction receipt."
+            "❌ The receipt appears incomplete.\n\n"
+            "Please copy and send the complete TeleBirr "
+            "transaction receipt."
         )
+
         return
 
     if not BOT_API_SECRET:
+
         logger.error("BOT_API_SECRET is missing")
 
         await message.reply_text(
-            "❌ Deposit service configuration error. "
+            "❌ Deposit service configuration error.\n"
             "Please contact support."
         )
+
         return
 
     processing = await message.reply_text(
-        "⏳ Your TeleBirr receipt has been received. "
+        "⏳ Your TeleBirr receipt has been received.\n"
         "The system is processing it..."
     )
 
@@ -230,6 +252,7 @@ async def receive_receipt(
     }
 
     try:
+
         response = await asyncio.to_thread(
             requests.post,
             f"{BACKEND_URL}/api/bot/deposit",
@@ -240,18 +263,23 @@ async def receive_receipt(
 
         try:
             data = response.json()
+
         except ValueError:
+
             logger.error(
-                "Backend non-JSON response HTTP %s: %s",
+                "Backend returned non-JSON response. HTTP %s: %s",
                 response.status_code,
                 response.text[:500]
             )
 
             await processing.edit_text(
                 "❌ The deposit service returned an unexpected "
-                "response. Your receipt has not been processed. "
+                "response.\n\n"
+                "Your receipt has not been confirmed. "
                 "Please try again later or contact support."
             )
+
+            context.user_data["waiting_for_receipt"] = True
             return
 
         logger.info(
@@ -262,6 +290,7 @@ async def receive_receipt(
         )
 
         if not (200 <= response.status_code < 300) or not data.get("success"):
+
             error = data.get(
                 "error",
                 data.get(
@@ -271,7 +300,7 @@ async def receive_receipt(
             )
 
             await processing.edit_text(
-                f"❌ DEPOSIT NOT PROCESSED\n\n"
+                "❌ DEPOSIT NOT PROCESSED\n\n"
                 f"{error}\n\n"
                 "Please check your receipt and try again."
             )
@@ -284,15 +313,17 @@ async def receive_receipt(
         status = str(data.get("status", "")).upper()
 
         if status != "PROVISIONAL" or not reference or amount is None:
+
             logger.warning(
                 "Unexpected deposit response: %r",
                 data
             )
 
             await processing.edit_text(
-                "⚠️ The server did not confirm the playing credit. "
-                "Please contact support before submitting the "
-                "same receipt again."
+                "⚠️ The server did not return the expected "
+                "deposit confirmation.\n\n"
+                "Please contact support before submitting "
+                "the same receipt again."
             )
 
             context.user_data["waiting_for_receipt"] = False
@@ -304,7 +335,7 @@ async def receive_receipt(
             "✅ RECEIPT SUBMITTED SUCCESSFULLY!\n\n"
             f"Amount: {amount} ETB\n"
             f"Transaction number: {reference}\n\n"
-            "💰 Your playing credit has been added.\n\n"
+            "💰 Your provisional playing credit has been added.\n\n"
             "🎮 You can now open Guder Bingo and select an "
             "available cartela during the selection period.\n\n"
             "Enjoy playing Guder Bingo!",
@@ -312,10 +343,11 @@ async def receive_receipt(
         )
 
     except requests.exceptions.Timeout:
+
         logger.exception("Deposit request timed out")
 
         await processing.edit_text(
-            "⏳ The deposit service did not respond in time. "
+            "⏳ The deposit service did not respond in time.\n\n"
             "Your receipt may already have been processed. "
             "Please check your wallet before submitting it again."
         )
@@ -323,20 +355,22 @@ async def receive_receipt(
         context.user_data["waiting_for_receipt"] = False
 
     except requests.exceptions.RequestException:
+
         logger.exception("Deposit connection failed")
 
         await processing.edit_text(
-            "❌ Could not connect to the deposit service. "
+            "❌ Could not connect to the deposit service.\n\n"
             "Please try again later."
         )
 
         context.user_data["waiting_for_receipt"] = True
 
     except Exception:
+
         logger.exception("Unexpected receipt processing error")
 
         await processing.edit_text(
-            "❌ An unexpected error occurred. "
+            "❌ An unexpected error occurred.\n\n"
             "Please contact support."
         )
 
@@ -344,13 +378,14 @@ async def receive_receipt(
 
 
 # ============================================================
-# INLINE BUTTONS
+# INLINE BUTTON HANDLER
 # ============================================================
 
 async def button_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
+
     query = update.callback_query
 
     if not query:
@@ -361,57 +396,77 @@ async def button_handler(
     user_id = update.effective_user.id
 
     if query.data == "deposit":
+
         await deposit_instructions(update, context)
 
     elif query.data == "balance":
+
         await query.message.reply_text(
             "💳 WALLET BALANCE\n\n"
-            "Open Guder Bingo Mini App to see your latest wallet "
-            "balance. Refresh the Mini App after submitting a receipt.",
+            "Open Guder Bingo Mini App to see your latest "
+            "wallet balance.\n\n"
+            "Refresh the Mini App after submitting a receipt.",
+            reply_markup=main_keyboard()
+        )
+
+    elif query.data == "withdraw":
+
+        await query.message.reply_text(
+            "📤 WITHDRAWAL\n\n"
+            "Please open Guder Bingo Mini App and check "
+            "the withdrawal section for available options.\n\n"
+            "If you need assistance, contact support.",
             reply_markup=main_keyboard()
         )
 
     elif query.data == "history":
+
         await query.message.reply_text(
-            "🏆 Open Guder Bingo and select History to view game results.",
+            "🏆 GAME HISTORY\n\n"
+            "Open Guder Bingo and select History to view "
+            "game results.",
             reply_markup=main_keyboard()
         )
 
     elif query.data == "invite":
+
         link = (
-            f"https://t.me/guderbingo_bot"
+            "https://t.me/guderbingo_bot"
             f"?start=ref_{user_id}"
         )
 
         await query.message.reply_text(
             "📤 INVITE FRIENDS TO GUDER BINGO\n\n"
-            "Share this link:\n\n"
+            "Share this link with your friends:\n\n"
             f"{link}",
             reply_markup=main_keyboard()
         )
 
     elif query.data == "instructions":
+
         await query.message.reply_text(
             "📖 HOW TO PLAY GUDER BINGO\n\n"
             "1. Press Deposit.\n"
             "2. Transfer using TeleBirr.\n"
             "3. Submit the complete receipt text.\n"
-            "4. Your playing credit is added after the receipt "
-            "is successfully processed.\n"
+            "4. Wait for the server to process the receipt.\n"
             "5. Open the Mini App.\n"
             "6. Select an available cartela during the "
             "30-second selection period.\n"
             "7. Watch the called numbers.\n"
-            "8. Press BINGO when your card has a valid winning pattern.\n\n"
-            "Enjoy the game!",
+            "8. Press BINGO when your card has a valid "
+            "winning pattern.\n\n"
+            "Enjoy Guder Bingo!",
             reply_markup=main_keyboard()
         )
 
     elif query.data == "support":
+
         await query.message.reply_text(
             "☎ GUDER BINGO SUPPORT\n\n"
             f"Support contact: {SUPPORT_NUMBER}\n\n"
-            "Contact support if your receipt cannot be processed.",
+            "Contact support if your receipt cannot be "
+            "processed or you experience a problem.",
             reply_markup=main_keyboard()
         )
 
@@ -424,6 +479,7 @@ async def error_handler(
     update: object,
     context: ContextTypes.DEFAULT_TYPE
 ):
+
     logger.error(
         "Telegram bot encountered an error",
         exc_info=context.error
@@ -431,18 +487,24 @@ async def error_handler(
 
 
 # ============================================================
-# MAIN
+# MAIN APPLICATION
 # ============================================================
 
 def main():
+
     if not BOT_TOKEN:
         raise RuntimeError(
-            "BOT_TOKEN environment variable is missing"
+            "BOT_TOKEN environment variable is missing."
         )
 
     if not BOT_API_SECRET:
         raise RuntimeError(
-            "BOT_API_SECRET environment variable is missing"
+            "BOT_API_SECRET environment variable is missing."
+        )
+
+    if not APP_URL.startswith("https://"):
+        raise RuntimeError(
+            "APP_URL must be a valid HTTPS address."
         )
 
     application = (
@@ -472,12 +534,16 @@ def main():
 
     application.add_error_handler(error_handler)
 
-    logger.info("Guder Bingo Telegram bot is starting")
+    logger.info("Guder Bingo Telegram bot is starting.")
 
     application.run_polling(
         drop_pending_updates=False
     )
 
+
+# ============================================================
+# RUN BOT
+# ============================================================
 
 if __name__ == "__main__":
     main()
