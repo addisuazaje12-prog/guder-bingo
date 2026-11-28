@@ -1,14 +1,22 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <meta name="theme-color" content="#101426">
-<title>Guder Bingo</title>
+
+<title>Guder Bingo | ጉደር ቢንጎ</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
+
 :root {
     --bg:#101426;
     --panel:#1b2340;
@@ -20,7 +28,9 @@
     --muted:#b8c0d8;
 }
 
-* { box-sizing:border-box; }
+* {
+    box-sizing:border-box;
+}
 
 body {
     margin:0;
@@ -30,7 +40,9 @@ body {
     font-family:Arial,sans-serif;
 }
 
-button,input { font:inherit; }
+button,input {
+    font:inherit;
+}
 
 button {
     border:0;
@@ -56,7 +68,9 @@ button:disabled {
     font-size:27px;
 }
 
-.header p { color:var(--muted); }
+.header p {
+    color:var(--muted);
+}
 
 .panel {
     background:var(--panel);
@@ -76,6 +90,7 @@ button:disabled {
 .menu button {
     background:var(--panel2);
     color:white;
+    line-height:1.5;
 }
 
 .menu button.active {
@@ -83,10 +98,24 @@ button:disabled {
     color:#171717;
 }
 
-.primary { background:var(--gold); color:#171717; }
-.green { background:var(--green); color:white; }
-.red { background:var(--red); color:white; }
-.full { width:100%; }
+.primary {
+    background:var(--gold);
+    color:#171717;
+}
+
+.green {
+    background:var(--green);
+    color:white;
+}
+
+.red {
+    background:var(--red);
+    color:white;
+}
+
+.full {
+    width:100%;
+}
 
 .balance {
     color:var(--gold);
@@ -108,7 +137,10 @@ button:disabled {
     font-weight:bold;
 }
 
-.muted { color:var(--muted); font-size:13px; }
+.muted {
+    color:var(--muted);
+    font-size:13px;
+}
 
 .call-board {
     display:grid;
@@ -170,8 +202,14 @@ button:disabled {
     overflow:hidden;
 }
 
-.cell.marked { background:var(--green); color:white; }
-.cell.free { background:#d7d7d7; }
+.cell.marked {
+    background:var(--green);
+    color:white;
+}
+
+.cell.free {
+    background:#d7d7d7;
+}
 
 .cartela-picker {
     display:grid;
@@ -209,7 +247,9 @@ input {
     margin:7px 0;
 }
 
-.hidden { display:none !important; }
+.hidden {
+    display:none !important;
+}
 
 .notice {
     padding:10px;
@@ -220,8 +260,13 @@ input {
     overflow-wrap:anywhere;
 }
 
-.notice.error { background:#612b37; }
-.notice.success { background:#145b3b; }
+.notice.error {
+    background:#612b37;
+}
+
+.notice.success {
+    background:#145b3b;
+}
 
 table {
     width:100%;
@@ -246,260 +291,713 @@ td,th {
     font-size:12px;
 }
 
-@media(max-width:360px) {
-    body { padding:7px; }
-    .call-number { font-size:11px; }
-    .cell { font-size:12px; min-height:32px; }
+.winner-box {
+    background:#145b3b;
+    border:2px solid var(--gold);
+    border-radius:12px;
+    padding:15px;
+    text-align:center;
+    margin:10px 0;
 }
+
+.winner-box h2 {
+    color:var(--gold);
+}
+
+.am {
+    display:block;
+    font-size:12px;
+    opacity:.9;
+}
+
+@media(max-width:360px) {
+
+    body {
+        padding:7px;
+    }
+
+    .call-number {
+        font-size:11px;
+    }
+
+    .cell {
+        font-size:12px;
+        min-height:32px;
+    }
+
+    .menu button {
+        font-size:12px;
+        padding:9px 5px;
+    }
+
+}
+
 </style>
+
 </head>
 
 <body>
 
+<!-- ======================================================
+     HEADER
+====================================================== -->
+
 <div class="header">
+
     <h1>🎱 GUDER BINGO</h1>
-    <p>ጉደር ቢንጎ — Play and Win</p>
+
+    <p>
+        ጉደር ቢንጎ
+        <br>
+        Connecting Players • Play and Win
+    </p>
+
 </div>
+
+
+<!-- ======================================================
+     WALLET
+====================================================== -->
 
 <div class="panel">
-    <div>💰 Wallet Balance</div>
-    <div class="balance" id="balance">0.00 ETB</div>
-    <div class="muted" id="playerStatus">Connecting to Guder Bingo...</div>
+
+    <div>
+        💰 Wallet Balance / የኪስ ቦርሳ ቀሪ ሂሳብ
+    </div>
+
+    <div class="balance" id="balance">
+        0.00 ETB
+    </div>
+
+    <div class="muted" id="playerStatus">
+        Connecting to Guder Bingo...
+        <br>
+        ከጉደር ቢንጎ ጋር በመገናኘት ላይ...
+    </div>
+
 </div>
+
+
+<!-- ======================================================
+     MAIN MENU
+====================================================== -->
 
 <div class="menu">
-    <button class="active" onclick="showPage('game',this)">🎮 Play</button>
-    <button onclick="showPage('deposit',this)">💰 Deposit</button>
-    <button onclick="showPage('history',this)">🏆 History</button>
-    <button onclick="showPage('instructions',this)">📖 Instructions</button>
-    <button onclick="showPage('support',this)">☎ Support</button>
-    <button onclick="showPage('manager',this)">🔐 Manager</button>
+
+    <button class="active"
+    onclick="showPage('game',this)">
+
+        🎮 Play / ተጫወት
+
+    </button>
+
+    <button
+    onclick="showPage('deposit',this)">
+
+        💰 Deposit / ገንዘብ አስገባ
+
+    </button>
+
+    <button
+    onclick="showPage('history',this)">
+
+        🏆 History / ታሪክ
+
+    </button>
+
+    <button
+    onclick="showPage('instructions',this)">
+
+        📖 Instructions / መመሪያ
+
+    </button>
+
+    <button
+    onclick="showPage('support',this)">
+
+        ☎ Support / ድጋፍ
+
+    </button>
+
+    <button
+    onclick="showPage('manager',this)">
+
+        🔐 Manager / አስተዳዳሪ
+
+    </button>
+
 </div>
 
-<!-- GAME PAGE -->
+
+<!-- ======================================================
+     GAME PAGE
+====================================================== -->
+
 <section id="page-game">
 
     <div class="panel">
-        <h3>🎮 Live Game</h3>
+
+        <h3>
+            🎮 Live Game / የቀጥታ ጨዋታ
+        </h3>
 
         <div class="status">
-            <div id="gameStatus">Loading game...</div>
-            <div class="timer" id="timer">--</div>
-            <div class="muted" id="roomNumber"></div>
+
+            <div id="gameStatus">
+                Loading game...
+            </div>
+
+            <div class="timer" id="timer">
+                --
+            </div>
+
+            <div class="muted" id="roomNumber">
+            </div>
+
         </div>
 
-        <div class="latest-call" id="latestCall">Waiting...</div>
-        <div class="call-board" id="callBoard"></div>
+        <div class="latest-call" id="latestCall">
+            Waiting for numbers...
+        </div>
+
+        <div class="call-board" id="callBoard">
+        </div>
+
+        <div id="winnerDisplay">
+        </div>
+
     </div>
 
+
+    <!-- CARTELA SELECTION -->
+
     <div class="panel">
-        <h3>🎟 Select Your Cartela</h3>
+
+        <h3>
+            🎟 Select Your Cartela
+            <br>
+            ካርቴላዎን ይምረጡ
+        </h3>
 
         <div class="muted">
-            Select an available cartela during the selection period.
+
             Each cartela costs 10 ETB.
+            <br>
+            እያንዳንዱ ካርቴላ 10 ብር ያስከፍላል።
+
+            <br><br>
+
+            Select an available cartela during the selection period.
+            <br>
+            በምርጫ ጊዜ ያልተያዘ ካርቴላ ይምረጡ።
+
         </div>
 
         <div id="gameMessage" class="notice">
+
             Loading available cartelas...
+
         </div>
 
-        <div class="cartela-picker" id="cartelaPicker"></div>
+        <div class="cartela-picker"
+        id="cartelaPicker">
+        </div>
+
     </div>
+
+
+    <!-- MY CARTELA -->
 
     <div class="panel" id="myCartelaPanel">
-        <h3>🎟 Your Playing Cartela</h3>
+
+        <h3>
+            🎟 Your Playing Cartela
+            <br>
+            የእርስዎ ካርቴላ
+        </h3>
 
         <div id="myCartelaNumber" class="muted">
+
             You have not selected a cartela.
+
         </div>
 
-        <div id="myCartela" class="cartela-grid"></div>
+        <div id="myCartela" class="cartela-grid">
+        </div>
 
-        <button class="green full hidden" id="bingoButton" onclick="claimBingo()">
-            🏆 BINGO!
-        </button>
+        <div class="muted">
+
+            Green numbers indicate numbers already called.
+            <br>
+            አረንጓዴ ቁጥሮች የተጠሩ ቁጥሮችን ያመለክታሉ።
+
+        </div>
+
     </div>
 
-    <div class="panel">
-        <h3>👥 Players in This Game</h3>
-        <div id="playerCount">0 players</div>
-        <div id="selectedCartelas" class="muted"></div>
-    </div>
+
+    <!-- PLAYERS -->
 
     <div class="panel">
-        <h3>🏆 Recent Winners</h3>
-        <div id="recentWinners" class="muted">No winners yet.</div>
+
+        <h3>
+            👥 Players in This Game
+            <br>
+            በዚህ ጨዋታ የተሳተፉ
+        </h3>
+
+        <div id="playerCount">
+            0 cartelas selected
+        </div>
+
+        <div id="selectedCartelas" class="muted">
+        </div>
+
+    </div>
+
+
+    <!-- RECENT WINNERS -->
+
+    <div class="panel">
+
+        <h3>
+            🏆 Recent Winners / የቅርብ ጊዜ አሸናፊዎች
+        </h3>
+
+        <div id="recentWinners" class="muted">
+            No winners yet.
+        </div>
+
     </div>
 
 </section>
 
-<!-- DEPOSIT PAGE -->
+
+<!-- ======================================================
+     DEPOSIT PAGE
+====================================================== -->
+
 <section id="page-deposit" class="hidden">
 
     <div class="panel">
-        <h3>💰 Deposit Money</h3>
+
+        <h3>
+            💰 Deposit Money
+            <br>
+            ገንዘብ ያስገቡ
+        </h3>
 
         <div class="notice">
-            <strong>TeleBirr payment</strong><br><br>
+
+            <strong>
+                TeleBirr Payment / የቴሌብር ክፍያ
+            </strong>
+
+            <br><br>
+
             Transfer your payment to the TeleBirr number below.
+
+            <br>
+
+            ክፍያዎን ከታች ወዳለው የቴሌብር ቁጥር ይላኩ።
+
+            <br><br>
+
             After payment, open Telegram and press Deposit in the bot.
+
+            <br>
+
+            ከክፍያ በኋላ ወደ ቴሌግራም በመመለስ የDeposit ቁልፍን ይጫኑ።
+
+            <br><br>
+
             Copy the complete transaction receipt and send it to the bot.
+
+            <br>
+
+            ሙሉ የክፍያ ደረሰኙን በመቅዳት ለቦቱ ይላኩ።
+
         </div>
 
-        <h2 id="telebirrNumber">0913706670</h2>
 
-        <button class="primary full" onclick="copyTelebirr()">
-            Copy TeleBirr Number
+        <h2 id="telebirrNumber">
+            0913706670
+        </h2>
+
+        <button class="primary full"
+        onclick="copyTelebirr()">
+
+            📋 Copy TeleBirr Number
+            <br>
+            የቴሌብር ቁጥር ቅዳ
+
         </button>
+
 
         <div class="notice">
-            Your playing credit is added only when the server successfully
-            processes the receipt. A submitted receipt is not independent
-            proof that a payment was received.
+
+            Playing credit is added when the backend successfully processes the submitted receipt.
+
+            <br><br>
+
+            ሰርቨሩ የቀረበውን ደረሰኝ ሲያስተናግድ የመጫወቻ ሂሳብ ይጨመራል።
+
+            <br><br>
+
+            Important: Provisional credit does not mean the payment has been independently verified.
+
+            <br>
+
+            ማስታወሻ፦ ጊዜያዊ የመጫወቻ ሂሳብ መጨመር ክፍያው በባንክ ወይም በቴሌብር ተረጋግጧል ማለት አይደለም።
+
         </div>
 
-        <button class="green full" onclick="openTelegramBot()">
-            Open Telegram Deposit
+
+        <button class="green full"
+        onclick="openTelegramBot()">
+
+            📲 Open Telegram Deposit
+            <br>
+            የቴሌግራም የክፍያ ገጽ ክፈት
+
         </button>
+
     </div>
 
 </section>
 
-<!-- HISTORY PAGE -->
+
+<!-- ======================================================
+     HISTORY PAGE
+====================================================== -->
+
 <section id="page-history" class="hidden">
+
     <div class="panel">
-        <h3>🏆 Game History</h3>
-        <div id="historyList">Loading history...</div>
+
+        <h3>
+            🏆 Game History / የጨዋታ ታሪክ
+        </h3>
+
+        <div id="historyList">
+            Loading history...
+        </div>
+
     </div>
+
 </section>
 
-<!-- INSTRUCTIONS PAGE -->
+
+<!-- ======================================================
+     INSTRUCTIONS PAGE
+====================================================== -->
+
 <section id="page-instructions" class="hidden">
+
     <div class="panel">
-        <h3>📖 How to Play Guder Bingo</h3>
-        <p>1. Deposit money using TeleBirr.</p>
-        <p>2. Submit your complete receipt through the Telegram bot.</p>
-        <p>3. Open the Guder Bingo Mini App.</p>
-        <p>4. Select an available cartela during the selection period.</p>
-        <p>5. Each cartela costs 10 ETB.</p>
-        <p>6. Wait for the game to begin.</p>
-        <p>7. Watch the numbers being called.</p>
-        <p>8. When you complete a valid winning pattern, press BINGO.</p>
-        <p>9. The server checks your Bingo claim.</p>
+
+        <h3>
+            📖 How to Play Guder Bingo
+            <br>
+            ጉደር ቢንጎን እንዴት መጫወት ይቻላል?
+        </h3>
+
+        <p>
+            1. Deposit money using TeleBirr.
+            <br>
+            በቴሌብር ገንዘብ ያስገቡ።
+        </p>
+
+        <p>
+            2. Submit your complete receipt through the Telegram bot.
+            <br>
+            ደረሰኝዎን በቴሌግራም ቦት ይላኩ።
+        </p>
+
+        <p>
+            3. Open the Guder Bingo Mini App.
+            <br>
+            የጉደር ቢንጎ መተግበሪያን ይክፈቱ።
+        </p>
+
+        <p>
+            4. Select an available cartela during the selection period.
+            <br>
+            በምርጫ ጊዜ ነፃ ካርቴላ ይምረጡ።
+        </p>
+
+        <p>
+            5. Each cartela costs 10 ETB.
+            <br>
+            እያንዳንዱ ካርቴላ 10 ብር ነው።
+        </p>
+
+        <p>
+            6. Wait for the game to begin.
+            <br>
+            ጨዋታው እስኪጀምር ይጠብቁ።
+        </p>
+
+        <p>
+            7. Watch the numbers being called.
+            <br>
+            የሚጠሩትን ቁጥሮች ይከታተሉ።
+        </p>
+
+        <p>
+            8. Complete a valid Bingo pattern.
+            <br>
+            ትክክለኛ የቢንጎ ቅርጽ ያሟሉ።
+        </p>
+
+        <p>
+            9. The system automatically checks completed patterns and announces a winner.
+            <br>
+            ስርዓቱ የተሟላውን የቢንጎ ቅርጽ በራሱ ይፈትሻል እና አሸናፊውን ያሳውቃል።
+        </p>
+
     </div>
+
 </section>
 
-<!-- SUPPORT PAGE -->
+
+<!-- ======================================================
+     SUPPORT PAGE
+====================================================== -->
+
 <section id="page-support" class="hidden">
+
     <div class="panel">
-        <h3>☎ Guder Bingo Support</h3>
-        <p>For assistance with deposits or playing, contact support.</p>
-        <h2 id="supportNumber">0913706670</h2>
+
+        <h3>
+            ☎ Guder Bingo Support
+            <br>
+            የጉደር ቢንጎ ድጋፍ
+        </h3>
+
+        <p>
+            For assistance with deposits or playing, contact support.
+
+            <br>
+
+            በክፍያ ወይም በጨዋታ ላይ እገዛ ከፈለጉ ያግኙን።
+
+        </p>
+
+        <h2 id="supportNumber">
+            0913706670
+        </h2>
+
     </div>
+
 </section>
 
-<!-- MANAGER PAGE -->
+
+<!-- ======================================================
+     MANAGER PAGE
+====================================================== -->
+
 <section id="page-manager" class="hidden">
 
     <div class="panel">
-        <h3>🔐 Manager Panel</h3>
+
+        <h3>
+            🔐 Manager Panel
+            <br>
+            የአስተዳዳሪ ገጽ
+        </h3>
 
         <input
             type="password"
             id="managerPin"
-            placeholder="Enter manager PIN"
+            placeholder="Manager PIN / የአስተዳዳሪ ሚስጥር ቁጥር"
             autocomplete="off"
         >
 
-        <button class="primary full" onclick="loadManager()">
-            Login
+        <button class="primary full"
+        onclick="loadManager()">
+
+            🔓 Login / ግባ
+
         </button>
 
-        <div id="managerMessage" class="notice hidden"></div>
+        <div id="managerMessage"
+        class="notice hidden">
+        </div>
+
     </div>
 
-    <div class="panel hidden" id="managerDashboard">
-        <h3>📊 Dashboard</h3>
-        <div id="managerStats"></div>
 
-        <h3>💰 Deposit Records</h3>
-        <div id="managerDeposits"></div>
+    <div class="panel hidden"
+    id="managerDashboard">
+
+        <h3>
+            📊 Dashboard / አጠቃላይ መረጃ
+        </h3>
+
+        <div id="managerStats">
+        </div>
+
+
+        <h3>
+            💰 Deposit Records
+            <br>
+            የክፍያ መዝገቦች
+        </h3>
+
+        <div id="managerDeposits">
+        </div>
+
+
+        <h3>
+            🏆 Recent Winners
+            <br>
+            የቅርብ ጊዜ አሸናፊዎች
+        </h3>
+
+        <div id="managerWinners">
+        </div>
+
+
+        <button class="primary full"
+        onclick="loadManager()">
+
+            🔄 Refresh Dashboard / አድስ
+
+        </button>
+
     </div>
 
 </section>
 
+
+<!-- ======================================================
+     JAVASCRIPT
+====================================================== -->
+
 <script>
+
 "use strict";
 
+
 // ============================================================
-// GUDER BINGO FRONTEND
+// TELEGRAM
 // ============================================================
 
 const tg = window.Telegram?.WebApp || null;
 
 if (tg) {
+
     tg.ready();
+
     tg.expand();
+
+    tg.setHeaderColor("#101426");
+
+    tg.setBackgroundColor("#101426");
+
 }
 
+
+// ============================================================
+// CONFIGURATION
+// ============================================================
+
 const API = "";
+
 const BOT_URL = "https://t.me/guderbingo_bot";
 
 const initData = tg ? tg.initData : "";
 
 let gameData = null;
+
 let configData = {};
+
 let currentBalance = 0;
+
 let managerPin = "";
-let refreshTimer = null;
+
 let gameLoading = false;
 
+let refreshTimer = null;
+
+let lastWinnerRoom = null;
+
+
 // ============================================================
-// API REQUESTS
+// API HEADERS
 // ============================================================
 
 function headers(extra = {}) {
+
     const result = {
         ...extra
     };
 
     if (initData) {
+
         result["X-Telegram-Init-Data"] = initData;
+
     }
 
     return result;
+
 }
+
+
+// ============================================================
+// API REQUEST
+// ============================================================
 
 async function api(path, options = {}) {
 
     const requestOptions = {
+
         ...options,
-        headers: headers(options.headers || {})
+
+        headers: headers(
+            options.headers || {}
+        )
+
     };
 
-    const response = await fetch(API + path, requestOptions);
+    const response = await fetch(
+        API + path,
+        requestOptions
+    );
 
     let data;
 
     try {
+
         data = await response.json();
+
     } catch {
+
         throw new Error(
-            "The server returned an invalid response. Check the backend logs."
+            "Invalid server response. / የሰርቨር ምላሽ ስህተት።"
         );
+
     }
 
     if (!response.ok || data.success === false) {
+
         throw new Error(
+
             data.error ||
+
             data.message ||
+
             "Request failed. HTTP " + response.status
+
         );
+
     }
 
     return data;
+
 }
+
 
 // ============================================================
 // PAGE NAVIGATION
@@ -508,62 +1006,116 @@ async function api(path, options = {}) {
 function showPage(page, button) {
 
     document.querySelectorAll("section").forEach(section => {
+
         section.classList.add("hidden");
+
     });
 
-    const target = document.getElementById("page-" + page);
+    const target = document.getElementById(
+        "page-" + page
+    );
 
     if (target) {
+
         target.classList.remove("hidden");
+
     }
 
     document.querySelectorAll(".menu button").forEach(item => {
+
         item.classList.remove("active");
+
     });
 
     if (button) {
+
         button.classList.add("active");
+
     }
 
     if (page === "history") {
+
         loadHistory();
+
     }
+
 }
 
+
 // ============================================================
-// MESSAGES
+// MESSAGE
 // ============================================================
 
 function setMessage(message, type = "") {
 
-    const element = document.getElementById("gameMessage");
+    const element = document.getElementById(
+        "gameMessage"
+    );
 
     element.textContent = message;
+
     element.className = "notice " + type;
+
 }
 
+
 // ============================================================
-// HTML SAFETY
+// HTML ESCAPE
 // ============================================================
 
 function escapeHtml(value) {
 
-    return String(value ?? "").replace(/[&<>"']/g, character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-    })[character]);
+    return String(value ?? "").replace(
+        /[&<>"']/g,
+        character => ({
+
+            "&": "&amp;",
+
+            "<": "&lt;",
+
+            ">": "&gt;",
+
+            '"': "&quot;",
+
+            "'": "&#39;"
+
+        })[character]
+    );
+
 }
 
+
 // ============================================================
-// BINGO CALLING BOARD
+// BINGO LETTER
+// ============================================================
+
+function bingoLetter(number) {
+
+    number = Number(number);
+
+    if (number <= 15) return "B";
+
+    if (number <= 30) return "I";
+
+    if (number <= 45) return "N";
+
+    if (number <= 60) return "G";
+
+    return "O";
+
+}
+
+
+// ============================================================
+// CALLING BOARD
 // ============================================================
 
 function makeCallBoard(calledNumbers) {
 
-    const board = document.getElementById("callBoard");
+    const board = document.getElementById(
+        "callBoard"
+    );
+
     board.innerHTML = "";
 
     const called = new Set(
@@ -571,40 +1123,59 @@ function makeCallBoard(calledNumbers) {
     );
 
     const ranges = [
-        ["B", 1, 15],
-        ["I", 16, 30],
-        ["N", 31, 45],
-        ["G", 46, 60],
-        ["O", 61, 75]
+
+        ["B",1,15],
+
+        ["I",16,30],
+
+        ["N",31,45],
+
+        ["G",46,60],
+
+        ["O",61,75]
+
     ];
 
-    ranges.forEach(([letter, start, end]) => {
+    ranges.forEach(([letter,start,end]) => {
 
         const column = document.createElement("div");
+
         column.className = "call-column";
 
         const heading = document.createElement("h3");
+
         heading.textContent = letter;
 
         column.appendChild(heading);
 
-        for (let number = start; number <= end; number++) {
+        for (
+            let number = start;
+            number <= end;
+            number++
+        ) {
 
             const item = document.createElement("span");
 
             item.className = "call-number";
+
             item.textContent = number;
 
             if (called.has(number)) {
+
                 item.classList.add("called");
+
             }
 
             column.appendChild(item);
+
         }
 
         board.appendChild(column);
+
     });
+
 }
+
 
 // ============================================================
 // CARTELA DISPLAY
@@ -612,7 +1183,9 @@ function makeCallBoard(calledNumbers) {
 
 function renderCartela(matrix, calledNumbers) {
 
-    const container = document.getElementById("myCartela");
+    const container = document.getElementById(
+        "myCartela"
+    );
 
     container.innerHTML = "";
 
@@ -621,23 +1194,25 @@ function renderCartela(matrix, calledNumbers) {
     );
 
     if (!Array.isArray(matrix)) {
+
         return;
+
     }
 
     matrix.forEach(row => {
 
-        if (!Array.isArray(row)) {
-            return;
-        }
-
         row.forEach(value => {
 
             const cell = document.createElement("div");
+
             cell.className = "cell";
 
-            if (String(value).toUpperCase() === "FREE") {
+            if (
+                String(value).toUpperCase() === "FREE"
+            ) {
 
                 cell.classList.add("free");
+
                 cell.textContent = "FREE";
 
             } else {
@@ -647,88 +1222,125 @@ function renderCartela(matrix, calledNumbers) {
                 cell.textContent = value;
 
                 if (called.has(number)) {
+
                     cell.classList.add("marked");
+
                 }
+
             }
 
             container.appendChild(cell);
+
         });
+
     });
+
 }
+
 
 // ============================================================
 // CARTELA PICKER
 // ============================================================
 
-function renderCartelaPicker(data) {
+function renderCartelaPicker(game) {
 
-    const picker = document.getElementById("cartelaPicker");
+    const picker = document.getElementById(
+        "cartelaPicker"
+    );
 
     picker.innerHTML = "";
 
-    const selections = Array.isArray(data.selections)
-        ? data.selections
+    const selections = Array.isArray(
+        game.selected_cartelas
+    )
+        ? game.selected_cartelas
         : [];
 
     const taken = new Set(
+
         selections.map(selection =>
-            Number(
-                selection.cartela_number ??
-                selection.cartela_no ??
-                selection.cartela
-            )
+
+            Number(selection.cartela_no)
+
         )
+
     );
 
-    const ownCartela = data.cartela
-        ? Number(
-            data.cartela.cartela_no ??
-            data.cartela.cartela_number ??
-            data.cartela.cartela
-        )
+    const ownCartela = game.own_cartela
+
+        ? Number(game.own_cartela.cartela_no)
+
         : null;
 
-    for (let number = 1; number <= 800; number++) {
+    const selectionOpen =
+        game.status === "OPEN";
+
+    for (
+        let number = 1;
+        number <= 800;
+        number++
+    ) {
 
         const button = document.createElement("button");
 
         button.className = "cartela-choice";
+
         button.textContent = number;
 
         if (ownCartela === number) {
 
             button.classList.add("mine");
+
             button.textContent = "✓ " + number;
+
             button.disabled = true;
 
         } else if (taken.has(number)) {
 
             button.classList.add("taken");
+
+            button.disabled = true;
+
+        } else if (!selectionOpen) {
+
             button.disabled = true;
 
         } else {
 
             button.onclick = () => selectCartela(number);
+
         }
 
         picker.appendChild(button);
+
     }
+
 }
+
 
 // ============================================================
 // SELECTED PLAYERS
 // ============================================================
 
-function renderSelections(data) {
+function renderSelections(game) {
 
-    const selections = Array.isArray(data.selections)
-        ? data.selections
+    const selections = Array.isArray(
+        game.selected_cartelas
+    )
+        ? game.selected_cartelas
         : [];
 
-    document.getElementById("playerCount").textContent =
-        selections.length + " cartela(s) selected";
+    document.getElementById(
+        "playerCount"
+    ).textContent =
 
-    document.getElementById("selectedCartelas").textContent =
+        selections.length +
+        " cartela(s) selected / ካርቴላ ተመርጧል";
+
+    document.getElementById(
+        "selectedCartelas"
+    ).textContent =
+
         selections.map(selection => {
 
             const name =
@@ -736,51 +1348,164 @@ function renderSelections(data) {
                 selection.username ||
                 "Player";
 
-            const number =
-                selection.cartela_number ??
-                selection.cartela_no ??
-                "";
+            return (
 
-            return name + " — Cartela " + number;
+                name +
 
-        }).join(" | ") || "No cartelas selected yet.";
+                " — Cartela " +
+
+                selection.cartela_no
+
+            );
+
+        }).join(" | ") ||
+
+        "No cartelas selected yet. / እስካሁን ካርቴላ አልተመረጠም።";
+
 }
+
+
+// ============================================================
+// WINNER DISPLAY
+// ============================================================
+
+function renderWinner(game) {
+
+    const element = document.getElementById(
+        "winnerDisplay"
+    );
+
+    element.innerHTML = "";
+
+    if (
+        game.status !== "WINNER" ||
+        !game.winner
+    ) {
+
+        return;
+
+    }
+
+    const winner = game.winner;
+
+    const name = escapeHtml(
+        winner.first_name ||
+        winner.username ||
+        "Player"
+    );
+
+    const cartela = Number(
+        winner.cartela_no || 0
+    );
+
+    const prize = Number(
+        winner.prize_amount || 0
+    );
+
+    element.innerHTML = `
+
+        <div class="winner-box">
+
+            <h2>🏆 BINGO WINNER!</h2>
+
+            <h2>አሸናፊ!</h2>
+
+            <strong>${name}</strong>
+
+            <p>
+                Cartela: ${cartela}
+            </p>
+
+            <h3>
+                Prize: ${prize.toFixed(2)} ETB
+            </h3>
+
+            <p>
+                Congratulations! / እንኳን ደስ አለዎት!
+            </p>
+
+        </div>
+
+    `;
+
+}
+
 
 // ============================================================
 // RECENT WINNERS
 // ============================================================
 
-function renderWinners(data) {
+async function loadRecentWinners() {
 
-    const winners = Array.isArray(data.winners)
-        ? data.winners
-        : [];
+    const element = document.getElementById(
+        "recentWinners"
+    );
 
-    const element = document.getElementById("recentWinners");
+    try {
 
-    if (!winners.length) {
-        element.textContent = "No winners yet.";
-        return;
+        const data = await api(
+            "/api/admin/winners",
+            {
+                headers: {
+                    "X-Admin-Pin": ""
+                }
+            }
+        );
+
+        if (!data.success) {
+
+            throw new Error("Unable to load winners");
+
+        }
+
+        renderRecentWinnerList(data.winners || []);
+
+    } catch {
+
+        // Public winner list is not exposed by the
+        // current backend. The manager can view it
+        // from the protected manager dashboard.
+
+        element.textContent =
+            "Recent winners are available in the Manager Panel. / የአሸናፊዎች መረጃ በአስተዳዳሪ ገጽ ይገኛል።";
+
     }
 
-    element.innerHTML = winners.map(winner => {
-
-        const name = escapeHtml(
-            winner.winner_name || winner.name || "Player"
-        );
-
-        const cartela = Number(
-            winner.cartela_no || winner.cartela_number || 0
-        );
-
-        return `
-            <div class="notice">
-                🏆 ${name} — Cartela ${cartela}
-            </div>
-        `;
-
-    }).join("");
 }
+
+
+function renderRecentWinnerList(winners) {
+
+    const element = document.getElementById(
+        "recentWinners"
+    );
+
+    if (!winners.length) {
+
+        element.textContent = "No winners yet.";
+
+        return;
+
+    }
+
+    element.innerHTML = winners.map(winner => `
+
+        <div class="notice">
+
+            🏆 ${escapeHtml(winner.first_name || "Player")}
+
+            — Cartela ${Number(winner.cartela_no || 0)}
+
+            <br>
+
+            Prize: ${Number(winner.prize_amount || 0).toFixed(2)} ETB
+
+        </div>
+
+    `).join("");
+
+}
+
 
 // ============================================================
 // WALLET
@@ -790,30 +1515,48 @@ async function loadWallet() {
 
     if (!initData) {
 
-        document.getElementById("playerStatus").textContent =
-            "Open this game through the Guder Bingo Telegram bot.";
+        document.getElementById(
+            "playerStatus"
+        ).textContent =
+
+            "Open Guder Bingo through Telegram. / ከቴሌግራም ይክፈቱ።";
 
         return;
+
     }
 
     try {
 
-        const data = await api("/api/wallet");
+        const data = await api(
+            "/api/wallet"
+        );
 
-        currentBalance = Number(data.balance || 0);
+        currentBalance = Number(
+            data.balance || 0
+        );
 
-        document.getElementById("balance").textContent =
+        document.getElementById(
+            "balance"
+        ).textContent =
+
             currentBalance.toFixed(2) + " ETB";
 
-        document.getElementById("playerStatus").textContent =
-            "Telegram player connected.";
+        document.getElementById(
+            "playerStatus"
+        ).textContent =
 
-    } catch (error) {
+            "Telegram player connected. / ተገናኝተዋል።";
 
-        document.getElementById("playerStatus").textContent =
-            error.message;
+    } catch(error) {
+
+        document.getElementById(
+            "playerStatus"
+        ).textContent = error.message;
+
     }
+
 }
+
 
 // ============================================================
 // GAME STATUS
@@ -822,30 +1565,28 @@ async function loadWallet() {
 function statusText(status) {
 
     const labels = {
-        OPEN: "🟢 Cartela Selection Open",
-        REGISTRATION: "🟢 Cartela Selection Open",
-        PREPARING: "🟡 Preparing Game",
-        PREPARATION: "🟡 Preparing Game",
-        RUNNING: "🔴 Game in Progress",
-        PLAYING: "🔴 Game in Progress",
-        COMPLETED: "🏆 Game Completed",
-        WAITING: "Waiting for Game"
+
+        OPEN:
+        "🟢 Cartela Selection Open / የካርቴላ ምርጫ ክፍት ነው",
+
+        PREPARING:
+        "🟡 Preparing Game / ጨዋታው እየተዘጋጀ ነው",
+
+        RUNNING:
+        "🔴 Game in Progress / ጨዋታው በመካሄድ ላይ ነው",
+
+        WINNER:
+        "🏆 Winner Announced / አሸናፊ ታውቋል",
+
+        COMPLETED:
+        "🏆 Game Completed / ጨዋታው ተጠናቋል"
+
     };
 
-    return labels[status] || status || "Waiting...";
+    return labels[status] || "Waiting / በመጠባበቅ ላይ";
+
 }
 
-function bingoLetter(number) {
-
-    number = Number(number);
-
-    if (number <= 15) return "B";
-    if (number <= 30) return "I";
-    if (number <= 45) return "N";
-    if (number <= 60) return "G";
-
-    return "O";
-}
 
 // ============================================================
 // LOAD GAME
@@ -854,147 +1595,217 @@ function bingoLetter(number) {
 async function loadGame() {
 
     if (gameLoading) {
+
         return;
+
     }
 
     gameLoading = true;
 
     try {
 
-        const data = await api("/api/game/state");
+        // Correct backend endpoint and response structure.
 
-        gameData = data;
-
-        const status =
-            data.game_status ||
-            data.status ||
-            "WAITING";
-
-        const called = Array.isArray(data.called_numbers)
-            ? data.called_numbers
-            : [];
-
-        document.getElementById("gameStatus").textContent =
-            statusText(status);
-
-        const remaining = Number(
-            data.remaining_seconds ??
-            data.seconds_remaining ??
-            0
+        const response = await api(
+            "/api/game/state"
         );
 
-        document.getElementById("timer").textContent =
-            remaining > 0 ? remaining + " seconds" : "";
+        const game = response.game;
 
-        document.getElementById("roomNumber").textContent =
-            data.room_id ? "Game Room #" + data.room_id : "";
+        if (!game) {
 
-        const latest = called.length
-            ? Number(called[called.length - 1])
-            : null;
+            throw new Error(
+                "Game information unavailable."
+            );
 
-        document.getElementById("latestCall").textContent =
+        }
+
+        gameData = game;
+
+        const status = game.status || "OPEN";
+
+        const called = Array.isArray(
+            game.called_numbers
+        )
+            ? game.called_numbers
+            : [];
+
+        // Game status.
+
+        document.getElementById(
+            "gameStatus"
+        ).textContent = statusText(status);
+
+        // Countdown.
+
+        const remaining = Number(
+            game.remaining_seconds || 0
+        );
+
+        document.getElementById(
+            "timer"
+        ).textContent =
+
+            remaining > 0
+                ? remaining + " seconds"
+                : "";
+
+        // Room.
+
+        document.getElementById(
+            "roomNumber"
+        ).textContent =
+
+            "Game Room #" + game.room_id;
+
+        // Latest number.
+
+        const latest = game.last_number;
+
+        document.getElementById(
+            "latestCall"
+        ).textContent =
+
             latest
-                ? "Latest Number: " + bingoLetter(latest) + "-" + latest
+
+                ? "Latest Number: " +
+                  bingoLetter(latest) +
+                  "-" +
+                  latest
+
                 : "Waiting for numbers...";
+
+        // Calling board.
 
         makeCallBoard(called);
 
-        renderCartelaPicker(data);
-        renderSelections(data);
-        renderWinners(data);
+        // Cartela picker.
 
-        if (data.cartela) {
+        renderCartelaPicker(game);
 
-            const cartelaNumber =
-                data.cartela.cartela_no ??
-                data.cartela.cartela_number ??
-                "";
+        // Selected players.
 
-            document.getElementById("myCartelaNumber").textContent =
-                "Your Cartela: " + cartelaNumber;
+        renderSelections(game);
 
-            let matrix = data.cartela.numbers;
+        // Winner.
 
-            if (!Array.isArray(matrix) && data.cartela.numbers_json) {
+        renderWinner(game);
 
-                try {
-                    matrix = JSON.parse(data.cartela.numbers_json);
-                } catch {
-                    matrix = [];
-                }
-            }
+        // My cartela.
 
-            if (Array.isArray(matrix)) {
-                renderCartela(matrix, called);
-            }
+        if (game.own_cartela) {
 
-            document.getElementById("bingoButton")
-                .classList.remove("hidden");
+            const cartela = game.own_cartela;
+
+            document.getElementById(
+                "myCartelaNumber"
+            ).textContent =
+
+                "Your Cartela: " +
+                cartela.cartela_no;
+
+            renderCartela(
+                cartela.numbers,
+                called
+            );
 
         } else {
 
-            document.getElementById("myCartelaNumber").textContent =
-                "You have not selected a cartela.";
+            document.getElementById(
+                "myCartelaNumber"
+            ).textContent =
 
-            document.getElementById("myCartela").innerHTML = "";
+                "You have not selected a cartela. / ካርቴላ አልመረጡም።";
 
-            document.getElementById("bingoButton")
-                .classList.add("hidden");
+            document.getElementById(
+                "myCartela"
+            ).innerHTML = "";
+
         }
 
-        if (data.balance !== undefined) {
+        // Wallet.
 
-            currentBalance = Number(data.balance);
+        if (game.balance !== undefined) {
 
-            document.getElementById("balance").textContent =
+            currentBalance = Number(
+                game.balance
+            );
+
+            document.getElementById(
+                "balance"
+            ).textContent =
+
                 currentBalance.toFixed(2) + " ETB";
+
         }
+
+        // Individual balance protection.
 
         if (
-            status === "OPEN" ||
-            status === "REGISTRATION"
+            game.status === "OPEN" &&
+            currentBalance < 10 &&
+            !game.own_cartela
         ) {
 
             setMessage(
-                "Cartela selection is open. Choose an available cartela.",
+
+                "Insufficient balance. Please deposit at least 10 ETB before selecting a cartela. / ካርቴላ ለመምረጥ ቢያንስ 10 ብር ያስገቡ።",
+
+                "error"
+
+            );
+
+        } else if (status === "OPEN") {
+
+            setMessage(
+
+                "Selection is open. Choose an available cartela. / ካርቴላ ይምረጡ።",
+
                 "success"
+
             );
 
-        } else if (
-            status === "PREPARING" ||
-            status === "PREPARATION"
-        ) {
+        } else if (status === "PREPARING") {
 
             setMessage(
-                "Preparing the game. Please wait."
+                "Preparing the game. Please wait. / ይጠብቁ።"
             );
 
-        } else if (
-            status === "RUNNING" ||
-            status === "PLAYING"
-        ) {
+        } else if (status === "RUNNING") {
 
             setMessage(
-                "The game is running. Watch the called numbers."
+                "The game is running. Watch the numbers. / ቁጥሮቹን ይከታተሉ።"
+            );
+
+        } else if (status === "WINNER") {
+
+            setMessage(
+                "Congratulations to the winner! / እንኳን ለአሸናፊው ደስ አለው!"
             );
 
         } else if (status === "COMPLETED") {
 
             setMessage(
-                "This game has ended. Preparing the next game."
+                "Game completed. Preparing the next game. / ቀጣዩ ጨዋታ እየተዘጋጀ ነው።"
             );
+
         }
 
-    } catch (error) {
+    } catch(error) {
 
-        setMessage(error.message, "error");
+        setMessage(
+            error.message,
+            "error"
+        );
 
     } finally {
 
         gameLoading = false;
+
     }
+
 }
+
 
 // ============================================================
 // SELECT CARTELA
@@ -1005,189 +1816,284 @@ async function selectCartela(number) {
     if (!initData) {
 
         setMessage(
-            "Please open Guder Bingo through the Telegram bot.",
+            "Open Guder Bingo through Telegram. / ከቴሌግራም ይክፈቱ።",
             "error"
         );
 
         return;
+
     }
 
     if (currentBalance < 10) {
 
         setMessage(
-            "Insufficient balance. Please deposit before selecting a cartela.",
+            "Insufficient balance. Deposit before playing. / በቂ ሂሳብ የለም።",
             "error"
         );
 
         return;
+
     }
 
-    if (!confirm("Select Cartela " + number + " for 10 ETB?")) {
+    if (
+        !confirm(
+            "Select Cartela " +
+            number +
+            " for 10 ETB?\n\n" +
+            "ለ10 ብር ካርቴላውን ይምረጡ?"
+        )
+    ) {
+
         return;
+
     }
 
     try {
 
-        const data = await api("/api/cartela/select", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                cartela_number: number
-            })
-        });
+        const data = await api(
+            "/api/cartela/select",
+            {
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"application/json"
+                },
+
+                body:JSON.stringify({
+
+                    // Correct backend field.
+
+                    cartela_no:number
+
+                })
+
+            }
+        );
 
         setMessage(
-            data.message || "Cartela " + number + " selected successfully!",
+
+            data.message_am
+                ? data.message + " / " + data.message_am
+                : "Cartela selected successfully! / ካርቴላ ተመርጧል።",
+
             "success"
+
         );
 
-        await loadWallet();
-        await loadGame();
-
-    } catch (error) {
-
-        setMessage(error.message, "error");
-    }
-}
-
-// ============================================================
-// BINGO CLAIM
-// ============================================================
-
-async function claimBingo() {
-
-    if (!initData) {
-        alert("Please open Guder Bingo through Telegram.");
-        return;
-    }
-
-    if (!confirm("Are you sure you have Bingo?")) {
-        return;
-    }
-
-    try {
-
-        const data = await api("/api/game/claim", {
-            method: "POST",
-            body: JSON.stringify({})
-        });
-
-        alert(
-            "🏆 BINGO CLAIM SUBMITTED!\n\n" +
-            (data.message || "The server has received your claim.")
+        currentBalance = Number(
+            data.balance
         );
+
+        document.getElementById(
+            "balance"
+        ).textContent =
+
+            currentBalance.toFixed(2) + " ETB";
 
         await loadGame();
 
-    } catch (error) {
+    } catch(error) {
 
-        alert(error.message);
+        setMessage(
+            error.message,
+            "error"
+        );
+
     }
+
 }
 
+
 // ============================================================
-// GAME HISTORY
+// HISTORY
 // ============================================================
 
 async function loadHistory() {
 
-    const element = document.getElementById("historyList");
+    const element = document.getElementById(
+        "historyList"
+    );
 
     element.textContent = "Loading history...";
 
+    if (!initData) {
+
+        element.textContent =
+            "Open the Mini App through Telegram.";
+
+        return;
+
+    }
+
     try {
 
-        const data = await api("/api/game/history");
+        const data = await api(
+            "/api/game/history"
+        );
 
-        const winners = Array.isArray(data.winners)
-            ? data.winners
+        // Correct backend field: history.
+
+        const history = Array.isArray(
+            data.history
+        )
+            ? data.history
             : [];
 
-        if (!winners.length) {
+        if (!history.length) {
 
-            element.textContent = "No completed games yet.";
+            element.textContent =
+                "No winning history yet. / እስካሁን የአሸናፊነት ታሪክ የለም።";
+
             return;
+
         }
 
-        element.innerHTML = winners.map(winner => {
+        element.innerHTML = history.map(item => `
 
-            return `
-                <div class="notice">
-                    🏆 <strong>${escapeHtml(winner.winner_name || "Player")}</strong><br>
-                    Room: ${Number(winner.room_id || 0)}<br>
-                    Cartela: ${Number(winner.cartela_no || 0)}<br>
-                    Date: ${escapeHtml(winner.created_at || "")}
-                </div>
-            `;
+            <div class="notice">
 
-        }).join("");
+                🏆 Room: ${Number(item.room_id)}
 
-    } catch (error) {
+                <br>
+
+                Cartela: ${Number(item.cartela_no)}
+
+                <br>
+
+                Prize: ${Number(item.prize_amount || 0).toFixed(2)} ETB
+
+                <br>
+
+                Pattern: ${escapeHtml(item.winning_pattern || "")}
+
+                <br>
+
+                Date: ${escapeHtml(item.created_at || "")}
+
+            </div>
+
+        `).join("");
+
+    } catch(error) {
 
         element.textContent = error.message;
+
     }
+
 }
 
+
 // ============================================================
-// CONFIGURATION
+// LOAD CONFIGURATION
 // ============================================================
 
 async function loadConfig() {
 
     try {
 
-        configData = await api("/api/config");
+        configData = await api(
+            "/api/config"
+        );
 
         const number =
-            configData.telebirr_phone ||
             configData.telebirr_number ||
             "0913706670";
 
-        document.getElementById("telebirrNumber").textContent =
-            number;
+        document.getElementById(
+            "telebirrNumber"
+        ).textContent = number;
 
-        document.getElementById("supportNumber").textContent =
-            configData.support_number || "0913706670";
+        document.getElementById(
+            "supportNumber"
+        ).textContent =
+            "0913706670";
 
-    } catch (error) {
+    } catch(error) {
 
-        console.error("Configuration loading error:", error);
+        console.error(
+            "Configuration error:",
+            error
+        );
+
     }
+
 }
 
+
 // ============================================================
-// TELEBIRR
+// COPY TELEBIRR
 // ============================================================
 
 async function copyTelebirr() {
 
     const number =
-        configData.telebirr_phone ||
         configData.telebirr_number ||
         "0913706670";
 
     try {
 
-        await navigator.clipboard.writeText(number);
+        await navigator.clipboard.writeText(
+            number
+        );
 
-        alert("TeleBirr number copied: " + number);
+        alert(
+            "TeleBirr number copied. / ቁጥሩ ተቀድቷል።"
+        );
 
     } catch {
 
-        alert("TeleBirr number: " + number);
+        alert(
+            "TeleBirr Number: " + number
+        );
+
     }
+
 }
+
+
+// ============================================================
+// OPEN TELEGRAM BOT
+// ============================================================
 
 function openTelegramBot() {
 
     if (tg) {
+
         tg.openTelegramLink(BOT_URL);
+
     } else {
-        window.open(BOT_URL, "_blank");
+
+        window.open(
+            BOT_URL,
+            "_blank"
+        );
+
     }
+
 }
+
+
+// ============================================================
+// MANAGER MESSAGE
+// ============================================================
+
+function managerMessage(message, error = false) {
+
+    const element = document.getElementById(
+        "managerMessage"
+    );
+
+    element.textContent = message;
+
+    element.classList.remove("hidden");
+
+    element.className =
+        "notice " +
+        (error ? "error" : "success");
+
+}
+
 
 // ============================================================
 // MANAGER LOGIN
@@ -1195,125 +2101,243 @@ function openTelegramBot() {
 
 async function loadManager() {
 
-    managerPin = document
-        .getElementById("managerPin")
-        .value
-        .trim();
+    managerPin = document.getElementById(
+        "managerPin"
+    ).value.trim();
 
     if (!managerPin) {
 
         managerMessage(
-            "Please enter the manager PIN.",
+            "Enter manager PIN. / የአስተዳዳሪ ቁጥር ያስገቡ።",
             true
         );
 
         return;
+
     }
 
     try {
 
-        const data = await api("/api/manager/overview", {
-            headers: {
-                "X-Manager-PIN": managerPin
+        const data = await api(
+            "/api/admin/dashboard",
+            {
+
+                headers:{
+
+                    "X-Admin-Pin":managerPin
+
+                }
+
             }
-        });
-
-        document.getElementById("managerDashboard")
-            .classList.remove("hidden");
-
-        document.getElementById("managerStats").innerHTML = `
-            <div class="notice">
-                Players: ${Number(data.players || 0)}<br>
-                Deposits: ${Number(data.deposit_count || 0)}<br>
-                Current Room: ${Number(data.current_room || 0)}<br>
-                Game Status: ${escapeHtml(data.game_status || "")}
-            </div>
-        `;
-
-        renderManagerDeposits(data.deposits || []);
-
-        managerMessage(
-            "Manager login successful.",
-            false
         );
 
-    } catch (error) {
+        document.getElementById(
+            "managerDashboard"
+        ).classList.remove("hidden");
 
-        managerMessage(error.message, true);
+        const room = data.current_room || {};
 
-        document.getElementById("managerDashboard")
-            .classList.add("hidden");
+        document.getElementById(
+            "managerStats"
+        ).innerHTML = `
+
+            <div class="notice">
+
+                👥 Total Players:
+                ${Number(data.total_users || 0)}
+
+                <br>
+
+                💰 Total Deposits:
+                ${Number(data.total_deposits || 0).toFixed(2)} ETB
+
+                <br>
+
+                🎮 Current Room:
+                ${Number(room.room_id || 0)}
+
+                <br>
+
+                Status:
+                ${escapeHtml(room.status || "")}
+
+            </div>
+
+        `;
+
+        renderManagerDeposits(
+            data.provisional_deposits || []
+        );
+
+        renderManagerWinners(
+            data.recent_winners || []
+        );
+
+        managerMessage(
+            "Manager login successful. / በተሳካ ሁኔታ ገብተዋል።"
+        );
+
+    } catch(error) {
+
+        managerMessage(
+            error.message,
+            true
+        );
+
+        document.getElementById(
+            "managerDashboard"
+        ).classList.add("hidden");
+
     }
+
 }
 
-function managerMessage(message, error) {
-
-    const element = document.getElementById("managerMessage");
-
-    element.textContent = message;
-
-    element.classList.remove("hidden");
-
-    element.className =
-        "notice " + (error ? "error" : "success");
-}
 
 // ============================================================
-// MANAGER DEPOSIT RECORDS
+// MANAGER DEPOSITS
 // ============================================================
 
 function renderManagerDeposits(deposits) {
 
-    const element = document.getElementById("managerDeposits");
+    const element = document.getElementById(
+        "managerDeposits"
+    );
 
-    if (!Array.isArray(deposits) || !deposits.length) {
+    if (
+        !Array.isArray(deposits) ||
+        !deposits.length
+    ) {
 
-        element.textContent = "No deposits submitted yet.";
+        element.textContent =
+            "No provisional deposits. / ጊዜያዊ ክፍያ የለም።";
+
         return;
+
     }
 
     element.innerHTML = deposits.map(deposit => {
 
         const id = Number(
-            deposit.deposit_id || deposit.id || 0
+            deposit.deposit_id
         );
 
-        const amount = Number(deposit.amount || 0);
+        const amount = Number(
+            deposit.amount || 0
+        );
 
         return `
+
             <div class="notice">
-                <strong>${escapeHtml(
-                    deposit.first_name ||
-                    deposit.username ||
-                    "Player"
-                )}</strong><br>
 
-                Amount: ${amount.toFixed(2)} ETB<br>
+                <strong>
 
-                Reference: ${escapeHtml(
-                    deposit.payer_reference ||
-                    deposit.reference ||
-                    ""
-                )}<br>
+                    ${escapeHtml(
+                        deposit.first_name ||
+                        deposit.username ||
+                        "Player"
+                    )}
 
-                Status: ${escapeHtml(deposit.status || "")}<br>
+                </strong>
+
+                <br>
+
+                Amount: ${amount.toFixed(2)} ETB
+
+                <br>
+
+                Reference:
+                ${escapeHtml(
+                    deposit.payer_reference || ""
+                )}
+
+                <br>
+
+                Status:
+                ${escapeHtml(deposit.status || "")}
+
+                <br>
+
+                Date:
+                ${escapeHtml(deposit.created_at || "")}
 
                 <div class="manager-actions">
+
                     <button class="green"
-                        onclick="reviewDeposit(${id},'verify')">
-                        Verify
+                    onclick="reviewDeposit(${id},'APPROVE')">
+
+                        Verify / አረጋግጥ
+
                     </button>
 
                     <button class="red"
-                        onclick="reviewDeposit(${id},'reject')">
-                        Reject
+                    onclick="reviewDeposit(${id},'REJECT')">
+
+                        Reject / አትቀበል
+
                     </button>
+
                 </div>
+
             </div>
+
         `;
 
     }).join("");
+
 }
+
+
+// ============================================================
+// MANAGER WINNERS
+// ============================================================
+
+function renderManagerWinners(winners) {
+
+    const element = document.getElementById(
+        "managerWinners"
+    );
+
+    if (!Array.isArray(winners) || !winners.length) {
+
+        element.textContent =
+            "No winners recorded yet.";
+
+        return;
+
+    }
+
+    element.innerHTML = winners.map(winner => `
+
+        <div class="notice">
+
+            🏆 ${escapeHtml(winner.first_name || "Player")}
+
+            <br>
+
+            Room: ${Number(winner.room_id)}
+
+            <br>
+
+            Cartela: ${Number(winner.cartela_no)}
+
+            <br>
+
+            Prize: ${Number(winner.prize_amount || 0).toFixed(2)} ETB
+
+            <br>
+
+            Phone: ${escapeHtml(winner.phone_number || "Not provided")}
+
+            <br>
+
+            Date: ${escapeHtml(winner.created_at || "")}
+
+        </div>
+
+    `).join("");
+
+}
+
 
 // ============================================================
 // MANAGER DEPOSIT REVIEW
@@ -1322,75 +2346,153 @@ function renderManagerDeposits(deposits) {
 async function reviewDeposit(id, action) {
 
     if (!id) {
-        managerMessage("Invalid deposit ID.", true);
+
+        managerMessage(
+            "Invalid deposit ID.",
+            true
+        );
+
         return;
+
     }
 
-    if (!confirm("Continue with " + action + " for this deposit?")) {
+    const actionText =
+        action === "APPROVE"
+            ? "VERIFY"
+            : "REJECT";
+
+    if (
+        !confirm(
+            "Are you sure you want to " +
+            actionText +
+            " this deposit?"
+        )
+    ) {
+
         return;
+
     }
 
     try {
 
         await api(
-            "/api/manager/deposit/" + id + "/" + action,
+            "/api/admin/deposits/review",
             {
-                method: "POST",
-                headers: {
-                    "X-Manager-PIN": managerPin
+
+                method:"POST",
+
+                headers:{
+
+                    "X-Admin-Pin":managerPin,
+
+                    "Content-Type":"application/json"
+
                 },
-                body: JSON.stringify({})
+
+                body:JSON.stringify({
+
+                    deposit_id:id,
+
+                    action:action,
+
+                    note:"Reviewed through Guder Bingo Manager Panel"
+
+                })
+
             }
+        );
+
+        managerMessage(
+            "Deposit review completed successfully."
         );
 
         await loadManager();
 
-    } catch (error) {
+    } catch(error) {
 
-        managerMessage(error.message, true);
+        managerMessage(
+            error.message,
+            true
+        );
+
     }
+
 }
 
+
 // ============================================================
-// INITIALIZE APPLICATION
+// INITIALIZATION
 // ============================================================
 
 async function loadAll() {
 
     await loadConfig();
+
     await loadWallet();
+
     await loadGame();
+
+    loadRecentWinners();
+
 }
+
+
+// ============================================================
+// START APPLICATION
+// ============================================================
 
 loadAll();
 
-// Refresh live game and wallet every 2.5 seconds.
+
+// ============================================================
+// AUTOMATIC GAME REFRESH
+// ============================================================
 
 if (refreshTimer) {
+
     clearInterval(refreshTimer);
+
 }
 
 refreshTimer = setInterval(async () => {
 
+    if (document.hidden) {
+
+        return;
+
+    }
+
     await loadGame();
 
     if (initData) {
+
         await loadWallet();
+
     }
 
 }, 2500);
 
-// Stop automatic refresh when the page is hidden.
 
-document.addEventListener("visibilitychange", () => {
+// ============================================================
+// PAGE VISIBILITY
+// ============================================================
 
-    if (!document.hidden) {
-        loadAll();
+document.addEventListener(
+    "visibilitychange",
+    () => {
+
+        if (!document.hidden) {
+
+            loadAll();
+
+        }
+
     }
-
-});
+);
 
 </script>
 
 </body>
+
 </html>
+```
